@@ -1,1 +1,1238 @@
-
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>大地遊戲闖關系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
+    body { font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    .glass-card { background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(226, 232, 240, 0.8); }
+    .stamp-badge { position: relative; overflow: hidden; }
+    .stamp-badge.completed::after { content: "✓ PASSED"; position: absolute; top: 18px; right: -24px; transform: rotate(25deg); background: #d97706; color: #ffffff; font-size: 8px; font-weight: 900; padding: 2px 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); letter-spacing: 0.5px; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes alertPulse { 0%, 100% { background-color: rgba(225, 29, 72, 0.95); } 50% { background-color: rgba(159, 18, 57, 0.95); } }
+    .animate-alert { animation: alertPulse 1.2s infinite; }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between selection:bg-amber-500 selection:text-white">
+  <div id="toastContainer" class="fixed bottom-6 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none w-[92%] max-w-sm"></div>
+  <header class="bg-gradient-to-r from-emerald-800 via-teal-700 to-cyan-800 text-white shadow-lg sticky top-0 z-40 transition-all">
+    <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+      <div class="flex items-center gap-2.5 sm:gap-3">
+        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 shadow-inner shrink-0">
+          <i class="fa-solid fa-compass text-amber-300 text-lg sm:text-xl animate-pulse"></i>
+        </div>
+        <div>
+          <h1 class="font-black text-base sm:text-lg md:text-xl tracking-wide flex items-center gap-1.5 sm:gap-2">
+            <span class="truncate">大地遊戲闖關系統</span>
+            <span class="hidden xs:inline-block text-[10px] sm:text-xs font-normal px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-900 font-mono font-bold shrink-0">XSHS</span>
+          </h1>
+          <p class="text-[10px] sm:text-xs text-emerald-100/90 font-light tracking-wider">闖關計分與路線導引 <span class="font-mono text-[9px] sm:text-[10px] opacity-75">v6.1</span></p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 sm:gap-2 ml-auto">
+        <button id="adminHeaderSosBadge" onclick="switchAdminTab('alerts')" class="hidden animate-bounce items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black bg-rose-600 border border-rose-300 text-white shadow-lg cursor-pointer">
+          <i class="fa-solid fa-triangle-exclamation text-amber-300"></i>
+          <span>緊急求助通報 (<span id="adminHeaderSosCount">0</span>)</span>
+        </button>
+        <div id="dbStatusBadge" class="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-950/40 border border-emerald-400/30 text-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span id="dbStatusText">同步成功</span>
+        </div>
+        <div id="userBadge" class="hidden items-center gap-1.5 sm:gap-2 bg-white/10 border border-white/20 px-2 sm:px-3 py-1 rounded-lg text-xs">
+          <i class="fa-solid fa-user-circle text-amber-300 text-sm"></i>
+          <span id="currentUserName" class="hidden sm:inline-block max-w-[100px] truncate">未登入</span>
+          <span id="currentUserRoleBadge" class="bg-amber-400 text-slate-900 font-bold px-1.5 py-0.5 text-[9px] sm:text-[10px] rounded shrink-0">未授權</span>
+        </div>
+        <button onclick="handleLogout()" class="bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-900 font-bold px-2.5 sm:px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1.5 shadow shrink-0">
+          <i id="authBtnIcon" class="fa-solid fa-right-to-bracket text-xs"></i>
+          <span id="loginBtnText">登入系統</span>
+        </button>
+      </div>
+    </div>
+  </header>
+  <main class="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-6 flex-grow w-full">
+    <section id="adminView" class="space-y-4 sm:space-y-6 hidden">
+      <div id="adminEmergencyBanner" class="hidden animate-alert text-white p-3.5 sm:p-4 rounded-2xl shadow-xl border-2 border-rose-300 items-center justify-between gap-3 transition-all">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-xl shrink-0 animate-bounce">🚨</div>
+          <div>
+            <h3 class="font-black text-sm sm:text-base tracking-wide flex items-center gap-2">
+              <span>關卡緊急求助通報！</span>
+              <span id="adminEmergencyTime" class="text-xs font-mono font-bold bg-black/30 px-2 py-0.5 rounded-full"></span>
+            </h3>
+            <p id="adminEmergencyText" class="text-xs sm:text-sm font-medium mt-0.5 text-rose-100">載入警報內容中...</p>
+          </div>
+        </div>
+        <div class="flex gap-2 shrink-0">
+          <button onclick="openResolveAlertModal()" class="px-3 py-2 bg-white text-rose-700 hover:bg-rose-50 active:scale-95 text-xs font-black rounded-xl shadow transition whitespace-nowrap">
+            <i class="fa-solid fa-check-circle mr-1"></i> 填寫狀況並處置
+          </button>
+        </div>
+      </div>
+      <div class="glass-card p-3.5 sm:p-5 rounded-2xl shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 border-l-4 border-l-emerald-600">
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-user-shield text-emerald-600"></i>大會總管理員控制台
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">即時監控全校 20 支闖關小隊比分、審核得分與 IP、處置緊急通報與帳號</p>
+        </div>
+        <div class="flex overflow-x-auto no-scrollbar gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-medium -mx-1 px-1 sm:mx-0">
+          <button onclick="switchAdminTab('leaderboard')" id="tabBtn-leaderboard" class="px-3 py-2 rounded-lg transition whitespace-nowrap bg-white shadow-sm text-emerald-700 font-bold"><i class="fa-solid fa-trophy mr-1 text-amber-500"></i>即時排行</button>
+          <button onclick="switchAdminTab('logs')" id="tabBtn-logs" class="px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 hover:text-slate-900"><i class="fa-solid fa-list-check mr-1 text-teal-600"></i>得分明細</button>
+          <button onclick="switchAdminTab('routes')" id="tabBtn-routes" class="px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 hover:text-slate-900"><i class="fa-solid fa-route mr-1 text-indigo-600"></i>動線編排</button>
+          <button onclick="switchAdminTab('alerts')" id="tabBtn-alerts" class="px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 hover:text-slate-900 relative"><i class="fa-solid fa-bullhorn mr-1 text-rose-600"></i>求助紀錄<span id="alertsBadgeCount" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-600 text-white rounded-full text-[9px] font-black items-center justify-center">0</span></button>
+          <button onclick="switchAdminTab('auth')" id="tabBtn-auth" class="px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 hover:text-slate-900"><i class="fa-solid fa-users mr-1 text-purple-600"></i>帳號管理</button>
+        </div>
+      </div>
+      <div id="adminTab-leaderboard" class="space-y-4 sm:space-y-6">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+          <div class="glass-card p-3 sm:p-4 rounded-2xl border-b-4 border-b-emerald-500"><p class="text-[11px] sm:text-xs text-slate-500 font-medium">參賽小隊總數</p><p class="text-xl sm:text-2xl font-black text-slate-800 mt-0.5 sm:mt-1" id="statTeamCount">20 隊</p></div>
+          <div class="glass-card p-3 sm:p-4 rounded-2xl border-b-4 border-b-amber-500"><p class="text-[11px] sm:text-xs text-slate-500 font-medium">大地遊戲關卡數</p><p class="text-xl sm:text-2xl font-black text-slate-800 mt-0.5 sm:mt-1" id="statStationCount">10 關</p></div>
+          <div class="glass-card p-3 sm:p-4 rounded-2xl border-b-4 border-b-blue-500"><p class="text-[11px] sm:text-xs text-slate-500 font-medium">全場發放總積分</p><p class="text-xl sm:text-2xl font-black text-slate-800 mt-0.5 sm:mt-1" id="statTotalPoints">0 分</p></div>
+          <div class="glass-card p-3 sm:p-4 rounded-2xl border-b-4 border-b-rose-500"><p class="text-[11px] sm:text-xs text-slate-500 font-medium">待處置求助通報</p><p class="text-xl sm:text-2xl font-black text-rose-600 mt-0.5 sm:mt-1" id="statPendingAlerts">0 件</p></div>
+        </div>
+        <div class="glass-card rounded-2xl overflow-hidden shadow-sm">
+          <div class="p-3.5 sm:p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center"><h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-ranking-star text-amber-500"></i> 全校小隊總排行榜</h3></div>
+          <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 text-slate-600 uppercase font-bold border-b border-slate-200"><tr><th class="px-3 sm:px-4 py-3 w-14 sm:w-16 text-center whitespace-nowrap">名次</th><th class="px-3 sm:px-4 py-3 whitespace-nowrap">班級小隊</th><th class="px-3 sm:px-4 py-3 text-right whitespace-nowrap">獲得總分</th><th class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">快速微調分數</th></tr></thead><tbody id="leaderboardTableBody" class="divide-y divide-slate-100"></tbody></table></div>
+        </div>
+      </div>
+      <div id="adminTab-logs" class="glass-card rounded-2xl p-3.5 sm:p-4 shadow-sm hidden space-y-4">
+        <div class="pb-2 border-b border-slate-200"><h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-teal-600"></i> 得分紀錄歷史與操作IP</h3></div>
+        <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200"><tr><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">時間</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">關卡名稱</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">獲分小隊</th><th class="px-3 sm:px-4 py-2.5 text-right whitespace-nowrap">分數</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">操作來源 IP</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">關主備註</th><th class="px-3 sm:px-4 py-2.5 text-center whitespace-nowrap">操作</th></tr></thead><tbody id="logsTableBody" class="divide-y divide-slate-100"></tbody></table></div>
+      </div>
+      <div id="adminTab-routes" class="glass-card rounded-2xl p-3.5 sm:p-4 shadow-sm hidden space-y-4">
+        <div class="pb-2 border-b border-slate-200"><h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-map-location-dot text-indigo-600"></i> 各班小隊跑關路線圖 (自動錯開)</h3></div>
+        <div id="routesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4"></div>
+      </div>
+      <div id="adminTab-alerts" class="glass-card rounded-2xl p-3.5 sm:p-4 shadow-sm hidden space-y-4">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-200"><h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-bullhorn text-rose-600"></i> 各關卡緊急求助與事件紀錄</h3></div>
+        <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200"><tr><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">通報時間</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">關卡名稱</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">事件類型</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">詳細狀況說明</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">大會處置備註</th><th class="px-3 sm:px-4 py-2.5 text-center whitespace-nowrap">處置狀態</th></tr></thead><tbody id="alertsTableBody" class="divide-y divide-slate-100"></tbody></table></div>
+      </div>
+      <div id="adminTab-auth" class="glass-card rounded-2xl p-3.5 sm:p-4 shadow-sm hidden space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-2 pb-2 border-b border-slate-200">
+          <h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-users text-purple-600"></i> 獨立帳號與密碼管理系統</h3>
+          <button onclick="fetchAccounts()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 active:scale-95 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm"><i class="fa-solid fa-arrows-rotate"></i> 重新載入帳號</button>
+        </div>
+        <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200"><tr><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">帳號 (Username)</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">顯示名稱</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">權限身份</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">設定密碼 (Password)</th><th class="px-3 sm:px-4 py-2.5 text-center whitespace-nowrap">儲存變更</th></tr></thead><tbody id="accountsTableBody" class="divide-y divide-slate-100"></tbody></table></div>
+      </div>
+    </section>
+    <section id="stationView" class="space-y-4 sm:space-y-6 hidden">
+      <div class="glass-card p-4 sm:p-6 rounded-3xl shadow-sm border-l-4 border-l-teal-600 relative overflow-hidden">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 bg-teal-100 text-teal-800 text-xs font-bold rounded-md flex items-center gap-1"><i class="fa-solid fa-headset"></i> 關主專用指揮台</span>
+              <div id="stationStatusBadge" class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-md flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 關卡正常開放中</div>
+            </div>
+            <h2 id="stationTitle" class="text-2xl sm:text-3xl font-black text-slate-800 mt-2">關卡名稱</h2>
+            <p id="stationLocation" class="text-xs sm:text-sm text-slate-500 flex items-center gap-1 mt-1"><i class="fa-solid fa-location-dot text-rose-500"></i> 地點載入中...</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="toggleStationStatus()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm"><i class="fa-solid fa-sliders text-teal-600"></i> 切換關卡狀態</button>
+            <button onclick="openEmergencyModal()" class="px-3 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-md"><i class="fa-solid fa-triangle-exclamation text-amber-300"></i> 通報大會 (SOS)</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mt-4">
+          <div class="bg-teal-50/60 border border-teal-100 p-2.5 sm:p-3 rounded-2xl"><p class="text-[10px] sm:text-xs text-teal-700 font-bold">已挑戰完成</p><p id="stStatCompleted" class="text-lg sm:text-xl font-black text-teal-900 mt-0.5">0 / 20 隊</p></div>
+          <div class="bg-amber-50/60 border border-amber-100 p-2.5 sm:p-3 rounded-2xl"><p class="text-[10px] sm:text-xs text-amber-700 font-bold">本關平均給分</p><p id="stStatAvg" class="text-lg sm:text-xl font-black text-amber-900 mt-0.5">0 分</p></div>
+          <div class="bg-blue-50/60 border border-blue-100 p-2.5 sm:p-3 rounded-2xl"><p class="text-[10px] sm:text-xs text-blue-700 font-bold">本關最高分隊伍</p><p id="stStatTop" class="text-lg sm:text-xl font-black text-blue-900 mt-0.5 truncate">尚無紀錄</p></div>
+          <div class="bg-purple-50/60 border border-purple-100 p-2.5 sm:p-3 rounded-2xl"><p class="text-[10px] sm:text-xs text-purple-700 font-bold">剩餘待到關小隊</p><p id="stStatRemaining" class="text-lg sm:text-xl font-black text-purple-900 mt-0.5">20 隊</p></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div class="lg:col-span-2 glass-card p-4 sm:p-6 rounded-3xl shadow-sm space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200">
+            <h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-circle-plus text-teal-600"></i> 關卡成績與加分登記</h3>
+            <div class="flex gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold">
+              <button onclick="setScoringMode('preset')" id="scoreModeBtnPreset" class="px-2.5 py-1 bg-white text-teal-700 rounded-lg shadow-sm transition">快捷單鍵</button>
+              <button onclick="setScoringMode('rubric')" id="scoreModeBtnRubric" class="px-2.5 py-1 text-slate-600 rounded-lg transition">多元規準 Rubric</button>
+            </div>
+          </div>
+          <div class="space-y-1.5"><label class="block text-xs font-bold text-slate-700">選擇前來闖關的小隊：</label><select id="stationTeamSelect" class="w-full px-3.5 py-3 border border-slate-300 rounded-xl font-bold text-slate-800 text-sm bg-white focus:ring-2 focus:ring-teal-500 outline-none shadow-sm"></select></div>
+          <div id="scoringPresetBox" class="space-y-2.5">
+            <label class="block text-xs font-bold text-slate-700">獲得分數 (點擊快速填入)：</label>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button type="button" onclick="document.getElementById('stationPointsInput').value=10" class="py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl font-bold text-xs sm:text-sm active:scale-95 transition">+10 分</button>
+              <button type="button" onclick="document.getElementById('stationPointsInput').value=20" class="py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl font-bold text-xs sm:text-sm active:scale-95 transition">+20 分</button>
+              <button type="button" onclick="document.getElementById('stationPointsInput').value=50" class="py-2.5 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 text-emerald-900 font-bold text-xs sm:text-sm active:scale-95 transition">+50 分 (完美)</button>
+              <button type="button" onclick="document.getElementById('stationPointsInput').value=-10" class="py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-xl font-bold text-xs sm:text-sm active:scale-95 transition">-10 分 (犯規)</button>
+            </div>
+            <input type="number" id="stationPointsInput" placeholder="自訂指定分數 (例如: 35)" class="w-full mt-2 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-mono focus:ring-2 focus:ring-teal-500 outline-none shadow-sm">
+          </div>
+          <div id="scoringRubricBox" class="space-y-3 hidden bg-teal-50/50 p-4 rounded-2xl border border-teal-100">
+            <p class="text-xs font-bold text-teal-800 flex items-center gap-1.5"><i class="fa-solid fa-calculator"></i> 多元評分規準 (系統自動計算填入)：</p>
+            <div class="space-y-2 text-xs">
+              <div class="flex items-center justify-between gap-2 bg-white p-2 rounded-xl border border-teal-100"><span class="font-bold text-slate-700">1. 團隊合作與紀律 (0-15分)</span><input type="number" id="rubric1" oninput="calculateRubric()" class="w-16 py-1 px-2 text-center border rounded-lg font-mono font-bold" min="0" max="15" value="0"></div>
+              <div class="flex items-center justify-between gap-2 bg-white p-2 rounded-xl border border-teal-100"><span class="font-bold text-slate-700">2. 任務達成度與精準度 (0-20分)</span><input type="number" id="rubric2" oninput="calculateRubric()" class="w-16 py-1 px-2 text-center border rounded-lg font-mono font-bold" min="0" max="20" value="0"></div>
+              <div class="flex items-center justify-between gap-2 bg-white p-2 rounded-xl border border-teal-100"><span class="font-bold text-slate-700">3. 創意與速度策略 (0-15分)</span><input type="number" id="rubric3" oninput="calculateRubric()" class="w-16 py-1 px-2 text-center border rounded-lg font-mono font-bold" min="0" max="15" value="0"></div>
+            </div>
+            <div class="pt-2 border-t border-teal-200 flex justify-between items-center text-xs font-bold"><span class="text-slate-700">加總試算：</span><span id="rubricTotal" class="text-lg font-black text-teal-700">0 分</span></div>
+          </div>
+          <div class="space-y-1.5"><label class="block text-xs font-bold text-rose-600 flex justify-between"><span>備註說明 <span class="text-rose-500">*必填</span></span></label><input type="text" id="stationNoteInput" placeholder="例如：團隊展現高度默契 (必填)" class="w-full px-3.5 py-2.5 border border-rose-300 bg-rose-50/30 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none shadow-sm"></div>
+          <button onclick="submitStationScore()" class="w-full py-3.5 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-sm sm:text-base"><i class="fa-solid fa-paper-plane"></i> 送出得分並更新排行榜</button>
+        </div>
+        <div class="glass-card p-4 sm:p-5 rounded-3xl shadow-sm flex flex-col justify-between border border-slate-200 relative overflow-hidden">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+            <h3 class="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-2"><i class="fa-solid fa-stopwatch text-indigo-600"></i> 賽事關卡計時器</h3>
+            <div class="flex bg-slate-100 rounded-lg p-0.5 shadow-inner"><button onclick="setStationTimerMode('countdown')" id="stTimerMode-countdown" class="px-2 py-1 text-[10px] font-bold bg-white text-indigo-700 shadow-sm rounded">倒數</button><button onclick="setStationTimerMode('stopwatch')" id="stTimerMode-stopwatch" class="px-2 py-1 text-[10px] font-bold text-slate-500 rounded">碼錶</button></div>
+          </div>
+          <div class="py-6 text-center relative flex flex-col items-center justify-center">
+            <div id="stTimerAlertBadge" class="absolute top-1 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-bounce hidden shadow">最後 10 秒倒數！</div>
+            <div class="text-4xl sm:text-5xl font-black font-mono tracking-tight text-slate-800" id="timerDisplay">05:00<span class="text-xl text-slate-400">.0</span></div>
+            <div class="flex items-center gap-1 mt-2">
+              <button onclick="adjustTimerSeconds(-10)" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold active:scale-95 transition">-10s</button>
+              <button onclick="adjustTimerSeconds(-1)" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold active:scale-95 transition">-1s</button>
+              <span class="text-[10px] text-slate-400 px-1 font-bold">微調</span>
+              <button onclick="adjustTimerSeconds(1)" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold active:scale-95 transition">+1s</button>
+              <button onclick="adjustTimerSeconds(10)" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold active:scale-95 transition">+10s</button>
+            </div>
+          </div>
+          <div id="stTimerPresets" class="space-y-2 mb-3">
+            <div class="grid grid-cols-4 gap-1">
+              <button onclick="setTimerSeconds(30)" class="py-1 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200">30 秒</button>
+              <button onclick="setTimerSeconds(60)" class="py-1 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200">1 分</button>
+              <button onclick="setTimerSeconds(180)" class="py-1 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200">3 分</button>
+              <button onclick="setTimerSeconds(300)" class="py-1 text-[10px] font-bold bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200 font-bold">5 分</button>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="toggleTimer()" id="timerStartBtn" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs sm:text-sm"><i class="fa-solid fa-play"></i> 開始計時</button>
+            <button onclick="resetTimer()" class="w-12 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition flex items-center justify-center"><i class="fa-solid fa-rotate-right"></i></button>
+          </div>
+        </div>
+      </div>
+      <div class="flex border-b border-slate-200 gap-2 overflow-x-auto no-scrollbar pb-1 text-xs font-bold">
+        <button onclick="switchStationSubTab('history')" id="stSubBtn-history" class="px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-teal-600 text-white shadow"><i class="fa-solid fa-list-check mr-1.5"></i> 本關得分歷史記錄</button>
+        <button onclick="switchStationSubTab('rules')" id="stSubBtn-rules" class="px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-white text-slate-600 hover:bg-slate-100"><i class="fa-solid fa-book-open mr-1.5 text-amber-500"></i> 關卡規則與道具備忘</button>
+      </div>
+      <div id="stSubTab-history" class="glass-card p-4 rounded-2xl shadow-sm space-y-3">
+        <h3 class="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-teal-600"></i> 本關卡近期加分明細</h3>
+        <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200"><tr><th class="px-3 sm:px-4 py-2 whitespace-nowrap">時間</th><th class="px-3 sm:px-4 py-2 whitespace-nowrap">隊伍</th><th class="px-3 sm:px-4 py-2 text-right whitespace-nowrap">分數</th><th class="px-3 sm:px-4 py-2 whitespace-nowrap">備註</th></tr></thead><tbody id="stationLogsBody" class="divide-y divide-slate-100"></tbody></table></div>
+      </div>
+      <div id="stSubTab-rules" class="glass-card p-4 sm:p-5 rounded-2xl shadow-sm hidden space-y-3">
+        <h3 class="text-amber-600 font-bold text-sm flex items-center gap-2 pb-2 border-b border-slate-200"><i class="fa-solid fa-book-open"></i> 關卡規則與安全注意事項</h3>
+        <div class="bg-amber-50/60 p-3.5 rounded-xl border border-amber-100 text-xs sm:text-sm text-slate-700 space-y-1.5">
+          <p>1. 遊戲開始前，請關主務必先說明遊戲規則 1 分鐘。</p>
+          <p>2. 每組闖關標準時間為 5 分鐘，完成基礎任務給予 +20 分。</p>
+          <p>3. 若團隊展現高度默契與速度，可最高給予 +50 分。</p>
+          <p>4. 發生故意犯規或破壞道具行為，請選擇 -10 分扣分並於備註填寫原因。</p>
+        </div>
+      </div>
+    </section>
+    <section id="studentView" class="space-y-4 sm:space-y-6 hidden">
+      <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white p-4 sm:p-6 rounded-3xl shadow-lg relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <i class="fa-solid fa-flag text-9xl absolute -right-6 -bottom-6 text-white/10 rotate-[-15deg] pointer-events-none"></i>
+        <div class="relative z-10">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 bg-black/25 text-amber-100 text-[10px] sm:text-xs font-bold rounded-md uppercase tracking-wider flex items-center gap-1"><i class="fa-solid fa-users"></i> 闖關小隊儀表板</span>
+            <span id="studentProgressBadge" class="px-2.5 py-0.5 bg-white/20 text-white text-[10px] sm:text-xs font-bold rounded-md">已過 0 / 10 關</span>
+          </div>
+          <h2 id="studentTeamTitle" class="text-2xl sm:text-3xl font-black mt-1.5 drop-shadow-sm">載入中...</h2>
+          <p class="text-xs text-amber-100 mt-1 flex items-center gap-1"><i class="fa-solid fa-circle-info"></i> 請依照專屬路線前往地點挑戰關卡，爭取最高榮譽！</p>
+        </div>
+        <div class="flex gap-3 sm:gap-4 bg-white/15 p-3 rounded-2xl border border-white/20 backdrop-blur-md w-full md:w-auto justify-around relative z-10">
+          <div class="text-center px-4"><p class="text-[10px] sm:text-xs text-amber-100 font-medium">目前累積總得分</p><p id="studentTotalScore" class="text-2xl sm:text-3xl font-black mt-0.5 font-mono">0</p></div>
+          <div class="w-px bg-white/20"></div>
+          <div class="text-center px-4"><p class="text-[10px] sm:text-xs text-amber-100 font-medium">挑戰進度</p><p id="studentCompletedCountText" class="text-2xl sm:text-3xl font-black mt-0.5 font-mono">0/10 關</p></div>
+        </div>
+      </div>
+      <div class="flex border-b border-slate-200 gap-1 sm:gap-2 overflow-x-auto no-scrollbar pb-1 text-xs font-bold">
+        <button onclick="switchStudentTab('quest')" id="stuTabBtn-quest" class="px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-amber-500 text-white shadow"><i class="fa-solid fa-compass mr-1"></i> 當前任務與導航</button>
+        <button onclick="openMapModal()" class="px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-indigo-600 text-white shadow hover:bg-indigo-700"><i class="fa-solid fa-map mr-1"></i> 🗺️ 校園總地圖</button>
+        <button onclick="switchStudentTab('stamps')" id="stuTabBtn-stamps" class="px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-white text-slate-600 hover:bg-slate-100"><i class="fa-solid fa-stamp mr-1 text-amber-600"></i> 數位集章卡 (A-J)</button>
+        <button onclick="switchStudentTab('timer')" id="stuTabBtn-timer" class="px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-white text-slate-600 hover:bg-slate-100"><i class="fa-solid fa-stopwatch mr-1 text-indigo-600"></i> 小隊戰術計時器</button>
+        <button onclick="switchStudentTab('history')" id="stuTabBtn-history" class="px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-white text-slate-600 hover:bg-slate-100"><i class="fa-solid fa-list-ol mr-1 text-teal-600"></i> 關卡得分履歷</button>
+      </div>
+      <div id="stuTab-quest" class="space-y-4">
+        <div class="glass-card p-5 sm:p-6 rounded-3xl shadow-sm border-2 border-amber-400 bg-gradient-to-br from-amber-50/50 to-orange-50/30 relative overflow-hidden">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-amber-200/60">
+            <div><span class="px-2.5 py-1 bg-amber-500 text-white text-[11px] font-extrabold rounded-lg shadow-sm">🎯 當前指定挑戰關卡 (ACTIVE QUEST)</span><h3 id="stuActiveStationTitle" class="text-2xl sm:text-3xl font-black text-slate-800 mt-2">載入動線中...</h3></div>
+            <div id="stuActiveLocationBadge" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl text-xs sm:text-sm font-bold shrink-0"><i class="fa-solid fa-location-dot text-rose-500 animate-bounce"></i><span id="stuActiveLocationText">地點查詢中...</span></div>
+          </div>
+          <div class="pt-3 text-xs sm:text-sm text-slate-600 space-y-1"><p>💡 <span class="font-bold text-slate-800">闖關提醒：</span>到達地點後請全隊集合完畢，並主動向關主報上隊伍名稱即可開始挑戰。</p></div>
+        </div>
+        <div class="glass-card p-4 sm:p-6 rounded-3xl shadow-sm space-y-3">
+          <div><h3 class="font-bold text-slate-800 text-base sm:text-lg flex items-center gap-2"><i class="fa-solid fa-route text-amber-500"></i> 全程 10 關路線輪替圖</h3><p class="text-xs text-slate-500 mt-0.5">系統已自動幫 20 支隊伍錯開順序，避免人潮擁擠。</p></div>
+          <div id="routeStepper" class="space-y-2.5"></div>
+        </div>
+      </div>
+      <div id="stuTab-stamps" class="glass-card p-4 sm:p-6 rounded-3xl shadow-sm hidden space-y-4">
+        <div><h3 class="font-bold text-slate-800 text-base sm:text-lg flex items-center gap-2"><i class="fa-solid fa-stamp text-amber-500"></i> 10 大關卡數位闖關集章卡 (A~J)</h3><p class="text-xs text-slate-500 mt-0.5">每完成一個關卡，關主上傳成績後此處將自動蓋上專屬通關印章！</p></div>
+        <div class="space-y-1.5 bg-slate-100 p-3 rounded-2xl border border-slate-200">
+          <div class="flex justify-between items-center text-xs font-bold"><span class="text-slate-600">完成進度總覽</span><span id="stuStampProgressText" class="text-amber-600 font-black">0% (0/10關)</span></div>
+          <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden"><div id="stuStampProgressBar" class="bg-amber-500 h-3 rounded-full transition-all duration-700 ease-out w-0"></div></div>
+        </div>
+        <div id="stuStampGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2"></div>
+      </div>
+      <div id="stuTab-timer" class="glass-card p-5 sm:p-6 rounded-3xl shadow-sm hidden space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+          <div><h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-stopwatch text-indigo-600"></i> 小隊專屬戰術計時器</h3><p class="text-xs text-slate-500 mt-0.5">可於現場競賽或闖關時作為小隊內部倒數或碼錶輔助工具</p></div>
+          <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-bold"><button onclick="setStudentTimerMode('countdown')" id="stuTimerMode-countdown" class="px-2.5 py-1 bg-white text-indigo-700 rounded-lg shadow-sm">倒數</button><button onclick="setStudentTimerMode('stopwatch')" id="stuTimerMode-stopwatch" class="px-2.5 py-1 text-slate-600 rounded-lg">碼錶</button></div>
+        </div>
+        <div class="py-6 text-center relative flex flex-col items-center justify-center bg-slate-50 rounded-2xl border border-slate-200">
+          <div id="stuTimerAlertBadge" class="absolute top-2 bg-rose-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full animate-bounce hidden shadow">最後 10 秒！</div>
+          <div class="text-5xl sm:text-6xl font-black font-mono tracking-tight text-slate-800" id="stuTimerDisplay">05:00<span class="text-2xl text-slate-400">.0</span></div>
+          <div class="flex items-center gap-1 mt-3">
+            <button onclick="adjustStudentTimerSeconds(-10)" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold active:scale-95 transition">-10s</button>
+            <button onclick="adjustStudentTimerSeconds(-1)" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold active:scale-95 transition">-1s</button>
+            <span class="text-xs text-slate-400 px-1 font-bold">微調</span>
+            <button onclick="adjustStudentTimerSeconds(1)" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold active:scale-95 transition">+1s</button>
+            <button onclick="adjustStudentTimerSeconds(10)" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold active:scale-95 transition">+10s</button>
+          </div>
+        </div>
+        <div id="stuTimerPresets" class="grid grid-cols-4 sm:grid-cols-4 gap-2">
+          <button onclick="setStudentTimerSeconds(30)" class="py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200">30 秒</button>
+          <button onclick="setStudentTimerSeconds(60)" class="py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200">1 分鐘</button>
+          <button onclick="setStudentTimerSeconds(180)" class="py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200">3 分鐘</button>
+          <button onclick="setStudentTimerSeconds(300)" class="py-2 text-xs font-bold bg-indigo-50 text-indigo-700 rounded-xl border border-indigo-200 font-bold">5 分鐘</button>
+        </div>
+        <div class="flex gap-2 pt-1">
+          <button onclick="toggleStudentTimer()" id="stuTimerStartBtn" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 text-sm"><i class="fa-solid fa-play"></i> 開始計時</button>
+          <button onclick="resetStudentTimer()" class="w-14 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition flex items-center justify-center"><i class="fa-solid fa-rotate-right"></i></button>
+        </div>
+      </div>
+      <div id="stuTab-history" class="glass-card p-4 sm:p-5 rounded-3xl shadow-sm hidden space-y-4">
+        <h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2 pb-2 border-b border-slate-200"><i class="fa-solid fa-list-check text-teal-600"></i> 本隊伍過關與得分紀錄履歷</h3>
+        <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200"><tr><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">過關時間</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">關卡名稱</th><th class="px-3 sm:px-4 py-2.5 text-right whitespace-nowrap">獲得得分</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">備註</th></tr></thead><tbody id="studentLogsTableBody" class="divide-y divide-slate-100"></tbody></table></div>
+      </div>
+    </section>
+  </main>
+  <div id="loginModal" class="fixed inset-0 bg-slate-100 z-[110] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-100 my-auto">
+      <div class="bg-gradient-to-r from-emerald-800 to-teal-700 text-white p-5 sm:p-6 text-center relative">
+        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 mx-auto mb-2 flex items-center justify-center border border-white/20 shadow-inner"><i class="fa-solid fa-shield-halved text-amber-300 text-xl sm:text-2xl"></i></div>
+        <h3 class="text-lg sm:text-xl font-black">大地遊戲闖關系統登入</h3>
+        <p class="text-xs text-emerald-100/80 mt-1">請輸入您的帳號與密碼</p>
+      </div>
+      <form onsubmit="handleLoginSubmit(event)" class="p-5 sm:p-6 space-y-4">
+        <div class="space-y-1.5"><label class="block text-xs font-bold text-slate-700">帳號 (Username)：</label><input type="text" id="loginUsernameInput" placeholder="例如：401A、401B、402A" required autocomplete="off" autocorrect="off" autocapitalize="off" class="w-full px-3.5 py-3 border border-slate-300 rounded-xl text-sm font-bold text-slate-800 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition"></div>
+        <div class="space-y-1.5"><label class="block text-xs font-bold text-slate-700">密碼 (Password)：</label><input type="password" id="loginPasswordInput" placeholder="請輸入密碼" required class="w-full px-3.5 py-3 border border-slate-300 rounded-xl text-sm font-mono focus:ring-2 focus:ring-emerald-500 outline-none transition"></div>
+        <button type="submit" class="w-full py-3.5 mt-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-xl shadow-lg transition flex justify-center items-center gap-2 text-sm sm:text-base">登入系統</button>
+      </form>
+    </div>
+  </div>
+  <div id="overrideModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[120] hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border-2 border-rose-500 my-auto">
+      <div class="bg-gradient-to-r from-rose-600 to-orange-500 text-white p-4 sm:p-5 text-center relative">
+        <i class="fa-solid fa-triangle-exclamation text-2xl sm:text-3xl text-amber-300 mb-1.5 drop-shadow-md"></i>
+        <h3 class="text-lg sm:text-xl font-black">已有過關加分紀錄！</h3>
+        <p class="text-xs text-rose-100 mt-1">該隊伍於本關卡已經有過成績紀錄，若要覆蓋請填寫原因。</p>
+      </div>
+      <div class="p-5 sm:p-6 space-y-3.5 bg-rose-50/30">
+        <div class="flex justify-between items-center text-xs sm:text-sm border-b border-slate-200 pb-2"><span class="text-slate-600 font-bold">目前登記分數：</span><span id="overrideOldScore" class="font-black text-slate-800"></span></div>
+        <div class="flex justify-between items-center text-xs sm:text-sm border-b border-slate-200 pb-2"><span class="text-rose-600 font-bold">更正後新分數：</span><span id="overrideNewScore" class="font-black text-rose-600 text-base sm:text-lg"></span></div>
+        <div class="space-y-1.5 pt-1"><label class="block text-xs font-bold text-rose-700">為什麼要修改？ (修改原因必填)：</label><input type="text" id="overrideReasonInput" placeholder="例如：稍早手誤打錯分數、補加碼" class="w-full px-3 py-2.5 border border-rose-300 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none"></div>
+        <div class="flex gap-2.5 pt-2"><button onclick="closeOverrideModal()" class="flex-1 py-2.5 sm:py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition text-xs sm:text-sm">取消變更</button><button onclick="confirmOverrideScore()" class="flex-1 py-2.5 sm:py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-lg transition text-xs sm:text-sm">確認修改成績</button></div>
+      </div>
+    </div>
+  </div>
+  <div id="emergencyModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[130] hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border-2 border-rose-600 my-auto">
+      <div class="bg-gradient-to-r from-rose-700 to-red-600 text-white p-5 text-center relative">
+        <i class="fa-solid fa-triangle-exclamation text-3xl text-amber-300 mb-1.5 animate-bounce"></i>
+        <h3 class="text-xl font-black">關卡緊急求助與通報</h3>
+        <p class="text-xs text-rose-100 mt-1">此通報會立即同步至大會控制台！</p>
+      </div>
+      <div class="p-5 sm:p-6 space-y-4">
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold text-slate-700">選擇事件緊急分類：</label>
+          <select id="emergencyTypeSelect" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-slate-800 bg-white focus:ring-2 focus:ring-rose-500 outline-none">
+            <option value="🚑 傷患救護">🚑 傷患救護 (學生受傷/不適)</option>
+            <option value="🛠️ 道具損壞/遺失">🛠️ 道具損壞 / 設備遺失</option>
+            <option value="⚠️ 秩序/違規糾紛">⚠️ 秩序騷亂 / 競賽違規糾紛</option>
+            <option value="🆘 人力/現場支援">🆘 人力短缺 / 現場需要支援</option>
+            <option value="💬 其他突發狀況">💬 其他緊急狀況</option>
+          </select>
+        </div>
+        <div class="space-y-1.5"><label class="block text-xs font-bold text-slate-700">詳細狀況說明 (幫助大會快速處置)：</label><textarea id="emergencyMessageInput" rows="3" placeholder="例如：有學生不慎於階梯跌倒擦傷，需要醫藥箱與人力支援..." class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none"></textarea></div>
+        <div class="flex gap-2.5 pt-2"><button onclick="closeEmergencyModal()" class="flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition text-xs sm:text-sm">取消</button><button onclick="submitEmergencyAlert()" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-lg transition text-xs sm:text-sm flex items-center justify-center gap-1"><i class="fa-solid fa-paper-plane"></i> 發送緊急求助</button></div>
+      </div>
+    </div>
+  </div>
+  <div id="resolveAlertModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[135] hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border-2 border-emerald-600 my-auto">
+      <div class="bg-gradient-to-r from-emerald-800 to-teal-700 text-white p-5 text-center relative">
+        <i class="fa-solid fa-clipboard-check text-3xl text-amber-300 mb-1.5"></i>
+        <h3 class="text-xl font-black">填寫處置狀況與核銷警報</h3>
+        <p class="text-xs text-emerald-100 mt-1">請說明大會派遣處置的詳細處理說明與結果</p>
+      </div>
+      <div class="p-5 sm:p-6 space-y-4">
+        <div class="bg-rose-50 border border-rose-200 rounded-2xl p-3 text-xs space-y-1">
+          <p><span class="font-bold text-rose-800">求助關卡：</span><span id="resModalStation" class="font-bold text-slate-800"></span></p>
+          <p><span class="font-bold text-rose-800">事件分類：</span><span id="resModalType" class="font-bold text-rose-600"></span></p>
+          <p><span class="font-bold text-rose-800">狀況說明：</span><span id="resModalMsg" class="text-slate-700"></span></p>
+        </div>
+        <div class="space-y-1.5"><label class="block text-xs font-bold text-slate-700">大會處理狀況備註 <span class="text-rose-500">*必填</span>：</label><textarea id="resolutionNoteInput" rows="3" placeholder="例如：已派教官帶醫藥箱前往現場包紮，學生恢復良好留站觀賽..." class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none"></textarea></div>
+        <div class="flex gap-2.5 pt-1"><button onclick="closeResolveAlertModal()" class="flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition text-xs sm:text-sm">取消</button><button onclick="confirmResolveAlert()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition text-xs sm:text-sm flex items-center justify-center gap-1"><i class="fa-solid fa-check"></i> 確認已處置</button></div>
+      </div>
+    </div>
+  </div>
+  <div id="mapModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[140] hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-4xl w-full shadow-2xl overflow-hidden border border-slate-200 my-auto flex flex-col max-h-[90vh]">
+      <div class="bg-slate-900 text-white p-4 flex justify-between items-center shrink-0">
+        <h3 class="font-bold text-base sm:text-lg flex items-center gap-2"><i class="fa-solid fa-map-marked-alt text-amber-400"></i> 新社高中 校園闖關平面地圖</h3>
+        <button onclick="closeMapModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-3 sm:p-4 overflow-auto flex items-center justify-center bg-slate-100 flex-grow min-h-[300px]">
+        <img id="campusMapImg" src="" alt="校園地圖" class="max-w-full max-h-[70vh] object-contain rounded-xl shadow border border-slate-200" onerror="this.src='https://placehold.co/1200x800/0284c7/ffffff?text=XSHS+Campus+Map+(GitHub+Upload+Pending)'">
+      </div>
+      <div class="p-3 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-500 shrink-0">💡 提示：可放大螢幕查看關卡 A~J 精確地理位置</div>
+    </div>
+  </div>
+  <footer class="bg-slate-900 text-slate-400 text-[11px] sm:text-xs py-3.5 text-center border-t border-slate-800"><p>臺中市立新社高級中學 大地遊戲計分導引系統 &copy; 2026</p></footer>
+  <script>
+    const SUPABASE_URL = 'https://xfevmqguantotrkatvoa.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_uQcbXqsRGxU-uLRagPtwHQ_6SSAUT59';
+    let supabaseClient = null;
+    const CAMPUS_MAP_URL = 'https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/campus_map.png';
+    const STATIONS = [
+      { id: 'A', name: 'A關 靜思樓穿堂' }, { id: 'B', name: 'B關 國教中心一樓' },
+      { id: 'C', name: 'C關 新龍崗' }, { id: 'D', name: 'D關 餐廳' },
+      { id: 'E', name: 'E關 活動中心' }, { id: 'F', name: 'F關 遮雨棚' },
+      { id: 'G', name: 'G關 司令台' }, { id: 'H', name: 'H關 學務處' },
+      { id: 'I', name: 'I關 圖書館' }, { id: 'J', name: 'J關 總務處' }
+    ];
+    const TEAM_NAMES = ['401A', '401B', '402A', '402B', '403A', '403B', '404A', '404B', '405A', '405B', '406A', '406B', '407A', '407B', '408A', '408B', '409A', '409B', '410A', '410B'];
+    let currentUser = null; 
+    let localTeams = TEAM_NAMES.map(function(name) { return { team_name: name, total_score: 0, current_step: 1 }; });
+    let localLogs = [];
+    let localAlerts = [];
+    let overrideTempData = null;
+    let pendingResolveAlertId = null;
+    let pollingInterval = null;
+    let stationTimerInterval = null;
+    let stationTimerSeconds = 3000;
+    let isStationTimerRunning = false;
+    let stationTimerMode = 'countdown';
+    let isStationOpen = true;
+    let studentTimerInterval = null;
+    let studentTimerSeconds = 3000;
+    let isStudentTimerRunning = false;
+    let studentTimerMode = 'countdown';
+    window.onload = function() { initSupabase(); populateDropdowns(); openLoginModal(); };
+    function initSupabase() {
+      try {
+        if (typeof supabase !== 'undefined') {
+          supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          var badge = document.getElementById('dbStatusBadge');
+          if (badge) badge.classList.remove('hidden');
+          setupRealtimeSubscriptions();
+          refreshData();
+        } else { showToast('同步失敗', 'error'); }
+      } catch (e) { showToast('同步失敗', 'error'); }
+    }
+    function isWebSocketAllowed() {
+      try {
+        if (typeof WebSocket === 'undefined') return false;
+        var testWs = new WebSocket('wss://xfevmqguantotrkatvoa.supabase.co/realtime/v1/websocket?vsn=2.0.0');
+        testWs.close();
+        return true;
+      } catch (e) { return false; }
+    }
+    function setupRealtimeSubscriptions() {
+      if (!supabaseClient) return;
+      if (!isWebSocketAllowed()) { fallbackToPolling(); return; }
+      try {
+        if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; }
+        var channel = supabaseClient.channel('public-realtime-room')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, function() { refreshData(); })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'score_logs' }, function() { refreshData(); })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'accounts' }, function() { refreshData(); })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'system_alerts' }, function() { refreshData(); });
+        channel.subscribe(function(status, err) {
+          var statusText = document.getElementById('dbStatusText');
+          if (status === 'SUBSCRIBED') { if (statusText) statusText.innerText = '同步成功'; }
+          else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) { fallbackToPolling(); }
+        });
+      } catch (error) { fallbackToPolling(); }
+    }
+    function fallbackToPolling() {
+      if (pollingInterval) return;
+      var statusText = document.getElementById('dbStatusText');
+      if (statusText) statusText.innerText = '同步成功';
+      pollingInterval = setInterval(function() { refreshData(); }, 2000);
+    }
+    function formatTeamName(name) {
+      if (!name) return '';
+      var match = name.match(/^(\d{3})([A-Za-z])$/);
+      if (match) return match[1] + '班 ' + match[2].toUpperCase() + '隊';
+      return name;
+    }
+    function populateDropdowns() {
+      var select = document.getElementById('stationTeamSelect');
+      if (select) {
+        var options = '<option value="">-- 請選擇小隊 --</option>';
+        for (var i = 0; i < TEAM_NAMES.length; i++) { options += '<option value="' + TEAM_NAMES[i] + '">' + formatTeamName(TEAM_NAMES[i]) + '</option>'; }
+        select.innerHTML = options;
+      }
+    }
+    function formatTaiwanTime(timeStr) {
+      if (!timeStr) return '-';
+      try {
+        var d = new Date(timeStr);
+        if (isNaN(d.getTime())) { d = new Date(timeStr.replace(/-/g, '/').replace('T', ' ').split('.')[0]); }
+        if (isNaN(d.getTime())) return timeStr;
+        var yyyy = d.getFullYear();
+        var MM = String(d.getMonth() + 1).padStart(2, '0');
+        var dd = String(d.getDate()).padStart(2, '0');
+        var hh = String(d.getHours()).padStart(2, '0');
+        var mm = String(d.getMinutes()).padStart(2, '0');
+        var ss = String(d.getSeconds()).padStart(2, '0');
+        return yyyy + '/' + MM + '/' + dd + ' ' + hh + ':' + mm + ':' + ss;
+      } catch (e) { return timeStr; }
+    }
+    function openLoginModal() { document.getElementById('loginModal').classList.remove('hidden'); }
+    function closeLoginModal() { document.getElementById('loginModal').classList.add('hidden'); }
+    function handleLogout() {
+      currentUser = null;
+      document.getElementById('currentUserName').innerText = '未登入';
+      document.getElementById('currentUserRoleBadge').innerText = '未授權';
+      document.getElementById('userBadge').classList.add('hidden');
+      document.getElementById('loginBtnText').innerText = '登入系統';
+      document.getElementById('authBtnIcon').className = 'fa-solid fa-right-to-bracket text-xs';
+      document.getElementById('adminView').classList.add('hidden');
+      document.getElementById('stationView').classList.add('hidden');
+      document.getElementById('studentView').classList.add('hidden');
+      document.getElementById('loginUsernameInput').value = '';
+      document.getElementById('loginPasswordInput').value = '';
+      var loginSubmitBtn = document.querySelector('#loginModal button[type="submit"]');
+      if (loginSubmitBtn) { loginSubmitBtn.innerHTML = '登入系統'; loginSubmitBtn.disabled = false; }
+      showToast('已登出', 'info');
+      openLoginModal();
+    }
+    async function handleLoginSubmit(e) {
+      e.preventDefault();
+      var inputUsername = document.getElementById('loginUsernameInput').value.trim();
+      var inputPass = document.getElementById('loginPasswordInput').value.trim();
+      var btn = e.target.querySelector('button[type="submit"]');
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 登入中...';
+      btn.disabled = true;
+      if (!supabaseClient) { showToast('同步失敗', 'error'); btn.innerHTML = '登入系統'; btn.disabled = false; return; }
+      try {
+        var res = await supabaseClient.from('accounts').select('*').eq('username', inputUsername).eq('password', inputPass).single();
+        var data = res.data;
+        if (res.error || !data) { showToast('帳號或密碼錯誤！請重新輸入', 'error'); btn.innerHTML = '登入系統'; btn.disabled = false; return; }
+        currentUser = { role: data.role, name: data.display_name, id: data.username };
+        showToast('登入成功：' + data.display_name, 'success');
+        document.getElementById('currentUserName').innerText = currentUser.name;
+        document.getElementById('currentUserRoleBadge').innerText = currentUser.role === 'ADMIN' ? '管理員' : (currentUser.role === 'STATION' ? '關主' : '小隊');
+        document.getElementById('userBadge').classList.remove('hidden');
+        document.getElementById('userBadge').classList.add('flex');
+        document.getElementById('loginBtnText').innerText = '登出';
+        document.getElementById('authBtnIcon').className = 'fa-solid fa-right-from-bracket text-xs';
+        document.getElementById('loginPasswordInput').value = '';
+        btn.innerHTML = '登入系統';
+        btn.disabled = false;
+        closeLoginModal();
+        renderViewsForRole();
+      } catch (err) {
+        showToast('同步失敗', 'error');
+        btn.innerHTML = '登入系統';
+        btn.disabled = false;
+      }
+    }
+    function renderViewsForRole() {
+      document.getElementById('adminView').classList.add('hidden');
+      document.getElementById('stationView').classList.add('hidden');
+      document.getElementById('studentView').classList.add('hidden');
+      if (!currentUser) return;
+      if (currentUser.role === 'ADMIN') { document.getElementById('adminView').classList.remove('hidden'); switchAdminTab('leaderboard'); refreshData(); }
+      else if (currentUser.role === 'STATION') { document.getElementById('stationView').classList.remove('hidden'); renderStationLeaderView(); }
+      else if (currentUser.role === 'TEAM') { document.getElementById('studentView').classList.remove('hidden'); switchStudentTab('quest'); renderStudentView(); }
+    }
+    function switchAdminTab(tabName) {
+      var tabs = ['leaderboard', 'logs', 'routes', 'alerts', 'auth'];
+      for (var i = 0; i < tabs.length; i++) {
+        var t = tabs[i];
+        var btn = document.getElementById('tabBtn-' + t);
+        var content = document.getElementById('adminTab-' + t);
+        if (content) {
+          if (t === tabName) { content.classList.remove('hidden'); if (t === 'auth') fetchAccounts(); if (t === 'alerts') renderAdminAlertsTable(); }
+          else content.classList.add('hidden');
+        }
+        if (btn) {
+          if (t === tabName) btn.className = "px-3 py-2 rounded-lg transition whitespace-nowrap bg-white shadow-sm text-emerald-700 font-bold";
+          else btn.className = "px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 hover:text-slate-900";
+        }
+      }
+    }
+    async function refreshData() {
+      if (!supabaseClient) return;
+      try {
+        var teamsRes = await supabaseClient.from('teams').select('*');
+        if (teamsRes.data && teamsRes.data.length > 0) localTeams = teamsRes.data;
+        var logsRes = await supabaseClient.from('score_logs').select('*').order('created_at', { ascending: false });
+        if (logsRes.data) localLogs = logsRes.data;
+        var alertsRes = await supabaseClient.from('system_alerts').select('*').order('created_at', { ascending: false });
+        if (alertsRes.data) localAlerts = alertsRes.data;
+      } catch (err) { console.error('資料同步失敗', err); }
+      updateAdminStats();
+      renderLeaderboard();
+      renderLogs();
+      renderRoutes();
+      checkEmergencyAlerts();
+      if (currentUser && currentUser.role === 'ADMIN') renderAdminAlertsTable();
+      if (currentUser && currentUser.role === 'STATION') renderStationLeaderView();
+      if (currentUser && currentUser.role === 'TEAM') renderStudentView();
+    }
+    function updateAdminStats() {
+      var teamCountEl = document.getElementById('statTeamCount');
+      if (teamCountEl) teamCountEl.innerText = localTeams.length + ' 隊';
+      var stationCountEl = document.getElementById('statStationCount');
+      if (stationCountEl) stationCountEl.innerText = STATIONS.length + ' 關';
+      var totalScore = 0;
+      for (var i = 0; i < localTeams.length; i++) { totalScore += (Number(localTeams[i].total_score) || 0); }
+      var totalPointsEl = document.getElementById('statTotalPoints');
+      if (totalPointsEl) totalPointsEl.innerText = totalScore + ' 分';
+      var pendingCount = 0;
+      for (var j = 0; j < localAlerts.length; j++) { if (localAlerts[j].status === 'PENDING') pendingCount++; }
+      var pendingAlertsEl = document.getElementById('statPendingAlerts');
+      if (pendingAlertsEl) pendingAlertsEl.innerText = pendingCount + ' 件';
+      var badgeCount = document.getElementById('alertsBadgeCount');
+      if (badgeCount) {
+        if (pendingCount > 0) { badgeCount.innerText = pendingCount; badgeCount.classList.remove('hidden'); badgeCount.classList.add('flex'); }
+        else { badgeCount.classList.add('hidden'); badgeCount.classList.remove('flex'); }
+      }
+    }
+    function checkEmergencyAlerts() {
+      var banner = document.getElementById('adminEmergencyBanner');
+      var headerBadge = document.getElementById('adminHeaderSosBadge');
+      var headerCount = document.getElementById('adminHeaderSosCount');
+      var pendingAlerts = [];
+      for (var i = 0; i < localAlerts.length; i++) { if (localAlerts[i].status === 'PENDING') pendingAlerts.push(localAlerts[i]); }
+      var pendingCount = pendingAlerts.length;
+      if (currentUser && currentUser.role === 'ADMIN' && pendingCount > 0) {
+        if (headerBadge) { headerBadge.classList.remove('hidden'); headerBadge.classList.add('flex'); }
+        if (headerCount) headerCount.innerText = pendingCount;
+      } else {
+        if (headerBadge) { headerBadge.classList.add('hidden'); headerBadge.classList.remove('flex'); }
+      }
+      if (banner && pendingCount > 0) {
+        var activeAlert = pendingAlerts[0];
+        var textEl = document.getElementById('adminEmergencyText');
+        var timeEl = document.getElementById('adminEmergencyTime');
+        if (textEl) textEl.innerText = activeAlert.station_name + '【' + activeAlert.alert_type + '】: ' + (activeAlert.message || '無細節說明');
+        if (timeEl) timeEl.innerText = formatTaiwanTime(activeAlert.created_at).split(' ')[1] || '';
+        banner.classList.remove('hidden');
+        banner.classList.add('flex');
+      } else if (banner) { banner.classList.add('hidden'); banner.classList.remove('flex'); }
+    }
+    function openResolveAlertModal(alertId) {
+      var activeAlert = null;
+      if (alertId) {
+        for (var i = 0; i < localAlerts.length; i++) { if (localAlerts[i].id === alertId) { activeAlert = localAlerts[i]; break; } }
+      } else {
+        for (var j = 0; j < localAlerts.length; j++) { if (localAlerts[j].status === 'PENDING') { activeAlert = localAlerts[j]; break; } }
+      }
+      if (!activeAlert) return;
+      pendingResolveAlertId = activeAlert.id;
+      document.getElementById('resModalStation').innerText = activeAlert.station_name;
+      document.getElementById('resModalType').innerText = activeAlert.alert_type;
+      document.getElementById('resModalMsg').innerText = activeAlert.message || '無';
+      document.getElementById('resolutionNoteInput').value = '';
+      var modal = document.getElementById('resolveAlertModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+    function closeResolveAlertModal() {
+      var modal = document.getElementById('resolveAlertModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      pendingResolveAlertId = null;
+    }
+    async function confirmResolveAlert() {
+      var note = document.getElementById('resolutionNoteInput').value.trim();
+      if (!note) { showToast('請填寫大會處理狀況備註說明！', 'error'); document.getElementById('resolutionNoteInput').focus(); return; }
+      if (!pendingResolveAlertId || !supabaseClient) return;
+      try {
+        var taipeiNow = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Taipei' }).replace(' ', 'T');
+        await supabaseClient.from('system_alerts').update({ status: 'RESOLVED', resolution_note: note, resolved_at: taipeiNow }).eq('id', pendingResolveAlertId);
+        showToast('已完成處置並紀錄！', 'success');
+        closeResolveAlertModal();
+        refreshData();
+      } catch (e) { showToast('更新處置狀態失敗', 'error'); }
+    }
+    function renderAdminAlertsTable() {
+      var tbody = document.getElementById('alertsTableBody');
+      if (!tbody) return;
+      if (!localAlerts || localAlerts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400 font-medium"><i class="fa-solid fa-bell-slash text-2xl mb-2 text-slate-300 block"></i>目前尚無任何關卡緊急求助通報紀錄</td></tr>';
+        return;
+      }
+      var html = '';
+      for (var i = 0; i < localAlerts.length; i++) {
+        var alt = localAlerts[i];
+        var isPending = alt.status === 'PENDING';
+        var statusBadge = isPending ? 
+          '<button onclick="openResolveAlertModal(' + alt.id + ')" class="px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 hover:bg-rose-200 font-bold border border-rose-300 transition active:scale-95 animate-pulse inline-flex items-center gap-1 text-xs cursor-pointer"><span class="w-2 h-2 rounded-full bg-rose-500"></span> 待處置 (按此填寫與處置)</button>' : 
+          '<span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-bold text-xs inline-flex items-center gap-1"><i class="fa-solid fa-check text-emerald-600"></i> 已完成處置</span>';
+        html += '<tr class="hover:bg-slate-50 transition">';
+        html += '<td class="px-3 sm:px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap font-mono">' + formatTaiwanTime(alt.created_at) + '</td>';
+        html += '<td class="px-3 sm:px-4 py-2.5 font-bold text-slate-800 whitespace-nowrap">' + alt.station_name + '</td>';
+        html += '<td class="px-3 sm:px-4 py-2.5 font-bold text-rose-600 whitespace-nowrap">' + alt.alert_type + '</td>';
+        html += '<td class="px-3 sm:px-4 py-2.5 text-xs text-slate-700 max-w-[200px] break-words">' + (alt.message || '無') + '</td>';
+        html += '<td class="px-3 sm:px-4 py-2.5 text-xs text-emerald-700 font-bold max-w-[200px] break-words">' + (alt.resolution_note || '-') + '</td>';
+        html += '<td class="px-3 sm:px-4 py-2.5 text-center whitespace-nowrap">' + statusBadge + '</td>';
+        html += '</tr>';
+      }
+      tbody.innerHTML = html;
+    }
+    function renderLeaderboard() {
+      var tbody = document.getElementById('leaderboardTableBody');
+      if (!tbody) return;
+      var sorted = localTeams.slice().sort(function(a, b) { return b.total_score - a.total_score; });
+      var html = '';
+      for (var index = 0; index < sorted.length; index++) {
+        var t = sorted[index];
+        var rankBadge = '<span class="font-bold text-slate-500">' + (index + 1) + '</span>';
+        if (index === 0) rankBadge = '<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-black">🥇 1</span>';
+        if (index === 1) rankBadge = '<span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-800 font-bold">🥈 2</span>';
+        if (index === 2) rankBadge = '<span class="px-2 py-0.5 rounded-full bg-amber-700/10 text-amber-900 font-bold">🥉 3</span>';
+        html += '<tr class="hover:bg-slate-50 transition">';
+        html += '<td class="px-3 sm:px-4 py-3 text-center">' + rankBadge + '</td>';
+        html += '<td class="px-3 sm:px-4 py-3 font-bold text-slate-800 whitespace-nowrap">' + formatTeamName(t.team_name) + '</td>';
+        html += '<td class="px-3 sm:px-4 py-3 text-right font-black text-emerald-600 text-sm sm:text-base whitespace-nowrap">' + t.total_score + ' 分</td>';
+        html += '<td class="px-3 sm:px-4 py-3 text-center"><div class="flex justify-center gap-1">';
+        html += '<button onclick="adminQuickScore(\'' + t.team_name + '\', 10)" class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded text-xs hover:bg-emerald-200 font-bold active:scale-95 transition">+10</button>';
+        html += '<button onclick="adminQuickScore(\'' + t.team_name + '\', -10)" class="px-2 py-1 bg-rose-100 text-rose-800 rounded text-xs hover:bg-rose-200 font-bold active:scale-95 transition">-10</button>';
+        html += '</div></td></tr>';
+      }
+      tbody.innerHTML = html;
+    }
+    function renderLogs() {
+      var tbody = document.getElementById('logsTableBody');
+      if (!tbody) return;
+      var html = '';
+      for (var i = 0; i < localLogs.length; i++) {
+        var log = localLogs[i];
+        var ptsClass = log.points >= 0 ? 'text-emerald-600' : 'text-rose-600';
+        var ptsSign = log.points > 0 ? '+' : '';
+        html += '<tr class="hover:bg-slate-50 transition">';
+        html += '<td class="px-3 sm:px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">' + formatTaiwanTime(log.created_at) + '</td>';
+        html += '<td class="px-3 sm:px-4 py-2.5 font-medium text-slate-700 whitespace-nowrap">' + log.station_name + '</td>';
+        html += '<td class="px-3 sm:px-4 py-2.5 font-bold text-slate-800 whitespace-nowrap">' + formatTeamName(log.team_name) + '</td>';
+        html += '<td class="px-3 sm:px-4 py-2.5 text-right font-bold whitespace-nowrap ' + ptsClass + '">' + ptsSign + log.points + '</td>';
+        html += '<td class="px-3 sm:px-4 py-2.5 font-mono text-xs text-slate-400 whitespace-nowrap">' + (log.ip_address || '-') + '</td>';
+        html += '<td class="px-3 sm:px-4 py-2.5 text-xs text-slate-500 max-w-[200px] truncate">' + (log.note || '-') + '</td>';
+        html += '<td class="px-3 sm:px-4 py-2.5 text-center whitespace-nowrap"><button onclick="deleteScoreLog(' + log.id + ')" class="p-1 text-rose-400 hover:text-rose-600 transition active:scale-95"><i class="fa-solid fa-trash-can"></i></button></td>';
+        html += '</tr>';
+      }
+      tbody.innerHTML = html;
+    }
+    function renderRoutes() {
+      var container = document.getElementById('routesContainer');
+      if (!container) return;
+      var html = '';
+      for (var idx = 0; idx < TEAM_NAMES.length; idx++) {
+        var team = TEAM_NAMES[idx];
+        var routeItems = '';
+        for (var stepIdx = 0; stepIdx < STATIONS.length; stepIdx++) {
+          var stObj = STATIONS[(idx + stepIdx) % STATIONS.length];
+          var stName = stObj.name.split(' ')[0];
+          var badgeClass = stepIdx === 0 ? 'bg-emerald-100 text-emerald-800 font-bold border border-emerald-300' : 'bg-slate-200';
+          routeItems += '<span class="px-1.5 py-0.5 ' + badgeClass + ' rounded whitespace-nowrap">' + stName + '</span>';
+          if (stepIdx < STATIONS.length - 1) routeItems += ' &rarr; ';
+        }
+        html += '<div class="p-3 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">';
+        html += '<p class="font-bold text-slate-800 text-xs sm:text-sm mb-2">' + formatTeamName(team) + ' 路線</p>';
+        html += '<div class="flex items-center gap-1 text-slate-600 overflow-x-auto pb-1 text-xs no-scrollbar">' + routeItems + '</div>';
+        html += '</div>';
+      }
+      container.innerHTML = html;
+    }
+    function renderStationLeaderView() {
+      if (!currentUser) return;
+      var st = STATIONS[0];
+      for (var i = 0; i < STATIONS.length; i++) { if (STATIONS[i].id === currentUser.id) { st = STATIONS[i]; break; } }
+      var nameParts = st.name.split(' ');
+      document.getElementById('stationTitle').innerText = st.name;
+      document.getElementById('stationLocation').innerHTML = '<i class="fa-solid fa-location-dot text-rose-500"></i> 地點：' + (nameParts[1] || '未知地點');
+      var filteredLogs = [];
+      for (var k = 0; k < localLogs.length; k++) { if (localLogs[k].station_name === st.name) filteredLogs.push(localLogs[k]); }
+      var completedCount = filteredLogs.length;
+      var sumPts = 0;
+      var maxPts = -999;
+      var topTeam = '尚無紀錄';
+      for (var m = 0; m < filteredLogs.length; m++) {
+        var pts = Number(filteredLogs[m].points) || 0;
+        sumPts += pts;
+        if (pts > maxPts) { maxPts = pts; topTeam = formatTeamName(filteredLogs[m].team_name) + ' (' + pts + '分)'; }
+      }
+      var avgPts = completedCount > 0 ? Math.round(sumPts / completedCount) : 0;
+      var remainingCount = Math.max(0, TEAM_NAMES.length - completedCount);
+      document.getElementById('stStatCompleted').innerText = completedCount + ' / ' + TEAM_NAMES.length + ' 隊';
+      document.getElementById('stStatAvg').innerText = avgPts + ' 分';
+      document.getElementById('stStatTop').innerText = topTeam;
+      document.getElementById('stStatRemaining').innerText = remainingCount + ' 隊';
+      var logsBody = document.getElementById('stationLogsBody');
+      if (!logsBody) return;
+      var html = '';
+      for (var j = 0; j < filteredLogs.length; j++) {
+        var l = filteredLogs[j];
+        var ptsClass = l.points >= 0 ? 'text-emerald-600' : 'text-rose-600';
+        var ptsSign = l.points > 0 ? '+' : '';
+        var timePart = formatTaiwanTime(l.created_at).split(' ')[1] || '-';
+        html += '<tr>';
+        html += '<td class="px-3 sm:px-4 py-2 text-xs text-slate-500 whitespace-nowrap">' + timePart + '</td>';
+        html += '<td class="px-3 sm:px-4 py-2 font-bold whitespace-nowrap">' + formatTeamName(l.team_name) + '</td>';
+        html += '<td class="px-3 sm:px-4 py-2 text-right font-bold whitespace-nowrap ' + ptsClass + '">' + ptsSign + l.points + '</td>';
+        html += '<td class="px-3 sm:px-4 py-2 text-xs text-slate-500 max-w-[180px] truncate">' + (l.note || '-') + '</td>';
+        html += '</tr>';
+      }
+      logsBody.innerHTML = html;
+    }
+    function switchStudentTab(tabId) {
+      var tabs = ['quest', 'stamps', 'timer', 'history'];
+      for (var i = 0; i < tabs.length; i++) {
+        var t = tabs[i];
+        var btn = document.getElementById('stuTabBtn-' + t);
+        var content = document.getElementById('stuTab-' + t);
+        if (content) {
+          if (t === tabId) content.classList.remove('hidden');
+          else content.classList.add('hidden');
+        }
+        if (btn) {
+          if (t === tabId) btn.className = "px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-amber-500 text-white shadow font-bold";
+          else btn.className = "px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-white text-slate-600 hover:bg-slate-100 font-bold";
+        }
+      }
+    }
+    function renderStudentView() {
+      if (!currentUser) return;
+      var team = { team_name: currentUser.id, total_score: 0 };
+      for (var i = 0; i < localTeams.length; i++) { if (localTeams[i].team_name === currentUser.id) { team = localTeams[i]; break; } }
+      document.getElementById('studentTeamTitle').innerText = formatTeamName(team.team_name);
+      document.getElementById('studentTotalScore').innerText = team.total_score;
+      var studentLogs = [];
+      for (var l = 0; l < localLogs.length; l++) { if (localLogs[l].team_name === team.team_name) studentLogs.push(localLogs[l]); }
+      var completedCount = studentLogs.length;
+      var completionPct = Math.min(100, Math.round((completedCount / STATIONS.length) * 100));
+      document.getElementById('studentProgressBadge').innerText = '已過 ' + completedCount + ' / ' + STATIONS.length + ' 關';
+      document.getElementById('studentCompletedCountText').innerText = completedCount + ' / ' + STATIONS.length + ' 關';
+      document.getElementById('stuStampProgressText').innerText = completionPct + '% (' + completedCount + '/' + STATIONS.length + '關)';
+      document.getElementById('stuStampProgressBar').style.width = completionPct + '%';
+      var teamIdx = TEAM_NAMES.indexOf(team.team_name);
+      var activeStation = STATIONS[(teamIdx >= 0 ? teamIdx + completedCount : completedCount) % STATIONS.length];
+      if (completedCount >= STATIONS.length) {
+        document.getElementById('stuActiveStationTitle').innerText = '🎉 恭喜全數過關！';
+        document.getElementById('stuActiveLocationText').innerText = '請帶隊返回體育館集合';
+      } else {
+        var activeLoc = activeStation.name.split(' ')[1] || '地點';
+        document.getElementById('stuActiveStationTitle').innerText = activeStation.name;
+        document.getElementById('stuActiveLocationText').innerText = '前往地點：' + activeLoc;
+      }
+      var stepperHtml = '';
+      for (var k = 0; k < STATIONS.length; k++) {
+        var st = STATIONS[(teamIdx >= 0 ? teamIdx + k : k) % STATIONS.length];
+        var isDone = k < completedCount;
+        var isActive = k === completedCount;
+        var cardClass = isActive ? 'border-2 border-amber-400 bg-amber-50/60 shadow-sm' : (isDone ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200');
+        var numClass = isActive ? 'bg-amber-500 text-white' : (isDone ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600');
+        var tagClass = isActive ? 'text-amber-600 font-bold' : (isDone ? 'text-emerald-600 font-bold' : 'text-slate-400 whitespace-nowrap');
+        var tagText = isActive ? '當前目標' : (isDone ? '✓ 已過關' : '後續');
+        stepperHtml += '<div class="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border ' + cardClass + '">';
+        stepperHtml += '<div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full ' + numClass + ' flex shrink-0 items-center justify-center font-bold text-xs sm:text-sm">' + (k + 1) + '</div>';
+        stepperHtml += '<div class="flex-grow min-w-0"><p class="font-bold text-slate-800 text-xs sm:text-sm truncate">' + st.name + '</p></div>';
+        stepperHtml += '<span class="text-xs ' + tagClass + '">' + tagText + '</span>';
+        stepperHtml += '</div>';
+      }
+      document.getElementById('routeStepper').innerHTML = stepperHtml;
+      var stampsHtml = '';
+      for (var s = 0; s < STATIONS.length; s++) {
+        var stObj = STATIONS[s];
+        var matchedLog = null;
+        for (var lg = 0; lg < studentLogs.length; lg++) {
+          if (studentLogs[lg].station_name === stObj.name) { matchedLog = studentLogs[lg]; break; }
+        }
+        if (matchedLog) {
+          stampsHtml += '<div class="stamp-badge completed bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-400 p-3 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm relative">';
+          stampsHtml += '<div class="w-8 h-8 rounded-full bg-amber-500 text-white font-black text-sm flex items-center justify-center mb-1">' + stObj.id + '</div>';
+          stampsHtml += '<p class="font-bold text-slate-800 text-xs truncate w-full">' + stObj.name.split(' ')[1] + '</p>';
+          stampsHtml += '<span class="mt-1 text-xs font-black text-emerald-600">+' + matchedLog.points + '分</span>';
+          stampsHtml += '</div>';
+        } else {
+          stampsHtml += '<div class="bg-slate-50 border border-slate-200 border-dashed p-3 rounded-2xl flex flex-col items-center justify-center text-center opacity-60">';
+          stampsHtml += '<div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 font-bold text-sm flex items-center justify-center mb-1">' + stObj.id + '</div>';
+          stampsHtml += '<p class="font-bold text-slate-600 text-xs truncate w-full">' + stObj.name.split(' ')[1] + '</p>';
+          stampsHtml += '<span class="mt-1 text-[10px] text-slate-400"><i class="fa-solid fa-lock"></i> 未解鎖</span>';
+          stampsHtml += '</div>';
+        }
+      }
+      document.getElementById('stuStampGrid').innerHTML = stampsHtml;
+      var stuLogsBody = document.getElementById('studentLogsTableBody');
+      if (stuLogsBody) {
+        var logsHtml = '';
+        for (var sl = 0; sl < studentLogs.length; sl++) {
+          var log = studentLogs[sl];
+          logsHtml += '<tr class="hover:bg-slate-50 transition">';
+          logsHtml += '<td class="px-3 sm:px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">' + formatTaiwanTime(log.created_at) + '</td>';
+          logsHtml += '<td class="px-3 sm:px-4 py-2.5 font-bold text-slate-800 whitespace-nowrap">' + log.station_name + '</td>';
+          logsHtml += '<td class="px-3 sm:px-4 py-2.5 text-right font-black text-emerald-600 whitespace-nowrap">+' + log.points + ' 分</td>';
+          logsHtml += '<td class="px-3 sm:px-4 py-2.5 text-xs text-slate-500 max-w-[180px] truncate">' + (log.note || '-') + '</td>';
+          logsHtml += '</tr>';
+        }
+        stuLogsBody.innerHTML = logsHtml || '<tr><td colspan="4" class="px-4 py-4 text-center text-slate-400">尚無過關紀錄</td></tr>';
+      }
+    }
+    function setStudentTimerSeconds(sec) { studentTimerSeconds = sec * 10; updateStudentTimerDisplay(); }
+    function adjustStudentTimerSeconds(deltaSec) { studentTimerSeconds = Math.max(0, studentTimerSeconds + (deltaSec * 10)); updateStudentTimerDisplay(); }
+    function toggleStudentTimer() {
+      var btn = document.getElementById('stuTimerStartBtn');
+      if (isStudentTimerRunning) {
+        clearInterval(studentTimerInterval);
+        isStudentTimerRunning = false;
+        btn.innerHTML = '<i class="fa-solid fa-play"></i> 開始計時';
+        btn.className = "flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs sm:text-sm";
+      } else {
+        isStudentTimerRunning = true;
+        btn.innerHTML = '<i class="fa-solid fa-pause"></i> 暫停計時';
+        btn.className = "flex-1 py-3 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs sm:text-sm";
+        studentTimerInterval = setInterval(function() {
+          if (studentTimerMode === 'countdown') {
+            if (studentTimerSeconds > 0) { studentTimerSeconds--; updateStudentTimerDisplay(); }
+            else {
+              clearInterval(studentTimerInterval);
+              isStudentTimerRunning = false;
+              btn.innerHTML = '<i class="fa-solid fa-play"></i> 開始計時';
+              btn.className = "flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs sm:text-sm";
+              showToast('時間到！', 'info');
+            }
+          } else { studentTimerSeconds++; updateStudentTimerDisplay(); }
+        }, 100);
+      }
+    }
+    function resetStudentTimer() {
+      clearInterval(studentTimerInterval);
+      isStudentTimerRunning = false;
+      studentTimerSeconds = studentTimerMode === 'countdown' ? 3000 : 0;
+      updateStudentTimerDisplay();
+      var btn = document.getElementById('stuTimerStartBtn');
+      if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-play"></i> 開始計時';
+        btn.className = "flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs sm:text-sm";
+      }
+    }
+    function setScoringMode(mode) {
+      if (mode === 'preset') {
+        document.getElementById('scoreModeBtnPreset').className = "px-2.5 py-1 bg-white text-teal-700 rounded-lg shadow-sm transition";
+        document.getElementById('scoreModeBtnRubric').className = "px-2.5 py-1 text-slate-600 rounded-lg transition";
+        document.getElementById('scoringPresetBox').classList.remove('hidden');
+        document.getElementById('scoringRubricBox').classList.add('hidden');
+      } else {
+        document.getElementById('scoreModeBtnRubric').className = "px-2.5 py-1 bg-white text-teal-700 rounded-lg shadow-sm transition";
+        document.getElementById('scoreModeBtnPreset').className = "px-2.5 py-1 text-slate-600 rounded-lg transition";
+        document.getElementById('scoringRubricBox').classList.remove('hidden');
+        document.getElementById('scoringPresetBox').classList.add('hidden');
+      }
+    }
+    function calculateRubric() {
+      var r1 = parseInt(document.getElementById('rubric1').value) || 0;
+      var r2 = parseInt(document.getElementById('rubric2').value) || 0;
+      var r3 = parseInt(document.getElementById('rubric3').value) || 0;
+      var total = r1 + r2 + r3;
+      document.getElementById('rubricTotal').innerText = total + ' 分';
+      document.getElementById('stationPointsInput').value = total;
+    }
+    function toggleStationStatus() {
+      isStationOpen = !isStationOpen;
+      var badge = document.getElementById('stationStatusBadge');
+      if (isStationOpen) {
+        badge.className = "px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-md flex items-center gap-1";
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 關卡正常開放中';
+        showToast('關卡已恢復開放', 'success');
+      } else {
+        badge.className = "px-2.5 py-0.5 bg-amber-100 text-amber-800 text-xs font-bold rounded-md flex items-center gap-1";
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-500"></span> 關卡暫停運作中';
+        showToast('關卡已設為暫停狀態', 'warning');
+      }
+    }
+    function openEmergencyModal() {
+      var modal = document.getElementById('emergencyModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+    function closeEmergencyModal() {
+      var modal = document.getElementById('emergencyModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+    function openMapModal() {
+      var mapImg = document.getElementById('campusMapImg');
+      if (mapImg) mapImg.src = CAMPUS_MAP_URL;
+      var modal = document.getElementById('mapModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+    function closeMapModal() {
+      var modal = document.getElementById('mapModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+    async function submitEmergencyAlert() {
+      var selectEl = document.getElementById('emergencyTypeSelect');
+      var inputEl = document.getElementById('emergencyMessageInput');
+      if (!selectEl || !inputEl) return;
+      var type = selectEl.value;
+      var msg = inputEl.value.trim();
+      if (!supabaseClient || !currentUser) return;
+      var st = STATIONS[0];
+      for (var i = 0; i < STATIONS.length; i++) { if (STATIONS[i].id === currentUser.id) { st = STATIONS[i]; break; } }
+      try {
+        var res = await supabaseClient.from('system_alerts').insert([{ station_id: st.id, station_name: st.name, alert_type: type, message: msg }]);
+        if (res.error) { showToast('通報失敗：請通知大會！', 'error'); return; }
+        showToast('緊急求助訊號已發送至大會主控台！', 'success');
+        inputEl.value = '';
+        closeEmergencyModal();
+        refreshData();
+      } catch (e) { showToast('通報失敗，請使用其他方式通報', 'error'); }
+    }
+    function switchStationSubTab(tabId) {
+      var historyTab = document.getElementById('stSubTab-history');
+      var rulesTab = document.getElementById('stSubTab-rules');
+      var btnHistory = document.getElementById('stSubBtn-history');
+      var btnRules = document.getElementById('stSubBtn-rules');
+      if (tabId === 'history') {
+        historyTab.classList.remove('hidden');
+        rulesTab.classList.add('hidden');
+        btnHistory.className = "px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-teal-600 text-white shadow font-bold";
+        btnRules.className = "px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-white text-slate-600 hover:bg-slate-100 font-bold";
+      } else {
+        rulesTab.classList.remove('hidden');
+        historyTab.classList.add('hidden');
+        btnRules.className = "px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-teal-600 text-white shadow font-bold";
+        btnHistory.className = "px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-white text-slate-600 hover:bg-slate-100 font-bold";
+      }
+    }
+    function setStationTimerMode(mode) {
+      stationTimerMode = mode;
+      var cdBtn = document.getElementById('stTimerMode-countdown');
+      var swBtn = document.getElementById('stTimerMode-stopwatch');
+      var presets = document.getElementById('stTimerPresets');
+      if (mode === 'countdown') {
+        cdBtn.className = "px-2 py-1 text-[10px] font-bold bg-white text-indigo-700 shadow-sm rounded";
+        swBtn.className = "px-2 py-1 text-[10px] font-bold text-slate-500 rounded";
+        if (presets) presets.classList.remove('hidden');
+        setTimerSeconds(300);
+      } else {
+        swBtn.className = "px-2 py-1 text-[10px] font-bold bg-white text-indigo-700 shadow-sm rounded";
+        cdBtn.className = "px-2 py-1 text-[10px] font-bold text-slate-500 rounded";
+        if (presets) presets.classList.add('hidden');
+        stationTimerSeconds = 0;
+        updateStationTimerDisplay();
+      }
+      if (isStationTimerRunning) toggleTimer();
+    }
+    function updateStationTimerDisplay() {
+      var display = document.getElementById('timerDisplay');
+      if (!display) return;
+      var totalSecs = Math.floor(stationTimerSeconds / 10);
+      var mins = Math.floor(totalSecs / 60);
+      var secs = totalSecs % 60;
+      var deci = stationTimerSeconds % 10;
+      var minStr = String(mins).padStart(2, '0');
+      var secStr = String(secs).padStart(2, '0');
+      display.innerHTML = minStr + ':' + secStr + '<span class="text-xl text-slate-400">.' + deci + '</span>';
+      var alertBadge = document.getElementById('stTimerAlertBadge');
+      if (!alertBadge) return;
+      if (stationTimerMode === 'countdown' && stationTimerSeconds <= 100 && stationTimerSeconds > 0) {
+        alertBadge.classList.remove('hidden');
+        display.classList.add('text-rose-600');
+        display.classList.remove('text-slate-800');
+      } else {
+        alertBadge.classList.add('hidden');
+        display.classList.remove('text-rose-600');
+        display.classList.add('text-slate-800');
+      }
+    }
+    function setTimerSeconds(sec) { stationTimerSeconds = sec * 10; updateStationTimerDisplay(); }
+    function adjustTimerSeconds(deltaSec) { stationTimerSeconds = Math.max(0, stationTimerSeconds + (deltaSec * 10)); updateStationTimerDisplay(); }
+    function toggleTimer() {
+      var btn = document.getElementById('timerStartBtn');
+      if (isStationTimerRunning) {
+        clearInterval(stationTimerInterval);
+        isStationTimerRunning = false;
+        btn.innerHTML = '<i class="fa-solid fa-play"></i> 開始計時';
+        btn.className = "flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs sm:text-sm";
+      } else {
+        isStationTimerRunning = true;
+        btn.innerHTML = '<i class="fa-solid fa-pause"></i> 暫停計時';
+        btn.className = "flex-1 py-2.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs sm:text-sm";
+        stationTimerInterval = setInterval(function() {
+          if (stationTimerMode === 'countdown') {
+            if (stationTimerSeconds > 0) { stationTimerSeconds--; updateStationTimerDisplay(); }
+            else {
+              clearInterval(stationTimerInterval);
+              isStationTimerRunning = false;
+              btn.innerHTML = '<i class="fa-solid fa-play"></i> 開始計時';
+              btn.className = "flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs sm:text-sm";
+              showToast('時間到！', 'info');
+            }
+          } else { stationTimerSeconds++; updateStationTimerDisplay(); }
+        }, 100);
+      }
+    }
+    function resetTimer() {
+      clearInterval(stationTimerInterval);
+      isStationTimerRunning = false;
+      stationTimerSeconds = stationTimerMode === 'countdown' ? 3000 : 0;
+      updateStationTimerDisplay();
+      var btn = document.getElementById('timerStartBtn');
+      if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-play"></i> 開始計時';
+        btn.className = "flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs sm:text-sm";
+      }
+    }
+    async function submitStationScore() {
+      var selectEl = document.getElementById('stationTeamSelect');
+      var inputEl = document.getElementById('stationPointsInput');
+      var noteEl = document.getElementById('stationNoteInput');
+      if (!selectEl || !inputEl || !noteEl) return;
+      var teamName = selectEl.value;
+      var points = parseInt(inputEl.value);
+      var note = noteEl.value.trim();
+      var st = STATIONS[0];
+      if (currentUser) {
+        for (var i = 0; i < STATIONS.length; i++) { if (STATIONS[i].id === currentUser.id) { st = STATIONS[i]; break; } }
+      }
+      if (!teamName) { showToast('請先選擇隊伍！', 'error'); return; }
+      if (isNaN(points)) { showToast('請輸入有效分數！', 'error'); return; }
+      if (!note) { showToast('請務必填寫加分或扣分「備註說明」！', 'error'); noteEl.focus(); return; }
+      var existingLog = null;
+      for (var j = 0; j < localLogs.length; j++) {
+        if (localLogs[j].station_name === st.name && localLogs[j].team_name === teamName) { existingLog = localLogs[j]; break; }
+      }
+      if (existingLog) {
+        overrideTempData = { oldLog: existingLog, newPoints: points, originalNote: note };
+        var oldPtsText = (existingLog.points > 0 ? '+' : '') + existingLog.points + '分 (' + (existingLog.note || '無') + ')';
+        var newPtsText = (points > 0 ? '+' : '') + points + '分';
+        document.getElementById('overrideOldScore').innerText = oldPtsText;
+        document.getElementById('overrideNewScore').innerText = newPtsText;
+        document.getElementById('overrideReasonInput').value = '';
+        var modal = document.getElementById('overrideModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        return;
+      }
+      await addScoreRecord(st.name, teamName, points, note);
+      inputEl.value = '';
+      noteEl.value = '';
+      selectEl.value = '';
+      showToast('已成功為 ' + formatTeamName(teamName) + ' 登記 ' + points + ' 分！', 'success');
+    }
+    function closeOverrideModal() {
+      var modal = document.getElementById('overrideModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      overrideTempData = null;
+    }
+    async function confirmOverrideScore() {
+      var reason = document.getElementById('overrideReasonInput').value.trim();
+      if (!reason) { showToast('請務必填寫修改原因！', 'error'); document.getElementById('overrideReasonInput').focus(); return; }
+      if (!overrideTempData || !supabaseClient) { closeOverrideModal(); return; }
+      var oldLog = overrideTempData.oldLog;
+      var newPoints = overrideTempData.newPoints;
+      var originalNote = overrideTempData.originalNote;
+      var diff = newPoints - oldLog.points;
+      var finalNote = originalNote + ' 【修正原因：' + reason + '】';
+      try {
+        await supabaseClient.from('score_logs').update({ points: newPoints, note: finalNote }).eq('id', oldLog.id);
+        var t = null;
+        for (var i = 0; i < localTeams.length; i++) { if (localTeams[i].team_name === oldLog.team_name) { t = localTeams[i]; break; } }
+        if (t) await supabaseClient.from('teams').update({ total_score: t.total_score + diff }).eq('team_name', t.team_name);
+        showToast('已修正 ' + formatTeamName(oldLog.team_name) + ' 的成績！', 'success');
+        document.getElementById('stationPointsInput').value = '';
+        document.getElementById('stationNoteInput').value = '';
+        document.getElementById('stationTeamSelect').value = '';
+        refreshData();
+      } catch (e) { showToast('修改失敗', 'error'); }
+      closeOverrideModal();
+    }
+    async function addScoreRecord(stationName, teamName, points, note) {
+      if (!supabaseClient) return;
+      try {
+        await supabaseClient.from('score_logs').insert([{ station_name: stationName, team_name: teamName, points: points, note: note }]);
+        var t = null;
+        for (var i = 0; i < localTeams.length; i++) { if (localTeams[i].team_name === teamName) { t = localTeams[i]; break; } }
+        if (t) await supabaseClient.from('teams').update({ total_score: t.total_score + points }).eq('team_name', teamName);
+        refreshData();
+      } catch(e) { showToast('更新失敗', 'error'); }
+    }
+    async function adminQuickScore(teamName, points) {
+      await addScoreRecord('大會控制台', teamName, points, '大會調整分數');
+      var sign = points > 0 ? '+' : '';
+      showToast('已調整 ' + formatTeamName(teamName) + ' ' + sign + points + ' 分', 'success');
+    }
+    async function deleteScoreLog(id) {
+      if (!supabaseClient) return;
+      try {
+        var logToDelete = null;
+        for (var i = 0; i < localLogs.length; i++) { if (localLogs[i].id === id) { logToDelete = localLogs[i]; break; } }
+        if (logToDelete) {
+          var t = null;
+          for (var j = 0; j < localTeams.length; j++) { if (localTeams[j].team_name === logToDelete.team_name) { t = localTeams[j]; break; } }
+          if (t) await supabaseClient.from('teams').update({ total_score: t.total_score - logToDelete.points }).eq('team_name', t.team_name);
+        }
+        await supabaseClient.from('score_logs').delete().eq('id', id);
+        showToast('已刪除該筆得分紀錄', 'success');
+        refreshData();
+      } catch(e) { showToast('刪除失敗', 'error'); }
+    }
+    async function fetchAccounts() {
+      if (!supabaseClient) return;
+      var tbody = document.getElementById('accountsTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-4 text-center text-slate-500"><i class="fa-solid fa-spinner fa-spin"></i> 載入帳號清單中...</td></tr>';
+      try {
+        var res = await supabaseClient.from('accounts').select('*').order('role', { ascending: true }).order('username', { ascending: true });
+        var data = res.data;
+        if (res.error || !data) return;
+        var html = '';
+        for (var i = 0; i < data.length; i++) {
+          var acc = data[i];
+          var roleText = acc.role === 'ADMIN' ? '管理員' : (acc.role === 'STATION' ? '關主' : '小隊');
+          html += '<tr class="hover:bg-slate-50 transition">';
+          html += '<td class="px-3 sm:px-4 py-2 font-mono text-slate-700 whitespace-nowrap">' + acc.username + '</td>';
+          html += '<td class="px-3 sm:px-4 py-2 font-bold text-slate-800 whitespace-nowrap">' + acc.display_name + '</td>';
+          html += '<td class="px-3 sm:px-4 py-2 text-xs text-slate-500 whitespace-nowrap">' + roleText + '</td>';
+          html += '<td class="px-3 sm:px-4 py-2"><input type="text" id="pass_' + acc.id + '" value="' + acc.password + '" class="w-full min-w-[100px] px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-emerald-500 outline-none"></td>';
+          html += '<td class="px-3 sm:px-4 py-2 text-center whitespace-nowrap"><button onclick="updateAccountPass(' + acc.id + ')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded text-xs font-bold shadow-sm transition">儲存</button></td>';
+          html += '</tr>';
+        }
+        tbody.innerHTML = html;
+      } catch (e) { tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-4 text-center text-rose-500">載入失敗</td></tr>'; }
+    }
+    async function updateAccountPass(id) {
+      if (!supabaseClient) return;
+      var inputEl = document.getElementById('pass_' + id);
+      if (!inputEl) return;
+      var newPass = inputEl.value.trim();
+      if (!newPass) { showToast('密碼不能為空！', 'error'); return; }
+      try {
+        await supabaseClient.from('accounts').update({ password: newPass }).eq('id', id);
+        showToast('密碼更新成功！', 'success');
+      } catch (e) { showToast('密碼更新失敗！', 'error'); }
+    }
+    function showToast(msg, type) {
+      var container = document.getElementById('toastContainer');
+      if (!container) return;
+      var toast = document.createElement('div');
+      var bgClass = type === 'success' ? 'bg-emerald-600 text-white border-2 border-emerald-500' : (type === 'error' ? 'bg-rose-600 text-white border-2 border-rose-500' : 'bg-slate-800 text-white border-2 border-slate-700');
+      var iconClass = type === 'success' ? 'fa-circle-check' : (type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info');
+      toast.className = 'px-4 py-3 rounded-xl shadow-2xl text-xs sm:text-sm font-bold pointer-events-auto flex justify-center items-center gap-2 transition-all duration-300 transform translate-y-5 opacity-0 ' + bgClass;
+      toast.innerHTML = '<i class="fa-solid ' + iconClass + '"></i> <span>' + msg + '</span>';
+      container.appendChild(toast);
+      setTimeout(function() { toast.classList.remove('translate-y-5', 'opacity-0'); }, 10);
+      setTimeout(function() { toast.classList.add('opacity-0', 'translate-y-5'); setTimeout(function() { toast.remove(); }, 300); }, 3500);
+    }
+  </script>
+</body>
+</html>
