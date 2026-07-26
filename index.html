@@ -12,151 +12,37 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
-    
-    html, body {
-      width: 100%;
-      max-width: 100vw;
-      overflow-x: hidden !important;
-      position: relative;
-    }
-
-    body {
-      font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: #f8fafc;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      transition: background-color 0.3s, color 0.3s;
-    }
-
-    body.dark-mode {
-      background-color: #0f172a;
-      color: #f1f5f9;
-    }
-
-    .glass-card {
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(226, 232, 240, 0.8);
-    }
-
-    .dark-mode .glass-card {
-      background: rgba(30, 41, 59, 0.92);
-      border-color: rgba(51, 65, 85, 0.8);
-      color: #f8fafc;
-    }
-
-    .stamp-badge {
-      position: relative;
-      overflow: hidden;
-    }
-
-    .stamp-badge.completed::after {
-      content: "✓ PASSED";
-      position: absolute;
-      top: 18px;
-      right: -24px;
-      transform: rotate(25deg);
-      background: #d97706;
-      color: #ffffff;
-      font-size: 8px;
-      font-weight: 900;
-      padding: 2px 24px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-      letter-spacing: 0.5px;
-    }
-
-    ::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: #f1f5f9;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 9999px;
-    }
-
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-
-    @keyframes alertPulse {
-      0%, 100% { background-color: rgba(225, 29, 72, 0.95); }
-      50% { background-color: rgba(159, 18, 57, 0.95); }
-    }
-
-    .animate-alert {
-      animation: alertPulse 1.2s infinite;
-    }
-
-    #qrReader video {
-      object-fit: cover !important;
-      border-radius: 1rem;
-      width: 100% !important;
-    }
-
-    #qrReader__dashboard {
-      display: none !important;
-    }
-
-    .leaflet-popup-content-wrapper {
-      border-radius: 1rem;
-      font-family: inherit;
-      font-size: 12px;
-      font-weight: bold;
-    }
-
-    .podium-card-1 {
-      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-      border: 2px solid #f59e0b;
-    }
-    .dark-mode .podium-card-1 {
-      background: linear-gradient(135deg, #78350f 0%, #451a03 100%);
-      border-color: #f59e0b;
-    }
-
-    .podium-card-2 {
-      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-      border: 2px solid #94a3b8;
-    }
-    .dark-mode .podium-card-2 {
-      background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
-      border-color: #64748b;
-    }
-
-    .podium-card-3 {
-      background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
-      border: 2px solid #f97316;
-    }
-    .dark-mode .podium-card-3 {
-      background: linear-gradient(135deg, #7c2d12 0%, #431407 100%);
-      border-color: #ea580c;
-    }
+    body { font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: background-color 0.3s, color 0.3s; overflow-x: hidden; width: 100%; max-width: 100vw; }
+    body.dark-mode { background-color: #0f172a; color: #f1f5f9; }
+    .glass-card { background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(226, 232, 240, 0.8); }
+    .dark-mode .glass-card { background: rgba(30, 41, 59, 0.92); border-color: rgba(51, 65, 85, 0.8); color: #f8fafc; }
+    .stamp-badge { position: relative; overflow: hidden; }
+    .stamp-badge.completed::after { content: "✓ PASSED"; position: absolute; top: 18px; right: -24px; transform: rotate(25deg); background: #d97706; color: #ffffff; font-size: 8px; font-weight: 900; padding: 2px 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); letter-spacing: 0.5px; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes alertPulse { 0%, 100% { background-color: rgba(225, 29, 72, 0.95); } 50% { background-color: rgba(159, 18, 57, 0.95); } }
+    .animate-alert { animation: alertPulse 1.2s infinite; }
+    .map-pin-badge { position: absolute; transform: translate(-50%, -50%); cursor: pointer; transition: transform 0.2s ease, filter 0.2s ease; z-index: 20; }
+    .map-pin-badge:hover { transform: translate(-50%, -50%) scale(1.3); filter: drop-shadow(0 6px 10px rgba(0,0,0,0.4)); z-index: 30; }
+    #qrReader video { object-fit: cover !important; border-radius: 1rem; width: 100% !important; }
+    #qrReader__dashboard { display: none !important; }
+    .leaflet-popup-content-wrapper { border-radius: 1rem; font-family: inherit; font-size: 12px; font-weight: bold; }
   </style>
 </head>
-<body class="min-h-screen text-slate-800 flex flex-col justify-between selection:bg-amber-500 selection:text-white max-w-full overflow-x-hidden">
-  
+<body class="min-h-screen text-slate-800 flex flex-col justify-between selection:bg-amber-500 selection:text-white">
   <div id="toastContainer" class="fixed bottom-6 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none w-[92%] max-w-sm"></div>
-
   <div id="marqueeBanner" class="bg-amber-500 text-slate-900 text-xs font-bold py-1.5 px-3 flex items-center overflow-hidden shadow-inner hidden">
     <i class="fa-solid fa-bullhorn mr-2 shrink-0 animate-bounce"></i>
     <div class="whitespace-nowrap overflow-hidden w-full">
       <div id="marqueeText" class="inline-block animate-[marquee_15s_linear_infinite]">大會即時廣播：請全校隊伍遵守各關卡秩序，並注意戶外補充水分！</div>
     </div>
   </div>
-
-  <header class="bg-gradient-to-r from-emerald-800 via-teal-700 to-cyan-800 text-white shadow-lg sticky top-0 z-40 transition-all w-full">
-    <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2">
-      <div class="flex items-center gap-2 sm:gap-3">
+  <header class="bg-gradient-to-r from-emerald-800 via-teal-700 to-cyan-800 text-white shadow-lg sticky top-0 z-40 transition-all">
+    <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+      <div class="flex items-center gap-2.5 sm:gap-3">
         <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 shadow-inner shrink-0">
           <i class="fa-solid fa-compass text-amber-300 text-lg sm:text-xl animate-pulse"></i>
         </div>
@@ -165,10 +51,9 @@
             <span class="truncate">大地遊戲闖關系統</span>
             <span class="hidden xs:inline-block text-[10px] sm:text-xs font-normal px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-900 font-mono font-bold shrink-0">XSHS</span>
           </h1>
-          <p class="text-[10px] sm:text-xs text-emerald-100/90 font-light tracking-wider">闖關計分與路線導引系統</p>
+          <p class="text-[10px] sm:text-xs text-emerald-100/90 font-light tracking-wider">闖關計分與路線導引</p>
         </div>
       </div>
-      
       <div class="flex items-center gap-1.5 sm:gap-2 ml-auto">
         <button onclick="toggleAudioMute()" id="audioToggleBtn" title="切換音效" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs transition border border-white/20">
           <i id="audioIcon" class="fa-solid fa-volume-high text-amber-300"></i>
@@ -179,23 +64,19 @@
         <button onclick="toggleFullscreen()" title="全螢幕切換" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs transition border border-white/20">
           <i class="fa-solid fa-expand text-amber-300"></i>
         </button>
-
         <button id="adminHeaderSosBadge" onclick="switchAdminTab('alerts')" class="hidden animate-bounce items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black bg-rose-600 border border-rose-300 text-white shadow-lg cursor-pointer">
           <i class="fa-solid fa-triangle-exclamation text-amber-300"></i>
           <span>求助通報 (<span id="adminHeaderSosCount">0</span>)</span>
         </button>
-
         <div id="dbStatusBadge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-950/40 border border-emerald-400/30 text-emerald-200">
-          <span id="dbPingDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="dbPingDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
           <span id="dbStatusText">已連線</span>
         </div>
-
         <div id="userBadge" class="hidden items-center gap-1.5 sm:gap-2 bg-white/10 border border-white/20 px-2 sm:px-3 py-1 rounded-lg text-xs">
           <i class="fa-solid fa-user-circle text-amber-300 text-sm"></i>
           <span id="currentUserName" class="hidden sm:inline-block max-w-[100px] truncate">未登入</span>
           <span id="currentUserRoleBadge" class="bg-amber-400 text-slate-900 font-bold px-1.5 py-0.5 text-[9px] sm:text-[10px] rounded shrink-0">未授權</span>
         </div>
-
         <button onclick="toggleAuth()" class="bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-900 font-bold px-2.5 sm:px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1.5 shadow shrink-0">
           <i id="authBtnIcon" class="fa-solid fa-right-to-bracket text-xs"></i>
           <span id="loginBtnText">登入系統</span>
@@ -203,10 +84,7 @@
       </div>
     </div>
   </header>
-
-  <main class="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-6 flex-grow w-full max-w-full overflow-x-hidden">
-    
-    <!-- ADMIN VIEW -->
+  <main class="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-6 flex-grow w-full">
     <section id="adminView" class="space-y-4 sm:space-y-6 hidden">
       <div id="adminEmergencyBanner" class="hidden animate-alert text-white p-3.5 sm:p-4 rounded-2xl shadow-xl border-2 border-rose-300 items-center justify-between gap-3 transition-all">
         <div class="flex items-center gap-3">
@@ -225,17 +103,16 @@
           </button>
         </div>
       </div>
-
       <div class="glass-card p-3.5 sm:p-5 rounded-2xl shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 border-l-4 border-l-emerald-600">
         <div>
           <h2 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
             <i class="fa-solid fa-user-shield text-emerald-600"></i> 大會總管理員控制台
           </h2>
-          <p class="text-xs text-slate-500 mt-0.5">即時監控全校 20 支闖關小隊比分、GPS 移動軌跡、審核得分與導出報表</p>
+          <p class="text-xs text-slate-500 mt-0.5">即時監控全校 20 支闖關小隊比分、GPS 網頁內地圖即時定位、審核得分與導出報表</p>
         </div>
         <div class="flex overflow-x-auto no-scrollbar gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-medium -mx-1 px-1 sm:mx-0">
           <button onclick="switchAdminTab('leaderboard')" id="tabBtn-leaderboard" class="px-3 py-2 rounded-lg transition whitespace-nowrap bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm font-bold"><i class="fa-solid fa-trophy mr-1 text-amber-500"></i>即時排行</button>
-          <button onclick="switchAdminTab('gps')" id="tabBtn-gps" class="px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900"><i class="fa-solid fa-location-crosshairs mr-1 text-sky-600"></i>GPS 定位與軌跡</button>
+          <button onclick="switchAdminTab('gps')" id="tabBtn-gps" class="px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900"><i class="fa-solid fa-location-crosshairs mr-1 text-sky-600"></i>GPS 定位監控</button>
           <button onclick="switchAdminTab('logs')" id="tabBtn-logs" class="px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900"><i class="fa-solid fa-list-check mr-1 text-teal-600"></i>得分明細</button>
           <button onclick="switchAdminTab('routes')" id="tabBtn-routes" class="px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900"><i class="fa-solid fa-route mr-1 text-indigo-600"></i>動線編排</button>
           <button onclick="switchAdminTab('alerts')" id="tabBtn-alerts" class="px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900 relative"><i class="fa-solid fa-bullhorn mr-1 text-rose-600"></i>求助紀錄<span id="alertsBadgeCount" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-600 text-white rounded-full text-[9px] font-black items-center justify-center">0</span></button>
@@ -243,7 +120,6 @@
           <button onclick="switchAdminTab('config')" id="tabBtn-config" class="px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900"><i class="fa-solid fa-gear mr-1 text-slate-600"></i>廣播與設定</button>
         </div>
       </div>
-
       <div id="adminTab-leaderboard" class="space-y-4 sm:space-y-6">
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           <div class="glass-card p-3 sm:p-4 rounded-2xl border-b-4 border-b-emerald-500"><p class="text-[11px] sm:text-xs text-slate-500 font-medium">參賽小隊總數</p><p class="text-xl sm:text-2xl font-black text-slate-800 dark:text-white mt-0.5 sm:mt-1" id="statTeamCount">20 隊</p></div>
@@ -251,10 +127,6 @@
           <div class="glass-card p-3 sm:p-4 rounded-2xl border-b-4 border-b-blue-500"><p class="text-[11px] sm:text-xs text-slate-500 font-medium">全場發放總積分</p><p class="text-xl sm:text-2xl font-black text-slate-800 dark:text-white mt-0.5 sm:mt-1" id="statTotalPoints">0 分</p></div>
           <div class="glass-card p-3 sm:p-4 rounded-2xl border-b-4 border-b-rose-500"><p class="text-[11px] sm:text-xs text-slate-500 font-medium">待處置求助通報</p><p class="text-xl sm:text-2xl font-black text-rose-600 mt-0.5 sm:mt-1" id="statPendingAlerts">0 件</p></div>
         </div>
-
-        <!-- Top 3 Podium Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="topPodiumContainer"></div>
-
         <div class="glass-card rounded-2xl overflow-hidden shadow-sm">
           <div class="p-3.5 sm:p-4 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center gap-2">
             <h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2">
@@ -264,15 +136,13 @@
               <i class="fa-solid fa-file-csv"></i> 導出排行榜 CSV
             </button>
           </div>
-          <div class="overflow-x-auto w-full">
+          <div class="overflow-x-auto">
             <table class="w-full text-left text-xs sm:text-sm">
               <thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase font-bold border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th class="px-3 sm:px-4 py-3 w-14 sm:w-16 text-center whitespace-nowrap">名次</th>
                   <th class="px-3 sm:px-4 py-3 whitespace-nowrap">班級小隊</th>
-                  <th class="px-3 sm:px-4 py-3 whitespace-nowrap">通關進度</th>
-                  <th class="px-3 sm:px-4 py-3 text-right whitespace-nowrap">獲得總積分</th>
-                  <th class="px-3 sm:px-4 py-3 text-right whitespace-nowrap">最新得分時間</th>
+                  <th class="px-3 sm:px-4 py-3 text-right whitespace-nowrap">獲得總分</th>
                 </tr>
               </thead>
               <tbody id="leaderboardTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
@@ -280,40 +150,21 @@
           </div>
         </div>
       </div>
-
       <div id="adminTab-gps" class="glass-card rounded-2xl p-3.5 sm:p-4 shadow-sm hidden space-y-4">
         <div class="flex flex-wrap justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700 gap-2">
           <div>
             <h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2">
-              <i class="fa-solid fa-map-marked-alt text-sky-600"></i> 即時 GPS 地圖與帳號移動軌跡紀錄
+              <i class="fa-solid fa-map-marked-alt text-sky-600"></i> 網頁內直接即時 GPS 地圖監控 (In-App Map)
             </h3>
-            <p class="text-xs text-slate-500 mt-0.5">即時追蹤各隊伍 GPS 定位與時間歷史移動路徑</p>
+            <p class="text-xs text-slate-500 mt-0.5">免開啟外部 Google Maps，直接於下方地圖瀏覽全校小隊位置圖示與移動軌跡</p>
           </div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <select id="gpsTrackTeamFilter" onchange="updateGpsMapTrackDisplay()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-bold dark:text-white">
-              <option value="ALL">🌐 顯示所有隊伍軌跡</option>
-            </select>
-            <button onclick="toggleGpsTracksVisibility()" id="toggleTracksBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition shadow-sm">
-              <i class="fa-solid fa-route mr-1"></i> 隱藏軌跡線
-            </button>
-            <button onclick="refreshData()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs transition shadow-sm">
-              <i class="fa-solid fa-arrows-rotate mr-1"></i> 刷新位置
-            </button>
-          </div>
+          <button onclick="refreshData()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs transition shadow-sm">
+            <i class="fa-solid fa-arrows-rotate mr-1"></i> 刷新位置
+          </button>
         </div>
-
         <div id="gpsLiveMap" class="w-full h-[380px] rounded-2xl border border-slate-200 dark:border-slate-700 shadow-inner z-10 bg-slate-100 dark:bg-slate-900"></div>
-
-        <div class="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-700">
-          <h4 class="font-bold text-xs sm:text-sm text-slate-800 dark:text-white mb-2 flex items-center gap-2">
-            <i class="fa-solid fa-shoe-prints text-indigo-500"></i> 帳號移動軌跡點數紀錄總覽
-          </h4>
-          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2 text-xs" id="gpsTrackStatsGrid"></div>
-        </div>
-
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="gpsTeamGrid"></div>
       </div>
-
       <div id="adminTab-logs" class="glass-card rounded-2xl p-3.5 sm:p-4 shadow-sm hidden space-y-4">
         <div class="flex flex-wrap justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700 gap-2">
           <h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-teal-600"></i> 得分紀錄歷史與審核 (含時間 / 帳號 / IP)</h3>
@@ -321,7 +172,7 @@
             <i class="fa-solid fa-file-csv"></i> 導出歷史紀錄 CSV
           </button>
         </div>
-        <div class="overflow-x-auto w-full">
+        <div class="overflow-x-auto">
           <table class="w-full text-left text-xs sm:text-sm">
             <thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
               <tr>
@@ -339,25 +190,21 @@
           </table>
         </div>
       </div>
-
       <div id="adminTab-routes" class="glass-card rounded-2xl p-3.5 sm:p-4 shadow-sm hidden space-y-4">
         <div class="pb-2 border-b border-slate-200 dark:border-slate-700"><h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-map-location-dot text-indigo-600"></i> 各班小隊時間場次動線對照表 (13:20~15:50)</h3></div>
         <div id="routesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4"></div>
       </div>
-
       <div id="adminTab-alerts" class="glass-card rounded-2xl p-3.5 sm:p-4 shadow-sm hidden space-y-4">
         <div class="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700"><h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-bullhorn text-rose-600"></i> 各關卡緊急求助與事件紀錄</h3></div>
-        <div class="overflow-x-auto w-full"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700"><tr><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">通報時間</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">關卡/來源</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">事件類型</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">詳細狀況說明</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">通報帳號</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">操作端 IP</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">大會處置備註</th><th class="px-3 sm:px-4 py-2.5 text-center whitespace-nowrap">處置狀態</th></tr></thead><tbody id="alertsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div>
+        <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700"><tr><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">通報時間</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">關卡/來源</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">事件類型</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">詳細狀況說明</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">通報帳號</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">操作端 IP</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">大會處置備註</th><th class="px-3 sm:px-4 py-2.5 text-center whitespace-nowrap">處置狀態</th></tr></thead><tbody id="alertsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div>
       </div>
-
       <div id="adminTab-auth" class="glass-card rounded-2xl p-3.5 sm:p-4 shadow-sm hidden space-y-4">
         <div class="flex flex-wrap justify-between items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
           <h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-users text-purple-600"></i> 獨立帳號與密碼管理系統</h3>
           <button onclick="fetchAccounts()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 active:scale-95 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm"><i class="fa-solid fa-arrows-rotate"></i> 重新載入帳號</button>
         </div>
-        <div class="overflow-x-auto w-full"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700"><tr><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">帳號 (Username)</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">顯示名稱</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">權限身份</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">設定密碼 (Password)</th><th class="px-3 sm:px-4 py-2.5 text-center whitespace-nowrap">儲存變更</th></tr></thead><tbody id="accountsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div>
+        <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700"><tr><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">帳號 (Username)</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">顯示名稱</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">權限身份</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">設定密碼 (Password)</th><th class="px-3 sm:px-4 py-2.5 text-center whitespace-nowrap">儲存變更</th></tr></thead><tbody id="accountsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div>
       </div>
-
       <div id="adminTab-config" class="glass-card rounded-2xl p-4 sm:p-5 shadow-sm hidden space-y-5">
         <h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700"><i class="fa-solid fa-sliders text-slate-600"></i> 全場跑馬燈廣播與系統維護</h3>
         <div class="space-y-3">
@@ -375,8 +222,6 @@
         </div>
       </div>
     </section>
-
-    <!-- STATION VIEW -->
     <section id="stationView" class="space-y-4 sm:space-y-6 hidden">
       <div class="glass-card p-4 sm:p-6 rounded-3xl shadow-sm border-l-4 border-l-teal-600 relative overflow-hidden">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-700">
@@ -400,7 +245,6 @@
           <div class="bg-purple-50/60 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 p-2.5 sm:p-3 rounded-2xl"><p class="text-[10px] sm:text-xs text-purple-700 dark:text-purple-300 font-bold">剩餘待到關小隊</p><p id="stStatRemaining" class="text-lg sm:text-xl font-black text-purple-900 dark:text-purple-200 mt-0.5">20 隊</p></div>
         </div>
       </div>
-
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div class="lg:col-span-2 glass-card p-4 sm:p-6 rounded-3xl shadow-sm space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-slate-700">
@@ -436,7 +280,6 @@
             <button onclick="undoLastStationScore()" title="撤銷上一筆給分" class="px-4 py-3.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 font-bold rounded-xl shadow-md transition flex items-center justify-center gap-1.5 text-xs whitespace-nowrap"><i class="fa-solid fa-rotate-left"></i> 撤銷上筆</button>
           </div>
         </div>
-
         <div class="glass-card p-4 sm:p-5 rounded-3xl shadow-sm flex flex-col justify-between border border-slate-200 dark:border-slate-700 relative overflow-hidden">
           <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
             <h3 class="font-bold text-slate-800 dark:text-white text-xs sm:text-sm flex items-center gap-2"><i class="fa-solid fa-stopwatch text-indigo-600"></i> 賽事關卡計時器</h3>
@@ -466,17 +309,14 @@
           </div>
         </div>
       </div>
-
       <div class="flex border-b border-slate-200 dark:border-slate-700 gap-2 overflow-x-auto no-scrollbar pb-1 text-xs font-bold">
         <button onclick="switchStationSubTab('history')" id="stSubBtn-history" class="px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-teal-600 text-white shadow"><i class="fa-solid fa-list-check mr-1.5"></i> 本關得分歷史記錄</button>
         <button onclick="switchStationSubTab('rules')" id="stSubBtn-rules" class="px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100"><i class="fa-solid fa-book-open mr-1.5 text-amber-500"></i> 關卡規則與道具備忘</button>
       </div>
-
       <div id="stSubTab-history" class="glass-card p-4 rounded-2xl shadow-sm space-y-3">
         <h3 class="font-bold text-slate-800 dark:text-white text-xs sm:text-sm flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-teal-600"></i> 本關卡近期加分明細 (含時間 / 帳號 / IP)</h3>
-        <div class="overflow-x-auto w-full"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700"><tr><th class="px-3 sm:px-4 py-2 whitespace-nowrap">時間</th><th class="px-3 sm:px-4 py-2 whitespace-nowrap">隊伍</th><th class="px-3 sm:px-4 py-2 text-right whitespace-nowrap">分數</th><th class="px-3 sm:px-4 py-2 whitespace-nowrap">操作帳號</th><th class="px-3 sm:px-4 py-2 whitespace-nowrap">操作端 IP</th><th class="px-3 sm:px-4 py-2 whitespace-nowrap">備註</th></tr></thead><tbody id="stationLogsBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div>
+        <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700"><tr><th class="px-3 sm:px-4 py-2 whitespace-nowrap">時間</th><th class="px-3 sm:px-4 py-2 whitespace-nowrap">隊伍</th><th class="px-3 sm:px-4 py-2 text-right whitespace-nowrap">分數</th><th class="px-3 sm:px-4 py-2 whitespace-nowrap">操作帳號</th><th class="px-3 sm:px-4 py-2 whitespace-nowrap">操作端 IP</th><th class="px-3 sm:px-4 py-2 whitespace-nowrap">備註</th></tr></thead><tbody id="stationLogsBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div>
       </div>
-
       <div id="stSubTab-rules" class="glass-card p-4 sm:p-5 rounded-2xl shadow-sm hidden space-y-4">
         <div class="border-b border-slate-200 dark:border-slate-700 pb-2 flex items-center justify-between">
           <h3 class="text-amber-600 font-bold text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-book-open"></i> <span id="ruleModalGameTitle">關卡規則指引</span></h3>
@@ -498,8 +338,6 @@
         </div>
       </div>
     </section>
-
-    <!-- STUDENT VIEW: Integrated Quest, Route & Digital Stamp Card -->
     <section id="studentView" class="space-y-4 sm:space-y-6 hidden">
       <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white p-4 sm:p-6 rounded-3xl shadow-lg relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <i class="fa-solid fa-flag text-9xl absolute -right-6 -bottom-6 text-white/10 rotate-[-15deg] pointer-events-none"></i>
@@ -523,17 +361,12 @@
           <div class="text-center px-4"><p class="text-[10px] sm:text-xs text-amber-100 font-medium">挑戰進度</p><p id="studentCompletedCountText" class="text-2xl sm:text-3xl font-black mt-0.5 font-mono">0/10 關</p></div>
         </div>
       </div>
-
       <div class="flex border-b border-slate-200 dark:border-slate-700 gap-1 sm:gap-2 overflow-x-auto no-scrollbar pb-1 text-xs font-bold">
-        <button onclick="switchStudentTab('quest')" id="stuTabBtn-quest" class="px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-amber-500 text-white shadow"><i class="fa-solid fa-compass mr-1"></i> 🎯 當前任務與數位集章</button>
+        <button onclick="switchStudentTab('quest')" id="stuTabBtn-quest" class="px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-amber-500 text-white shadow"><i class="fa-solid fa-compass mr-1"></i> 當前任務與數位集章卡</button>
         <button onclick="openMapModal()" class="px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-indigo-600 text-white shadow hover:bg-indigo-700"><i class="fa-solid fa-map mr-1"></i> 🗺️ 校園總地圖</button>
-        <button onclick="switchStudentTab('history')" id="stuTabBtn-history" class="px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100"><i class="fa-solid fa-list-ol mr-1 text-teal-600"></i> 📜 得分履歷</button>
+        <button onclick="switchStudentTab('history')" id="stuTabBtn-history" class="px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100"><i class="fa-solid fa-list-ol mr-1 text-teal-600"></i> 得分履歷</button>
       </div>
-
-      <!-- MERGED QUEST & DIGITAL STAMP CARD TAB -->
-      <div id="stuTab-quest" class="space-y-4 sm:space-y-6">
-        
-        <!-- Active Quest Box -->
+      <div id="stuTab-quest" class="space-y-4">
         <div class="glass-card p-5 sm:p-6 rounded-3xl shadow-sm border-2 border-amber-400 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10 relative overflow-hidden">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-amber-200/60 dark:border-amber-800/60">
             <div>
@@ -546,48 +379,31 @@
             <div id="stuActiveLocationBadge" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl text-xs sm:text-sm font-bold shrink-0"><i class="fa-solid fa-location-dot text-rose-500 animate-bounce"></i><span id="stuActiveLocationText">地點查詢中...</span></div>
           </div>
           <div class="pt-3 text-xs sm:text-sm text-slate-600 dark:text-slate-300 space-y-1">
+            <!-- 學生頁面已移除本名，僅保留綽號與地點 -->
             <p id="stuActiveStaffText" class="font-bold text-teal-700 dark:text-teal-300"></p>
             <p id="stuActiveGameRulesText" class="text-slate-700 dark:text-slate-300 mt-1"></p>
           </div>
         </div>
-
-        <!-- Integrated Digital Stamp Card -->
-        <div class="glass-card p-4 sm:p-6 rounded-3xl shadow-sm space-y-4 border-t-4 border-t-amber-500">
-          <div>
-            <h3 class="font-bold text-slate-800 dark:text-white text-base sm:text-lg flex items-center gap-2">
-              <i class="fa-solid fa-stamp text-amber-500"></i> 10 大關卡數位闖關集章卡 (A~J)
-            </h3>
-            <p class="text-xs text-slate-500 mt-0.5">每完成一個關卡，關主登記上傳成績後此處將自動蓋上專屬通關章！</p>
-          </div>
-          
+        <!-- 數位集章卡與任務合併區塊 -->
+        <div class="glass-card p-4 sm:p-6 rounded-3xl shadow-sm space-y-4">
+          <div><h3 class="font-bold text-slate-800 dark:text-white text-base sm:text-lg flex items-center gap-2"><i class="fa-solid fa-stamp text-amber-500"></i> 10 大關卡數位闖關集章卡 (A~J)</h3><p class="text-xs text-slate-500 mt-0.5">每完成一個關卡，關主上傳成績後此處將自動蓋上專屬通關印章！</p></div>
           <div class="space-y-1.5 bg-slate-100 dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700">
-            <div class="flex justify-between items-center text-xs font-bold">
-              <span class="text-slate-600 dark:text-slate-400">通關印章收集進度</span>
-              <span id="stuStampProgressText" class="text-amber-600 font-black">0% (0/10關)</span>
-            </div>
-            <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
-              <div id="stuStampProgressBar" class="bg-amber-500 h-3 rounded-full transition-all duration-700 ease-out w-0"></div>
-            </div>
+            <div class="flex justify-between items-center text-xs font-bold"><span class="text-slate-600 dark:text-slate-400">完成進度總覽</span><span id="stuStampProgressText" class="text-amber-600 font-black">0% (0/10關)</span></div>
+            <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden"><div id="stuStampProgressBar" class="bg-amber-500 h-3 rounded-full transition-all duration-700 ease-out w-0"></div></div>
           </div>
-          
-          <div id="stuStampGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-1"></div>
+          <div id="stuStampGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2"></div>
         </div>
-
-        <!-- Full Schedule Timeline -->
         <div class="glass-card p-4 sm:p-6 rounded-3xl shadow-sm space-y-3">
           <div><h3 class="font-bold text-slate-800 dark:text-white text-base sm:text-lg flex items-center gap-2"><i class="fa-solid fa-route text-amber-500"></i> 本隊 13:20~15:50 完整時間對照表</h3><p class="text-xs text-slate-500 mt-0.5">請嚴格依照時間前往指定關卡進行挑戰。</p></div>
           <div id="routeStepper" class="space-y-2.5"></div>
         </div>
       </div>
-
       <div id="stuTab-history" class="glass-card p-4 sm:p-5 rounded-3xl shadow-sm hidden space-y-4">
         <h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700"><i class="fa-solid fa-list-check text-teal-600"></i> 本隊伍過關與得分紀錄履歷</h3>
-        <div class="overflow-x-auto w-full"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700"><tr><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">過關時間</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">關卡名稱</th><th class="px-3 sm:px-4 py-2.5 text-right whitespace-nowrap">獲得得分</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">操作帳號</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">操作端 IP</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">備註</th></tr></thead><tbody id="studentLogsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div>
+        <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700"><tr><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">過關時間</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">關卡名稱</th><th class="px-3 sm:px-4 py-2.5 text-right whitespace-nowrap">獲得得分</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">操作帳號</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">操作端 IP</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">備註</th></tr></thead><tbody id="studentLogsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div>
       </div>
     </section>
   </main>
-
-  <!-- LOGIN MODAL -->
   <div id="loginModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[110] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
     <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-700 my-auto">
       <div class="bg-gradient-to-r from-emerald-800 to-teal-700 text-white p-5 sm:p-6 text-center relative">
@@ -602,8 +418,6 @@
       </form>
     </div>
   </div>
-
-  <!-- EMERGENCY MODAL -->
   <div id="emergencyModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[130] hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
     <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border-2 border-rose-600 my-auto">
       <div class="bg-gradient-to-r from-rose-700 to-red-600 text-white p-5 text-center relative">
@@ -627,8 +441,6 @@
       </div>
     </div>
   </div>
-
-  <!-- CONFIRM MODAL -->
   <div id="confirmModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[160] hidden items-center justify-center p-3 sm:p-4">
     <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-slate-700 my-auto">
       <div class="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-300 flex items-center justify-center mx-auto text-2xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
@@ -640,8 +452,6 @@
       </div>
     </div>
   </div>
-
-  <!-- RESOLVE ALERT MODAL -->
   <div id="resolveAlertModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[135] hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
     <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border-2 border-emerald-600 my-auto">
       <div class="bg-gradient-to-r from-emerald-800 to-teal-700 text-white p-5 text-center relative">
@@ -655,13 +465,11 @@
           <p><span class="font-bold text-rose-800 dark:text-rose-300">事件分類：</span><span id="resModalType" class="font-bold text-rose-600"></span></p>
           <p><span class="font-bold text-rose-800 dark:text-rose-300">狀況說明：</span><span id="resModalMsg" class="text-slate-700 dark:text-slate-300"></span></p>
         </div>
-        <div class="space-y-1.5"><label class="block text-xs font-bold text-slate-700 dark:text-slate-300">大會處理狀況備註 <span class="text-rose-500">*必填</span>：</label><textarea id="resolutionNoteInput" rows="3" placeholder="例如：已派教官帶醫藥箱前往現場包紮，學生恢復良好留站觀賽..." class="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:bg-slate-700 dark:text-white"></textarea></div>
+        <div class="space-y-1.5"><label class="block text-xs font-bold text-slate-700 dark:text-slate-300">大會處理狀況備註 <span class="text-rose-500">*必填</span>：</label><textarea id="resolutionNoteInput" rows="3" placeholder="例如：已派教官帶醫藥箱前往現場包紮, 學生恢復良好留站觀賽..." class="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:bg-slate-700 dark:text-white"></textarea></div>
         <div class="flex gap-2.5 pt-1"><button onclick="closeResolveAlertModal()" class="flex-1 py-3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold rounded-xl transition text-xs sm:text-sm">取消</button><button onclick="confirmResolveAlert()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition text-xs sm:text-sm flex items-center justify-center gap-1"><i class="fa-solid fa-check"></i> 確認已處置</button></div>
       </div>
     </div>
   </div>
-
-  <!-- QR SCANNER MODAL -->
   <div id="qrScannerModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[140] hidden items-center justify-center p-3 sm:p-4">
     <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-5 sm:p-6 text-center space-y-3 shadow-2xl border border-slate-700">
       <h3 class="font-black text-base sm:text-lg text-slate-800 dark:text-white flex items-center justify-center gap-2"><i class="fa-solid fa-camera text-indigo-600"></i> 實機 QR Code 相機掃描簽到</h3>
@@ -670,8 +478,6 @@
       <button onclick="closeQrScannerModal()" class="w-full py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl active:scale-95 transition">關閉相機掃描</button>
     </div>
   </div>
-
-  <!-- TEAM QR MODAL -->
   <div id="teamQrModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[140] hidden items-center justify-center p-3 sm:p-4">
     <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-slate-700">
       <h3 class="font-black text-lg text-slate-800 dark:text-white flex items-center justify-center gap-2"><i class="fa-solid fa-qrcode text-amber-500"></i> 隊伍專屬 QR 碼</h3>
@@ -682,8 +488,6 @@
       <button onclick="closeTeamQrModal()" class="w-full py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl">關閉窗口</button>
     </div>
   </div>
-
-  <!-- MAP MODAL -->
   <div id="mapModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[140] hidden items-center justify-center p-2 sm:p-4 overflow-y-auto">
     <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-5xl w-full shadow-2xl overflow-hidden my-auto flex flex-col max-h-[92vh]">
       <div class="bg-slate-900 text-white p-3.5 sm:p-4 flex justify-between items-center shrink-0">
@@ -694,7 +498,7 @@
         <button onclick="closeMapModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition shrink-0"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="p-2 sm:p-4 overflow-auto flex-grow relative flex items-center justify-center bg-slate-100 dark:bg-slate-900 min-h-[350px]">
-        <img src="map.png" onerror="this.onerror=null; this.src='https://placehold.co/800x500/0f172a/f59e0b?text=XSHS+Campus+Map';" alt="Campus Map" class="max-w-full h-auto rounded-xl shadow-md border border-slate-200 dark:border-slate-700 object-contain">
+        <img src="map.png" onerror="this.onerror=null; this.src='image_64a87d.png';" alt="Campus Map" class="max-w-full h-auto rounded-xl shadow-md border border-slate-200 dark:border-slate-700 object-contain">
       </div>
       <div class="p-3 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 flex items-center justify-between shrink-0">
         <span class="font-bold text-slate-500">🗺️ 校園平面導覽圖</span>
@@ -702,110 +506,162 @@
       </div>
     </div>
   </div>
-
-  <footer class="bg-slate-900 text-slate-400 text-[11px] sm:text-xs py-3.5 text-center border-t border-slate-800 w-full"><p>臺中市立新社高級中學 大地遊戲計分導引系統 &copy; 2026</p></footer>
-
+  <footer class="bg-slate-900 text-slate-400 text-[11px] sm:text-xs py-3.5 text-center border-t border-slate-800"><p>臺中市立新社高級中學 大地遊戲計分導引系統 &copy; 2026</p></footer>
   <script>
     const SUPABASE_URL = 'https://xfevmqguantotrkatvoa.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_uQcbXqsRGxU-uLRagPtwHQ_6SSAUT59';
-    
-    let supabaseClient = null;
-    try {
-      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-        auth: { persistSession: false },
-        realtime: { autoConnect: false }
-      });
-    } catch(e) {
-      console.warn("Supabase init fallback:", e);
-    }
-
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: false },
+      realtime: { autoConnect: false }
+    });
     const TIME_SLOTS = [
-      '13:20~13:30', '13:35~13:45', '13:55~14:05', '14:10~14:20', '14:25~14:35',
-      '14:40~14:50', '14:55~15:05', '15:10~15:20', '15:25~15:35', '15:40~15:50'
+      '13:20~13:30',
+      '13:35~13:45',
+      '13:55~14:05',
+      '14:10~14:20',
+      '14:25~14:35',
+      '14:40~14:50',
+      '14:55~15:05',
+      '15:10~15:20',
+      '15:25~15:35',
+      '15:40~15:50'
     ];
-
     const STATIONS = [
-      { id: 'A', name: 'A關 靜思樓穿堂 - 接力猜一猜', location: '靜思樓穿堂', gameName: '接力猜一猜', staff: '410 李佳樺、陳立昕 (呱吉 木頭)', props: '盤子、2顆球', rules: '1. 每隊隊員各持一個盤子排成單一縱列。\n2. 由第一位同學出發，利用盤子將球順序往後傳遞。\n3. 傳球過程中若球體落地，該次不算分，必須重新回到第一位重新出發。\n4. 球成功傳到最後一位同學時，該同學需持球至隊首進行答題。\n5. 答對：該隊加 1 分。答錯：不予計分。\n6. 答題結束後（無論對錯），該同學直接擔任隊首，展開下一輪傳球。\n7. 採限時計分制（單局約 2 分鐘，共進行 3 局），總分最高者獲勝。', advice: '⚠️ 注意事項：\n• 隊伍會越來越往前，要注意學生安全狀況！\n• 嚴禁盤子連盤子或用手控制球。' },
-      { id: 'B', name: 'B關 國教中心一樓 - 字首造詞', location: '國教中心一樓', gameName: '字首造詞', staff: '401 林嘉姵、簡虹欣 (嘎逼 孟孟)', props: '小白板×2、白板筆×4、板擦×3', rules: '1. 兩班分開各自圍成一圈，每班派出一位代表進行抽題。\n2. 全班合作將聯想到的詞語寫在白板上。\n3. 每寫出一個合規詞語得 1 分，每輪限時 2 分鐘，共進行 3 輪。', advice: '⚠️ 注意事項：\n• 不要讓規則只有一位關主說明，兩位都要熟悉規則！' },
-      { id: 'C', name: 'C關 新龍崗 - 比手畫腳', location: '新龍崗露營區', gameName: '比手畫腳', staff: '403 陳可欣、王沛媛 (糖糖 阿媛)', props: '題目紙 (大小一致)', rules: '1. 兩隊各排成一直線，所有人統一向後轉。\n2. 第一位抽取題目卡，利用肢體動作向下一位傳達。\n3. 限時 5 分鐘答對最多次獲勝。', advice: '⚠️ 注意事項：\n• 若遇到兩隊人數不平均，可先讓多數隊先開始數秒。' },
-      { id: 'D', name: 'D關 餐廳 - 你畫我猜', location: '餐廳', gameName: '你畫我猜', staff: '409 王瀅瑄、謝昀芯 (Teresa 屁屁偵探)', props: '空白紙、筆', rules: '1. 隊伍分成兩排，僅第一位同學面對關主觀看題目。\n2. 第一位將圖畫在紙上傳給下一位複製。\n3. 最後一位猜對就得分。', advice: '⚠️ 注意事項：\n• 兩位關主都要熟悉規則，互相配合。' },
-      { id: 'E', name: 'E關 活動中心舞台 - 成雙成對', location: '活動中心舞台', gameName: '成雙成對', staff: '407 賴筱雨、張愛鈴 (小魚 芭辣)', props: '自製卡牌', rules: '1. 翻牌配對遊戲。\n2. 成功配對可繼續翻，不相同蓋回。\n3. 湊齊最多對獲勝。', advice: '⚠️ 注意事項：\n• 講清楚規則並讓大家都遵守！' },
-      { id: 'F', name: 'F關 遮雨棚 - 圈地稱王', location: '遮雨棚', gameName: '圈地稱王', staff: '408 魏瑜芯、劉羽修 (Alice 吻仔魚)', props: '9個呼拉圈 & 兩色角錐', rules: '1. 第一輪極速連線折返接力。\n2. 第二輪快問快答搶答放角錐。', advice: '⚠️ 注意事項：\n• 安全第一，提醒勿受傷！' },
-      { id: 'G', name: 'G關 司令台 - 一叫到位', location: '司令台', gameName: '一叫到位', staff: '405 丁翊芹、黃晢愷 (丁丁 C愷)', props: '題目籤', rules: '1. 一人猜題，其餘輪流提示。\n2. 嚴禁講出答案或同音字。', advice: '⚠️ 注意事項：\n• 題目要預先出好。' },
-      { id: 'H', name: 'H關 學務處 - O與X跳跳樂', location: '學務處', gameName: '真人 OX 選邊跳', staff: '402 塗朋翰、柯捷齡 (排骨 小0)', props: '劃定 O/X 區', rules: '1. 聽題目選擇 O 或 X 區域跳躍。\n2. 跳錯或踩線淘汰。', advice: '⚠️ 注意事項：\n• 念題速度要順暢，裁定踩線需公正。' },
-      { id: 'I', name: 'I關 圖書館2F - 圖書館冒險', location: '圖書館2F', gameName: '圖書館冒險', staff: '406 李侑翰、藍苡茜 (漢吉 阿西)', props: '指定區域書籍', rules: '1. 依題目找尋符合特徵的書籍。\n2. 90 秒內收集最多者獲勝。', advice: '⚠️ 注意事項：\n• 嚴格規定僅能拿指定區塊書籍。' },
-      { id: 'J', name: 'J關 總務處 - 筆劃接力賽', location: '總務處', gameName: '筆劃接力賽', staff: '404 盧顗安、陳奕荁 (六一 威威)', props: '白板、白板筆', rules: '1. 隊員輪流上白板畫一筆。\n2. 最後一位轉身猜題目。', advice: '⚠️ 注意事項：\n• 確保每個人都有畫到且只畫一次。' }
+      {
+        id: 'A',
+        name: 'A關 靜思樓穿堂 - 接力猜一猜',
+        location: '靜思樓穿堂',
+        gameName: '接力猜一猜',
+        staff: '410 (呱吉 木頭)', // 已移除本名，僅保留綽號
+        props: '盤子、2顆球',
+        rules: '1. 每隊隊員各持一個盤子排成單一縱列。\n2. 由第一位同學出發，利用盤子將球順序往後傳遞。\n3. 傳球過程中若球體落地，該次不算分，必須重新回到第一位重新出發。\n4. 球成功傳到最後一位同學時，該同學需持球至隊首進行答題。\n5. 答對：該隊加 1 分。答錯：不予計分。\n6. 答題結束後（無論對錯），該同學直接擔任隊首，展開下一輪傳球。\n7. 採限時計分制（單局約 2 分鐘，共進行 3 局），總分最高者獲勝（較高分給3點，較低分給2點，諂媚視情況給1點）。',
+        advice: '⚠️ 注意事項：\n• 隊伍會越來越往前，要注意學生安全狀況！\n• 注意隊伍前後距離，嚴禁盤子連盤子或用手控制球，認真抓違規避爭議。\n• 其中一位關主在中間巡視違規，另外一位在前面準備出題並統計分數，兩位皆需熟悉規則！'
+      },
+      {
+        id: 'B',
+        name: 'B關 國教中心一樓 - 字首造詞',
+        location: '國教中心一樓',
+        gameName: '字首造詞',
+        staff: '401 (嘎逼 孟孟)', // 已移除本名，僅保留綽號
+        props: '小白板×2、白板筆×4、板擦×3',
+        rules: '1. 兩班分開各自圍成一圈，每班派出一位代表進行抽題（例：ㄓㄧ、ㄨㄇ…）。\n2. 全班合作將聯想到的詞語寫在白板上，嚴禁使用 3C 產品與不雅詞語（違者不計分）。\n3. 每寫出一個合規詞語得 1 分，每輪限時 2 分鐘，共進行 3 輪。\n4. 3 輪結束結算總積分，積分較高者獲勝。\n5. 獲勝班級得 3 分，另一班得 2 分。',
+        advice: '⚠️ 注意事項：\n• 不要讓規則只有一位關主說明，兩位都要熟悉規則，互相配合！'
+      },
+      {
+        id: 'C',
+        name: 'C關 新龍崗 - 比手畫腳',
+        location: '新龍崗露營區',
+        gameName: '比手畫腳',
+        staff: '403 (糖糖 阿媛)', // 已移除本名，僅保留綽號
+        props: '題目紙 (大小一致、無錯字)',
+        rules: '1. 兩隊各排成一直線，所有人統一向後轉。\n2. 每回合由第一位隊員抽取一張題目卡，閱讀後僅能利用肢體動作向下一位傳達（嚴禁說話、發出聲音、比口型或寫字）。\n3. 限時 5 分鐘內讓各組連續答題，答對最多次的隊伍獲勝（若卡住可喊 PASS 跳過）。\n4. 倒數 30 秒、15 秒提醒，最後 5 秒進行倒數。',
+        advice: '⚠️ 注意事項：\n• 若遇到兩隊人數不平均，可先讓多數隊者先開始數秒。\n• 出題紙大小要一致，避免錯字，兩位關主皆需熟悉規則！'
+      },
+      {
+        id: 'D',
+        name: 'D關 餐廳 - 你畫我猜',
+        location: '餐廳',
+        gameName: '你畫我猜',
+        staff: '409 (Teresa 屁屁偵探)', // 已移除本名，僅保留綽號
+        props: '空白紙、筆',
+        rules: '1. 隊伍分成兩排，僅第一位同學面對關主觀看題目並記下，其餘背對。\n2. 第一位將圖畫在紙上傳給下一位，下一位不可邊看邊畫，必須憑記憶複製畫在自己紙上。\n3. 不限時比速度，看哪邊畫得快且最後一位猜對就得分，猜對最多題目者獲勝。',
+        advice: '⚠️ 注意事項：\n• 若人數不平均，可先讓多數隊先開始數秒。\n• 兩位關主都要熟悉規則，互相配合。'
+      },
+      {
+        id: 'E',
+        name: 'E關 活動中心舞台 - 成雙成對',
+        location: '活動中心舞台',
+        gameName: '成雙成對',
+        staff: '407 (小魚 芭辣)', // 已移除本名，僅保留綽號
+        props: '自製卡牌 (含芭樂牌)',
+        rules: '1. 兩隊圍繞預先擺好的牌堆站立，保持 2~3 步距離。\n2. 第一位隊員上前翻開兩張牌：成功配對可繼續翻；不相同則蓋回原處，站起拍手交棒。\n3. 每局約 2~3 分鐘，時間截止湊齊最多對的隊伍獲勝。\n4. 第三局加入 2 張芭樂牌，翻出需喊關主進行問答，答對立即 +2 分，答錯不加分算成功湊齊。',
+        advice: '⚠️ 注意事項：\n• 講清楚規則並讓大家都遵守！卡牌記得充分洗牌。\n• 芭樂牌問答建議兩位關主一人一邊，互相配合！'
+      },
+      {
+        id: 'F',
+        name: 'F關 遮雨棚 - 圈地稱王',
+        location: '遮雨棚',
+        gameName: '圈地稱王',
+        staff: '408 (Alice 吻仔魚)', // 已移除本名，僅保留綽號
+        props: '9個呼拉圈 (九宮格) & 兩色角錐 (每隊各3個)',
+        rules: '1. 第一輪極速連線：折返接力放角錐，放完後改為移動場上己方角錐，最先連成一線獲勝。\n2. 第二輪快問快答：搶答對的隊伍派 1 人放/移動角錐，最先連線者獲勝。',
+        advice: '⚠️ 注意事項：\n• 安全第一，提醒勿受傷！兩階段皆讓未出發同學蹲下維持秩序。\n• 出題聲音要大，確保兩邊機會公平，認真抓違規！'
+      },
+      {
+        id: 'G',
+        name: 'G關 司令台 - 一叫到位',
+        location: '司令台',
+        gameName: '一叫到位 (提示猜題)',
+        staff: '405 (丁丁 C愷)', // 已移除本名，僅保留綽號
+        props: '題目籤',
+        rules: '1. 兩隊各派一位站在前方猜題，其餘隊員擔任提示者。\n2. 提示者依序輪流說出一個提示，嚴禁直接講出答案、同音字、諧音、英文或題目相關字（例:題目「冰島」不能直接說「冰冰的島」，違者該題作廢不算）。\n3. 採限時計分制，在規定時間內猜對最多題目的隊伍獲勝。',
+        advice: '⚠️ 注意事項：\n• 題目要預先出好，講提示時若講到題目相關字該題直接作廢！'
+      },
+      {
+        id: 'H',
+        name: 'H關 學務處 - O與X跳跳樂',
+        location: '學務處',
+        gameName: '真人 OX 選邊跳',
+        staff: '402 (排骨 小0)', // 已移除本名，僅保留綽號
+        props: '無 (現場劃定 O/X 區)',
+        rules: '1. 兩隊隊員分批上場（或全員同時）排成一列，劃定左方區域代表「O」，右方區域代表「X」。\n2. 關主快速念題目，隊員需根據答案區域選擇並跳進去。\n3. 跳錯、猶豫未及時跳躍或踩線失去平衡者即算淘汰退場。\n4. 累計留存人數最多或獲得最後勝利者獲勝。',
+        advice: '⚠️ 注意事項：\n• 念題速度要順暢，裁定踩線與猶豫需公正嚴謹。'
+      },
+      {
+        id: 'I',
+        name: 'I關 圖書館2F - 圖書館冒險',
+        location: '圖書館2F',
+        gameName: '圖書館冒險',
+        staff: '406 (漢吉 阿西)', // 已移除本名，僅保留綽號
+        props: '指定區域書籍',
+        rules: '1. 兩隊排一直線折返接力，關主出題（例：「請找藍色的書」）並限時 90 秒。\n2. 聽到指令第一位出發找書，每人每次限拿 1 本，拿回擺妥後下一位出發。\n3. 限時 90 秒結束後，統計兩隊收集到的合格書籍數量，多者得 1 分，採五戰三勝制。',
+        advice: '⚠️ 注意事項：\n• 嚴格規定僅能拿指定區塊書籍，維護圖書館整潔與秩序！'
+      },
+      {
+        id: 'J',
+        name: 'J關 總務處 - 筆劃接力賽',
+        location: '總務處',
+        gameName: '筆劃接力賽',
+        staff: '404 (六一 威威)', // 已移除本名，僅保留綽號
+        props: '白板、白板筆、題目籤、計時器',
+        rules: '1. 除最後一位背對白板外，其餘隊員面向白板觀看題目並記憶 10 秒。\n2. 計時開始第一位跑至白板畫「一筆」回隊尾，第二位接續補一筆（每人限時 5 秒）。\n3. 一筆定義：筆尖不離開白板的連續軌跡（寫「中」字算 3 筆）。\n4. 最後一位同學轉身觀看完成畫作並猜答，最先猜對或猜對最多者獲勝。',
+        advice: '⚠️ 注意事項：\n• 確保每個人都有畫到且只畫一次，過程中禁止討論避免猜題者聽到答案！'
+      }
     ];
-
     const TEAM_NAMES = ['401A', '401B', '402A', '402B', '403A', '403B', '404A', '404B', '405A', '405B', '406A', '406B', '407A', '407B', '408A', '408B', '409A', '409B', '410A', '410B'];
-    
-    // Color map for team trajectories
-    const TEAM_COLORS = {
-      '401A': '#ef4444', '401B': '#f97316', '402A': '#f59e0b', '402B': '#84cc16',
-      '403A': '#10b981', '403B': '#06b6d4', '404A': '#0284c7', '404B': '#3b82f6',
-      '405A': '#6366f1', '405B': '#8b5cf6', '406A': '#a855f7', '406B': '#d946ef',
-      '407A': '#ec4899', '407B': '#f43f5e', '408A': '#14b8a6', '408B': '#64748b',
-      '409A': '#84cc16', '409B': '#0ea5e9', '410A': '#eab308', '410B': '#9333ea'
-    };
-
     let currentUser = null; 
     let clientIp = '127.0.0.1';
     let localTeams = TEAM_NAMES.map(name => ({ team_name: name, total_score: 0, lat: null, lng: null, gps_updated_at: null }));
     let localLogs = [];
     let localAlerts = [];
-    // Trajectory tracking data structure: { '401A': [ {lat, lng, timestamp}, ... ] }
-    let localTracks = {};
-    
     let currentAdminTab = 'leaderboard';
-    let currentStudentTab = 'quest';
-    let currentStationSubTab = 'history';
     let pendingResolveAlertId = null;
     let pendingConfirmAction = null;
     let audioMuted = false;
     let isDarkMode = false;
-    
     let gpsLeafletMap = null;
     let gpsLeafletMarkers = {};
-    let gpsLeafletPolylines = {};
-    let showGpsTracks = true;
+    let teamLocationHistory = {};
 
+    function saveLocalAlertsToStorage() {
+      try { localStorage.setItem('xshs_local_alerts', JSON.stringify(localAlerts)); } catch(e){}
+    }
+    function loadLocalAlertsFromStorage() {
+      try {
+        const saved = localStorage.getItem('xshs_local_alerts');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) localAlerts = parsed;
+        }
+      } catch(e){}
+    }
     let gpsWatchId = null;
     let html5QrCode = null;
-    
     let stationTimerMode = 'countdown';
-    let stationTimerSeconds = 300;
+    let stationTimerSeconds = 3000;
     let stationTimerInterval = null;
     let isStationTimerRunning = false;
     let audioCtx = null;
-
-    function saveLocalDataToStorage() {
-      try {
-        localStorage.setItem('xshs_local_alerts', JSON.stringify(localAlerts));
-        localStorage.setItem('xshs_local_logs', JSON.stringify(localLogs));
-        localStorage.setItem('xshs_local_teams', JSON.stringify(localTeams));
-        localStorage.setItem('xshs_local_tracks', JSON.stringify(localTracks));
-      } catch(e){}
-    }
-
-    function loadLocalDataFromStorage() {
-      try {
-        const savedAlerts = localStorage.getItem('xshs_local_alerts');
-        if (savedAlerts) localAlerts = JSON.parse(savedAlerts);
-
-        const savedLogs = localStorage.getItem('xshs_local_logs');
-        if (savedLogs) localLogs = JSON.parse(savedLogs);
-
-        const savedTeams = localStorage.getItem('xshs_local_teams');
-        if (savedTeams) {
-          const parsed = JSON.parse(savedTeams);
-          if (Array.isArray(parsed) && parsed.length > 0) localTeams = parsed;
-        }
-
-        const savedTracks = localStorage.getItem('xshs_local_tracks');
-        if (savedTracks) localTracks = JSON.parse(savedTracks);
-      } catch(e){}
-    }
-
     function playBeep(freq = 440, type = 'sine', duration = 0.2) {
       if (audioMuted) return;
       try {
@@ -829,30 +685,6 @@
         console.warn('Audio suppressed:', e);
       }
     }
-
-    function showToast(msg, type = 'info') {
-      const container = document.getElementById('toastContainer');
-      if (!container) return;
-      const toast = document.createElement('div');
-      let bgColor = 'bg-slate-800 text-white';
-      if (type === 'success') bgColor = 'bg-emerald-600 text-white';
-      if (type === 'error') bgColor = 'bg-rose-600 text-white';
-      if (type === 'warning') bgColor = 'bg-amber-500 text-slate-900';
-      
-      toast.className = `${bgColor} px-4 py-2.5 rounded-2xl shadow-xl text-xs font-bold flex items-center gap-2 border border-white/20 transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto`;
-      toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info'}"></i><span>${msg}</span>`;
-      container.appendChild(toast);
-
-      setTimeout(() => {
-        toast.classList.remove('translate-y-2', 'opacity-0');
-      }, 20);
-
-      setTimeout(() => {
-        toast.classList.add('opacity-0', 'translate-y-2');
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
-    }
-
     function getRecordIp(item) {
       if (!item) return clientIp || '127.0.0.1';
       if (item.ip) return item.ip;
@@ -866,46 +698,33 @@
       }
       return clientIp || '127.0.0.1';
     }
-
     function cleanNoteText(text) {
       if (!text) return '-';
       return text.replace(/\s*\[IP:\s*[^\]]+\]/, '').trim() || '-';
     }
-
     async function fetchClientIp() {
       try {
         const res = await fetch('https://api.ipify.org?format=json');
         const data = await res.json();
-        if (data && data.ip) clientIp = data.ip;
+        if (data && data.ip) {
+          clientIp = data.ip;
+        }
       } catch (e) {}
     }
-
     function formatTeamName(name) {
       if (!name) return '';
       return name.includes('隊') ? name : `${name}小隊`;
     }
-
     function populateDropdowns() {
       const teamSelect = document.getElementById('stationTeamSelect');
       const optionsHtml = '<option value="">-- 請選擇小隊 --</option>' + 
         TEAM_NAMES.map(name => `<option value="${name}">${formatTeamName(name)}</option>`).join('');
       if (teamSelect) teamSelect.innerHTML = optionsHtml;
-
-      const trackFilter = document.getElementById('gpsTrackTeamFilter');
-      if (trackFilter) {
-        let filterHtml = '<option value="ALL">🌐 顯示所有隊伍軌跡</option>';
-        TEAM_NAMES.forEach(t => {
-          filterHtml += `<option value="${t}">📍 ${formatTeamName(t)} 軌跡</option>`;
-        });
-        trackFilter.innerHTML = filterHtml;
-      }
     }
-
     function openLoginModal() {
       const modal = document.getElementById('loginModal');
       if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
     }
-
     function toggleAuth() {
       if (currentUser) {
         handleLogout();
@@ -913,12 +732,10 @@
         openLoginModal();
       }
     }
-
     function handleLoginSubmit(event) {
       event.preventDefault();
       const username = document.getElementById('loginUsernameInput').value.trim();
       if (!username) { showToast('請輸入帳號', 'error'); return; }
-      
       if (username.toLowerCase() === 'admin') {
         currentUser = { id: 'admin', name: '大會總管理員', role: 'ADMIN' };
       } else if (STATIONS.some(s => s.id === username.toUpperCase())) {
@@ -931,926 +748,73 @@
       } else {
         currentUser = { id: username, name: username, role: 'STUDENT' };
       }
+      
+      try {
+        localStorage.setItem('xshs_current_user', JSON.stringify(currentUser));
+      } catch(e) {}
 
       const modal = document.getElementById('loginModal');
       if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
-      
       const userBadge = document.getElementById('userBadge');
       if (userBadge) { userBadge.classList.remove('hidden'); userBadge.classList.add('flex'); }
-      
       document.getElementById('currentUserName').innerText = currentUser.name;
       document.getElementById('currentUserRoleBadge').innerText = currentUser.role;
       document.getElementById('loginBtnText').innerText = '登出系統';
       document.getElementById('authBtnIcon').className = 'fa-solid fa-right-from-bracket text-xs';
-      
       showToast(`登入成功！歡迎 ${currentUser.name}`, 'success');
       renderViewsForRole();
     }
-
     function handleLogout() {
       if (gpsWatchId !== null && navigator.geolocation) {
         navigator.geolocation.clearWatch(gpsWatchId);
         gpsWatchId = null;
       }
       currentUser = null;
+      try {
+        localStorage.removeItem('xshs_current_user');
+      } catch(e) {}
+
       const userBadge = document.getElementById('userBadge');
       if (userBadge) { userBadge.classList.add('hidden'); userBadge.classList.remove('flex'); }
       document.getElementById('loginBtnText').innerText = '登入系統';
       document.getElementById('authBtnIcon').className = 'fa-solid fa-right-to-bracket text-xs';
-      
       document.getElementById('adminView').classList.add('hidden');
       document.getElementById('stationView').classList.add('hidden');
       document.getElementById('studentView').classList.add('hidden');
-      
       openLoginModal();
       showToast('已登出系統', 'info');
     }
 
-    function renderViewsForRole() {
-      const adminView = document.getElementById('adminView');
-      const stationView = document.getElementById('stationView');
-      const studentView = document.getElementById('studentView');
-
-      adminView.classList.add('hidden');
-      stationView.classList.add('hidden');
-      studentView.classList.add('hidden');
-
-      if (!currentUser) return;
-
-      if (currentUser.role === 'ADMIN') {
-        adminView.classList.remove('hidden');
-        renderAdminDashboard();
-      } else if (currentUser.role === 'STATION') {
-        stationView.classList.remove('hidden');
-        renderStationDashboard();
-      } else if (currentUser.role === 'STUDENT') {
-        studentView.classList.remove('hidden');
-        renderStudentDashboard();
-      }
-    }
-
-    function recordTeamGpsTrack(teamName, lat, lng) {
-      if (!teamName || !lat || !lng) return;
-      if (!localTracks[teamName]) {
-        localTracks[teamName] = [];
-      }
-      
-      const nowStr = new Date().toLocaleTimeString('zh-TW', { hour12: false });
-      const lastPoint = localTracks[teamName][localTracks[teamName].length - 1];
-      
-      // Avoid inserting exact duplicate coordinates
-      if (!lastPoint || lastPoint.lat !== lat || lastPoint.lng !== lng) {
-        localTracks[teamName].push({ lat, lng, timestamp: nowStr });
-        saveLocalDataToStorage();
-      }
-    }
-
-    function requestGpsPermission() {
-      if (!navigator.geolocation) {
-        showToast('您的瀏覽器不支援 GPS 定位功能', 'error');
-        return;
-      }
-
-      showToast('正在請求 GPS 定位權限...', 'info');
-      
-      if (gpsWatchId !== null) {
-        navigator.geolocation.clearWatch(gpsWatchId);
-      }
-
-      gpsWatchId = navigator.geolocation.watchPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          const nowStr = new Date().toLocaleTimeString('zh-TW', { hour12: false });
-
-          if (currentUser && currentUser.role === 'STUDENT') {
-            const teamObj = localTeams.find(t => t.team_name === currentUser.id);
-            if (teamObj) {
-              teamObj.lat = lat;
-              teamObj.lng = lng;
-              teamObj.gps_updated_at = nowStr;
-              recordTeamGpsTrack(currentUser.id, lat, lng);
-            }
-          }
-
-          const badge = document.getElementById('stuGpsStatusBadge');
-          if (badge) {
-            badge.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-300"></i> GPS已定位 (${nowStr})`;
-            badge.className = "px-2.5 py-0.5 bg-emerald-900/60 border border-emerald-300/40 text-emerald-200 text-[10px] sm:text-xs font-bold rounded-md flex items-center gap-1";
-          }
-
-          if (currentAdminTab === 'gps' && currentUser && currentUser.role === 'ADMIN') {
-            updateGpsMapDisplay();
-          }
-        },
-        (err) => {
-          console.warn("GPS error:", err);
-          const badge = document.getElementById('stuGpsStatusBadge');
-          if (badge) {
-            badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-300"></i> GPS未授權/無法存取`;
-            badge.className = "px-2.5 py-0.5 bg-rose-900/60 border border-rose-300/40 text-rose-200 text-[10px] sm:text-xs font-bold rounded-md flex items-center gap-1";
-          }
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
-      );
-    }
-
-    function initGpsLeafletMap() {
-      const container = document.getElementById('gpsLiveMap');
-      if (!container) return;
-
-      if (gpsLeafletMap) return;
-
-      // Center around XSHS default coordinates (approximate Xinshe High School Taiwan)
-      const defaultLat = 24.2285;
-      const defaultLng = 120.8125;
-
-      gpsLeafletMap = L.map('gpsLiveMap').setView([defaultLat, defaultLng], 17);
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-      }).addTo(gpsLeafletMap);
-
-      updateGpsMapDisplay();
-    }
-
-    function toggleGpsTracksVisibility() {
-      showGpsTracks = !showGpsTracks;
-      const btn = document.getElementById('toggleTracksBtn');
-      if (btn) {
-        btn.innerHTML = showGpsTracks ? '<i class="fa-solid fa-route mr-1"></i> 隱藏軌跡線' : '<i class="fa-solid fa-route mr-1"></i> 顯示軌跡線';
-      }
-      updateGpsMapTrackDisplay();
-    }
-
-    function updateGpsMapTrackDisplay() {
-      if (!gpsLeafletMap) return;
-
-      // Clear existing polylines
-      Object.keys(gpsLeafletPolylines).forEach(key => {
-        gpsLeafletMap.removeLayer(gpsLeafletPolylines[key]);
-      });
-      gpsLeafletPolylines = {};
-
-      if (!showGpsTracks) return;
-
-      const filterVal = document.getElementById('gpsTrackTeamFilter')?.value || 'ALL';
-
-      Object.keys(localTracks).forEach(teamName => {
-        if (filterVal !== 'ALL' && filterVal !== teamName) return;
-
-        const points = localTracks[teamName];
-        if (points && points.length >= 2) {
-          const latLngs = points.map(p => [p.lat, p.lng]);
-          const color = TEAM_COLORS[teamName] || '#3b82f6';
-
-          const polyline = L.polyline(latLngs, {
-            color: color,
-            weight: 4,
-            opacity: 0.8,
-            dashArray: '5, 8'
-          }).addTo(gpsLeafletMap);
-
-          polyline.bindPopup(`<b>${formatTeamName(teamName)} 移動軌跡</b><br>總軌跡紀錄點：${points.length} 點`);
-          gpsLeafletPolylines[teamName] = polyline;
-        }
-      });
-    }
-
-    function updateGpsMapDisplay() {
-      if (!gpsLeafletMap) return;
-
-      const validTeamsWithGps = localTeams.filter(t => t.lat && t.lng);
-
-      validTeamsWithGps.forEach(t => {
-        const lat = t.lat;
-        const lng = t.lng;
-        const color = TEAM_COLORS[t.team_name] || '#10b981';
-
-        if (gpsLeafletMarkers[t.team_name]) {
-          gpsLeafletMarkers[t.team_name].setLatLng([lat, lng]);
-        } else {
-          const customIcon = L.divIcon({
-            className: 'custom-gps-marker',
-            html: `<div style="background-color:${color}; color:#fff; font-weight:bold; font-size:10px; padding:3px 6px; border-radius:12px; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,0.3); whitespace:nowrap;">🚩 ${t.team_name}</div>`,
-            iconSize: [60, 24],
-            iconAnchor: [30, 12]
-          });
-
-          const marker = L.marker([lat, lng], { icon: customIcon }).addTo(gpsLeafletMap);
-          marker.bindPopup(`<b>${formatTeamName(t.team_name)}</b><br>最新定位時間: ${t.gps_updated_at || '剛才'}`);
-          gpsLeafletMarkers[t.team_name] = marker;
-        }
-      });
-
-      if (validTeamsWithGps.length > 0) {
-        const bounds = L.latLngBounds(validTeamsWithGps.map(t => [t.lat, t.lng]));
-        gpsLeafletMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 18 });
-      }
-
-      updateGpsMapTrackDisplay();
-      renderGpsCards();
-    }
-
-    function renderGpsCards() {
-      const grid = document.getElementById('gpsTeamGrid');
-      const statsGrid = document.getElementById('gpsTrackStatsGrid');
-
-      if (statsGrid) {
-        let statsHtml = '';
-        TEAM_NAMES.forEach(t => {
-          const pointCount = (localTracks[t] || []).length;
-          const color = TEAM_COLORS[t] || '#64748b';
-          statsHtml += `
-            <div class="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 flex justify-between items-center">
-              <span class="font-bold flex items-center gap-1" style="color:${color};"><i class="fa-solid fa-flag text-[10px]"></i> ${t}</span>
-              <span class="font-mono bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-[10px] font-bold">${pointCount} 點</span>
-            </div>
-          `;
-        });
-        statsGrid.innerHTML = statsHtml;
-      }
-
-      if (!grid) return;
-      
-      let html = '';
-      localTeams.forEach(t => {
-        const hasGps = t.lat && t.lng;
-        const tracksCount = (localTracks[t.team_name] || []).length;
-        html += `
-          <div class="glass-card p-3.5 rounded-2xl shadow-sm border ${hasGps ? 'border-emerald-300 dark:border-emerald-800' : 'border-slate-200 dark:border-slate-700'}">
-            <div class="flex justify-between items-center">
-              <h4 class="font-black text-sm text-slate-800 dark:text-white flex items-center gap-1.5">
-                <i class="fa-solid fa-flag ${hasGps ? 'text-emerald-500' : 'text-slate-400'}"></i> ${formatTeamName(t.team_name)}
-              </h4>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${hasGps ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200' : 'bg-slate-100 text-slate-500'}">
-                ${hasGps ? '● 定位連線中' : '○ 未提供定位'}
-              </span>
-            </div>
-            <div class="mt-2 text-xs space-y-1 text-slate-600 dark:text-slate-300 font-mono">
-              <p>座標: ${hasGps ? `${t.lat.toFixed(5)}, ${t.lng.toFixed(5)}` : '尚未取得'}</p>
-              <p>最後更新: ${t.gps_updated_at || '無'}</p>
-              <p>累積軌跡點: <span class="font-bold text-indigo-600 dark:text-indigo-400">${tracksCount} 個點位</span></p>
-            </div>
-          </div>
-        `;
-      });
-      grid.innerHTML = html;
-    }
-
-    function renderAdminDashboard() {
-      renderLeaderboard();
-      renderLogsTable();
-      renderAlertsTable();
-      renderRoutesTable();
-      checkAndTriggerEmergencyBanner();
-    }
-
-    function renderLeaderboard() {
-      const tbody = document.getElementById('leaderboardTableBody');
-      const podium = document.getElementById('topPodiumContainer');
-      if (!tbody) return;
-
-      // Calculate completed station count per team
-      const completedCountMap = {};
-      localLogs.forEach(log => {
-        if (!completedCountMap[log.team_name]) completedCountMap[log.team_name] = new Set();
-        completedCountMap[log.team_name].add(log.station_id);
-      });
-
-      // Find last timestamp per team
-      const lastTimeMap = {};
-      localLogs.forEach(log => {
-        if (!lastTimeMap[log.team_name] || log.created_at > lastTimeMap[log.team_name]) {
-          lastTimeMap[log.team_name] = log.created_at;
-        }
-      });
-
-      // Sort teams by total score descending
-      const sortedTeams = [...localTeams].sort((a, b) => b.total_score - a.total_score);
-
-      // Total score stat update
-      const totalPoints = localTeams.reduce((sum, t) => sum + (t.total_score || 0), 0);
-      document.getElementById('statTotalPoints').innerText = `${totalPoints} 分`;
-
-      // Render Top 3 Podium Cards
-      if (podium && sortedTeams.length >= 3) {
-        const gold = sortedTeams[0];
-        const silver = sortedTeams[1];
-        const bronze = sortedTeams[2];
-
-        podium.innerHTML = `
-          <div class="podium-card-1 p-4 rounded-2xl shadow-md relative overflow-hidden flex flex-col justify-between">
-            <div class="flex justify-between items-center">
-              <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-500 text-slate-900">🥇 第一名 (冠軍)</span>
-              <i class="fa-solid fa-crown text-2xl text-amber-600 animate-bounce"></i>
-            </div>
-            <div class="my-2">
-              <h4 class="text-xl font-black text-slate-900 dark:text-amber-100">${formatTeamName(gold.team_name)}</h4>
-              <p class="text-2xl font-black font-mono text-amber-700 dark:text-amber-300 mt-1">${gold.total_score} <span class="text-xs font-normal">分</span></p>
-            </div>
-            <p class="text-[11px] font-bold text-slate-700 dark:text-amber-200">已過關卡: ${(completedCountMap[gold.team_name] || new Set()).size} / 10 關</p>
-          </div>
-
-          <div class="podium-card-2 p-4 rounded-2xl shadow-md relative overflow-hidden flex flex-col justify-between">
-            <div class="flex justify-between items-center">
-              <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-slate-300 text-slate-900">🥈 第二名 (亞軍)</span>
-              <i class="fa-solid fa-medal text-2xl text-slate-500"></i>
-            </div>
-            <div class="my-2">
-              <h4 class="text-xl font-black text-slate-900 dark:text-slate-100">${formatTeamName(silver.team_name)}</h4>
-              <p class="text-2xl font-black font-mono text-slate-700 dark:text-slate-300 mt-1">${silver.total_score} <span class="text-xs font-normal">分</span></p>
-            </div>
-            <p class="text-[11px] font-bold text-slate-700 dark:text-slate-300">已過關卡: ${(completedCountMap[silver.team_name] || new Set()).size} / 10 關</p>
-          </div>
-
-          <div class="podium-card-3 p-4 rounded-2xl shadow-md relative overflow-hidden flex flex-col justify-between">
-            <div class="flex justify-between items-center">
-              <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-orange-400 text-slate-900">🥉 第三名 (季軍)</span>
-              <i class="fa-solid fa-award text-2xl text-orange-600"></i>
-            </div>
-            <div class="my-2">
-              <h4 class="text-xl font-black text-slate-900 dark:text-orange-100">${formatTeamName(bronze.team_name)}</h4>
-              <p class="text-2xl font-black font-mono text-orange-700 dark:text-orange-300 mt-1">${bronze.total_score} <span class="text-xs font-normal">分</span></p>
-            </div>
-            <p class="text-[11px] font-bold text-slate-700 dark:text-orange-200">已過關卡: ${(completedCountMap[bronze.team_name] || new Set()).size} / 10 關</p>
-          </div>
-        `;
-      }
-
-      // Render Full Leaderboard Table
-      let html = '';
-      sortedTeams.forEach((t, index) => {
-        const completedCount = (completedCountMap[t.team_name] || new Set()).size;
-        const progressPct = Math.round((completedCount / 10) * 100);
-        const lastTime = lastTimeMap[t.team_name] ? new Date(lastTimeMap[t.team_name]).toLocaleTimeString('zh-TW', { hour12: false }) : '-';
-
-        let rankBadge = `<span class="font-bold text-slate-600 dark:text-slate-400">#${index + 1}</span>`;
-        if (index === 0) rankBadge = `<span class="w-6 h-6 rounded-full bg-amber-400 text-slate-900 font-black inline-flex items-center justify-center text-xs shadow">1</span>`;
-        if (index === 1) rankBadge = `<span class="w-6 h-6 rounded-full bg-slate-300 text-slate-900 font-black inline-flex items-center justify-center text-xs shadow">2</span>`;
-        if (index === 2) rankBadge = `<span class="w-6 h-6 rounded-full bg-amber-600 text-white font-black inline-flex items-center justify-center text-xs shadow">3</span>`;
-
-        html += `
-          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-            <td class="px-3 sm:px-4 py-3 text-center">${rankBadge}</td>
-            <td class="px-3 sm:px-4 py-3 font-bold text-slate-800 dark:text-white whitespace-nowrap">${formatTeamName(t.team_name)}</td>
-            <td class="px-3 sm:px-4 py-3 min-w-[140px]">
-              <div class="flex justify-between items-center text-[11px] font-bold mb-1">
-                <span class="text-slate-500">${completedCount}/10 關</span>
-                <span class="text-amber-600">${progressPct}%</span>
-              </div>
-              <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
-                <div class="bg-amber-500 h-2 rounded-full" style="width: ${progressPct}%;"></div>
-              </div>
-            </td>
-            <td class="px-3 sm:px-4 py-3 text-right font-black font-mono text-emerald-600 dark:text-emerald-400 text-base whitespace-nowrap">${t.total_score} 分</td>
-            <td class="px-3 sm:px-4 py-3 text-right text-xs font-mono text-slate-500 whitespace-nowrap">${lastTime}</td>
-          </tr>
-        `;
-      });
-      tbody.innerHTML = html;
-    }
-
-    function renderLogsTable() {
-      const tbody = document.getElementById('logsTableBody');
-      if (!tbody) return;
-
-      let html = '';
-      localLogs.forEach(item => {
-        const st = STATIONS.find(s => s.id === item.station_id);
-        const stName = st ? st.name : `關卡 ${item.station_id}`;
-        const timeStr = item.created_at ? new Date(item.created_at).toLocaleString('zh-TW', { hour12: false }) : '-';
-        const ip = getRecordIp(item);
-        const note = cleanNoteText(item.note);
-
-        html += `
-          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-            <td class="px-3 sm:px-4 py-2.5 font-mono text-xs whitespace-nowrap">${timeStr}</td>
-            <td class="px-3 sm:px-4 py-2.5 font-bold text-slate-800 dark:text-white whitespace-nowrap">${stName}</td>
-            <td class="px-3 sm:px-4 py-2.5 font-bold text-teal-600 dark:text-teal-400 whitespace-nowrap">${formatTeamName(item.team_name)}</td>
-            <td class="px-3 sm:px-4 py-2.5 text-right font-black font-mono ${item.points >= 0 ? 'text-emerald-600' : 'text-rose-600'} whitespace-nowrap">${item.points > 0 ? '+' : ''}${item.points} 分</td>
-            <td class="px-3 sm:px-4 py-2.5 text-xs font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">${item.created_by || '系統'}</td>
-            <td class="px-3 sm:px-4 py-2.5 text-xs font-mono text-slate-400 whitespace-nowrap">${ip}</td>
-            <td class="px-3 sm:px-4 py-2.5 text-xs text-slate-600 dark:text-slate-300">${note}</td>
-            <td class="px-3 sm:px-4 py-2.5 text-center whitespace-nowrap">
-              <button onclick="openConfirmModal('確定要刪除這筆得分紀錄並回扣隊伍分數嗎？', () => deleteLogRecord('${item.id}', '${item.team_name}', ${item.points}))" class="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 rounded-lg text-xs font-bold transition">刪除</button>
-            </td>
-          </tr>
-        `;
-      });
-      tbody.innerHTML = html || `<tr><td colspan="8" class="text-center py-6 text-slate-400">尚無任何得分審核紀錄</td></tr>`;
-    }
-
-    function submitEmergencyAlert() {
-      const type = document.getElementById('emergencyTypeSelect').value;
-      const message = document.getElementById('emergencyMessageInput').value.trim();
-
-      if (!message) {
-        showToast('請填寫詳細狀況說明', 'error');
-        return;
-      }
-
-      const alertItem = {
-        id: 'ALT_' + Date.now(),
-        station_id: currentUser ? currentUser.id : 'GUEST',
-        alert_type: type,
-        message: message,
-        created_at: new Date().toISOString(),
-        created_by: currentUser ? currentUser.name : '匿名通報',
-        ip: clientIp || '127.0.0.1',
-        is_resolved: false,
-        resolution_note: ''
-      };
-
-      localAlerts.unshift(alertItem);
-      saveLocalDataToStorage();
-
-      document.getElementById('emergencyMessageInput').value = '';
-      closeEmergencyModal();
-
-      playBeep(880, 'sawtooth', 0.5);
-      showToast('🚨 求助訊息已成功發送至大會控制台！', 'warning');
-
-      checkAndTriggerEmergencyBanner();
-      if (currentUser && currentUser.role === 'ADMIN') {
-        renderAlertsTable();
-      }
-    }
-
-    function checkAndTriggerEmergencyBanner() {
-      const pendingAlerts = localAlerts.filter(a => !a.is_resolved);
-      const pendingCount = pendingAlerts.length;
-
-      const statEl = document.getElementById('statPendingAlerts');
-      if (statEl) statEl.innerText = `${pendingCount} 件`;
-
-      const badge = document.getElementById('adminHeaderSosBadge');
-      const countSpan = document.getElementById('adminHeaderSosCount');
-      if (badge && countSpan) {
-        if (pendingCount > 0) {
-          countSpan.innerText = pendingCount;
-          badge.classList.remove('hidden');
-          badge.classList.add('flex');
-        } else {
-          badge.classList.add('hidden');
-          badge.classList.remove('flex');
-        }
-      }
-
-      const alertsBadgeCount = document.getElementById('alertsBadgeCount');
-      if (alertsBadgeCount) {
-        if (pendingCount > 0) {
-          alertsBadgeCount.innerText = pendingCount;
-          alertsBadgeCount.classList.remove('hidden');
-          alertsBadgeCount.classList.add('flex');
-        } else {
-          alertsBadgeCount.classList.add('hidden');
-        }
-      }
-
-      const banner = document.getElementById('adminEmergencyBanner');
-      if (banner) {
-        if (pendingCount > 0) {
-          const latest = pendingAlerts[0];
-          document.getElementById('adminEmergencyTime').innerText = new Date(latest.created_at).toLocaleTimeString('zh-TW', { hour12: false });
-          document.getElementById('adminEmergencyText').innerText = `[${latest.station_id}] ${latest.alert_type} - ${latest.message}`;
-          banner.classList.remove('hidden');
-          banner.classList.add('flex');
-        } else {
-          banner.classList.add('hidden');
-          banner.classList.remove('flex');
-        }
-      }
-    }
-
-    function openResolveAlertModal() {
-      const pending = localAlerts.find(a => !a.is_resolved);
-      if (!pending) { showToast('目前無待處置的求助通報', 'info'); return; }
-
-      pendingResolveAlertId = pending.id;
-      document.getElementById('resModalStation').innerText = pending.station_id;
-      document.getElementById('resModalType').innerText = pending.alert_type;
-      document.getElementById('resModalMsg').innerText = pending.message;
-      document.getElementById('resolutionNoteInput').value = '';
-
-      const modal = document.getElementById('resolveAlertModal');
-      if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
-    }
-
-    function closeResolveAlertModal() {
-      const modal = document.getElementById('resolveAlertModal');
-      if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
-      pendingResolveAlertId = null;
-    }
-
-    function confirmResolveAlert() {
-      const note = document.getElementById('resolutionNoteInput').value.trim();
-      if (!note) { showToast('請填寫大會處置說明備註', 'error'); return; }
-
-      const item = localAlerts.find(a => a.id === pendingResolveAlertId);
-      if (item) {
-        item.is_resolved = true;
-        item.resolution_note = note;
-        saveLocalDataToStorage();
-        showToast('已完成事件處置與警報核銷', 'success');
-      }
-
-      closeResolveAlertModal();
-      checkAndTriggerEmergencyBanner();
-      renderAlertsTable();
-    }
-
-    function renderAlertsTable() {
-      const tbody = document.getElementById('alertsTableBody');
-      if (!tbody) return;
-
-      let html = '';
-      localAlerts.forEach(a => {
-        const timeStr = a.created_at ? new Date(a.created_at).toLocaleString('zh-TW', { hour12: false }) : '-';
-        const ip = getRecordIp(a);
-
-        html += `
-          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-            <td class="px-3 sm:px-4 py-2.5 font-mono text-xs whitespace-nowrap">${timeStr}</td>
-            <td class="px-3 sm:px-4 py-2.5 font-bold text-slate-800 dark:text-white whitespace-nowrap">${a.station_id}</td>
-            <td class="px-3 sm:px-4 py-2.5 font-bold text-rose-600 whitespace-nowrap">${a.alert_type}</td>
-            <td class="px-3 sm:px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300">${a.message}</td>
-            <td class="px-3 sm:px-4 py-2.5 text-xs font-mono text-slate-500 whitespace-nowrap">${a.created_by || '系統'}</td>
-            <td class="px-3 sm:px-4 py-2.5 text-xs font-mono text-slate-400 whitespace-nowrap">${ip}</td>
-            <td class="px-3 sm:px-4 py-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">${a.resolution_note || '尚無備註'}</td>
-            <td class="px-3 sm:px-4 py-2.5 text-center whitespace-nowrap">
-              ${a.is_resolved 
-                ? '<span class="px-2 py-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 rounded-lg text-xs font-bold">已核銷</span>' 
-                : `<button onclick="openSpecificResolveModal('${a.id}')" class="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow">點擊處置</button>`}
-            </td>
-          </tr>
-        `;
-      });
-      tbody.innerHTML = html || `<tr><td colspan="8" class="text-center py-6 text-slate-400">目前沒有任何求助與事件紀錄</td></tr>`;
-    }
-
-    function openSpecificResolveModal(id) {
-      const item = localAlerts.find(a => a.id === id);
-      if (!item) return;
-      pendingResolveAlertId = id;
-      document.getElementById('resModalStation').innerText = item.station_id;
-      document.getElementById('resModalType').innerText = item.alert_type;
-      document.getElementById('resModalMsg').innerText = item.message;
-      document.getElementById('resolutionNoteInput').value = '';
-
-      const modal = document.getElementById('resolveAlertModal');
-      if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
-    }
-
-    function renderStationDashboard() {
-      if (!currentUser || currentUser.role !== 'STATION') return;
-      const st = STATIONS.find(s => s.id === currentUser.id);
-      if (!st) return;
-
-      document.getElementById('stationTitle').innerText = st.name;
-      document.getElementById('stationLocation').innerText = `地點：${st.location}`;
-      document.getElementById('stationStaffInfo').innerText = `負責關主：${st.staff}`;
-
-      // Rules content
-      document.getElementById('ruleModalGameTitle').innerText = `${st.name} 遊戲規則`;
-      document.getElementById('ruleModalStaff').innerText = st.staff;
-      document.getElementById('ruleModalProps').innerText = st.props;
-      document.getElementById('ruleModalDescription').innerText = st.rules;
-      document.getElementById('ruleModalAdvice').innerText = st.advice;
-
+    window.addEventListener('DOMContentLoaded', () => {
+      loadLocalAlertsFromStorage();
+      fetchClientIp();
       populateDropdowns();
-      updateStationStats();
-      renderStationLogs();
-    }
-
-    function updateStationStats() {
-      if (!currentUser || currentUser.role !== 'STATION') return;
-      const stId = currentUser.id;
-      const logs = localLogs.filter(l => l.station_id === stId);
-
-      const completedTeams = new Set(logs.map(l => l.team_name));
-      const completedCount = completedTeams.size;
-
-      document.getElementById('stStatCompleted').innerText = `${completedCount} / 20 隊`;
-      document.getElementById('stStatRemaining').innerText = `${20 - completedCount} 隊`;
-
-      if (logs.length > 0) {
-        const totalPoints = logs.reduce((sum, l) => sum + l.points, 0);
-        const avg = Math.round(totalPoints / logs.length);
-        document.getElementById('stStatAvg').innerText = `${avg} 分`;
-
-        const topLog = [...logs].sort((a, b) => b.points - a.points)[0];
-        document.getElementById('stStatTop').innerText = `${formatTeamName(topLog.team_name)} (${topLog.points}分)`;
-      } else {
-        document.getElementById('stStatAvg').innerText = `0 分`;
-        document.getElementById('stStatTop').innerText = `尚無紀錄`;
-      }
-    }
-
-    function setScoringMode(mode) {
-      const presetBox = document.getElementById('scoringPresetBox');
-      const rubricBox = document.getElementById('scoringRubricBox');
-      const btnPreset = document.getElementById('scoreModeBtnPreset');
-      const btnRubric = document.getElementById('scoreModeBtnRubric');
-
-      if (mode === 'preset') {
-        presetBox.classList.remove('hidden');
-        rubricBox.classList.add('hidden');
-        btnPreset.className = 'px-2.5 py-1 bg-white dark:bg-slate-700 text-teal-700 dark:text-teal-300 rounded-lg shadow-sm transition font-bold';
-        btnRubric.className = 'px-2.5 py-1 text-slate-600 dark:text-slate-400 rounded-lg transition font-bold';
-      } else {
-        presetBox.classList.add('hidden');
-        rubricBox.classList.remove('hidden');
-        btnRubric.className = 'px-2.5 py-1 bg-white dark:bg-slate-700 text-teal-700 dark:text-teal-300 rounded-lg shadow-sm transition font-bold';
-        btnPreset.className = 'px-2.5 py-1 text-slate-600 dark:text-slate-400 rounded-lg transition font-bold';
-      }
-    }
-
-    function calculateRubric() {
-      const r1 = parseInt(document.getElementById('rubric1').value) || 0;
-      const r2 = parseInt(document.getElementById('rubric2').value) || 0;
-      const r3 = parseInt(document.getElementById('rubric3').value) || 0;
-      const sum = r1 + r2 + r3;
-      document.getElementById('rubricTotal').innerText = `${sum} 分`;
-      document.getElementById('stationPointsInput').value = sum;
-    }
-
-    function submitStationScore() {
-      const team = document.getElementById('stationTeamSelect').value;
-      const points = parseInt(document.getElementById('stationPointsInput').value);
-      const note = document.getElementById('stationNoteInput').value.trim();
-
-      if (!team) { showToast('請選擇前來闖關的小隊', 'error'); return; }
-      if (isNaN(points)) { showToast('請輸入有效得分', 'error'); return; }
-      if (!note) { showToast('請填寫備註說明 (必填)', 'error'); return; }
-
-      const stId = currentUser ? currentUser.id : 'A';
-
-      const newLog = {
-        id: 'LOG_' + Date.now(),
-        station_id: stId,
-        team_name: team,
-        points: points,
-        note: note,
-        created_at: new Date().toISOString(),
-        created_by: currentUser ? currentUser.name : '關主',
-        ip: clientIp || '127.0.0.1'
-      };
-
-      localLogs.unshift(newLog);
-
-      // Update team total score
-      const teamObj = localTeams.find(t => t.team_name === team);
-      if (teamObj) {
-        teamObj.total_score = (teamObj.total_score || 0) + points;
-      }
-
-      saveLocalDataToStorage();
-
-      document.getElementById('stationPointsInput').value = '';
-      document.getElementById('stationNoteInput').value = '';
-      document.getElementById('stationTeamSelect').value = '';
-
-      playBeep(523.25, 'sine', 0.25);
-      showToast(`成功為 ${formatTeamName(team)} 登記 ${points} 分！`, 'success');
-
-      updateStationStats();
-      renderStationLogs();
-    }
-
-    function undoLastStationScore() {
-      if (!currentUser || currentUser.role !== 'STATION') return;
-      const stId = currentUser.id;
-      const lastIndex = localLogs.findIndex(l => l.station_id === stId);
-
-      if (lastIndex === -1) { showToast('尚無可撤銷的加分紀錄', 'info'); return; }
-
-      const item = localLogs[lastIndex];
-      const teamObj = localTeams.find(t => t.team_name === item.team_name);
-      if (teamObj) {
-        teamObj.total_score -= item.points;
-      }
-
-      localLogs.splice(lastIndex, 1);
-      saveLocalDataToStorage();
-
-      showToast(`已撤銷 ${formatTeamName(item.team_name)} 上筆給分 (${item.points}分)`, 'success');
-      updateStationStats();
-      renderStationLogs();
-    }
-
-    function deleteLogRecord(logId, teamName, points) {
-      const idx = localLogs.findIndex(l => l.id === logId);
-      if (idx !== -1) {
-        localLogs.splice(idx, 1);
-        const teamObj = localTeams.find(t => t.team_name === teamName);
-        if (teamObj) teamObj.total_score -= points;
-        saveLocalDataToStorage();
-        showToast('已刪除得分紀錄並扣除分數', 'success');
-        renderLogsTable();
-        renderLeaderboard();
-      }
-    }
-
-    function renderStationLogs() {
-      const tbody = document.getElementById('stationLogsBody');
-      if (!tbody || !currentUser) return;
-      const stId = currentUser.id;
-      const logs = localLogs.filter(l => l.station_id === stId);
-
-      let html = '';
-      logs.forEach(l => {
-        const timeStr = l.created_at ? new Date(l.created_at).toLocaleTimeString('zh-TW', { hour12: false }) : '-';
-        const ip = getRecordIp(l);
-        const note = cleanNoteText(l.note);
-
-        html += `
-          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-            <td class="px-3 sm:px-4 py-2 font-mono text-xs whitespace-nowrap">${timeStr}</td>
-            <td class="px-3 sm:px-4 py-2 font-bold text-slate-800 dark:text-white whitespace-nowrap">${formatTeamName(l.team_name)}</td>
-            <td class="px-3 sm:px-4 py-2 text-right font-black font-mono ${l.points >= 0 ? 'text-emerald-600' : 'text-rose-600'} whitespace-nowrap">${l.points > 0 ? '+' : ''}${l.points} 分</td>
-            <td class="px-3 sm:px-4 py-2 text-xs font-mono text-slate-500 whitespace-nowrap">${l.created_by || '關主'}</td>
-            <td class="px-3 sm:px-4 py-2 text-xs font-mono text-slate-400 whitespace-nowrap">${ip}</td>
-            <td class="px-3 sm:px-4 py-2 text-xs text-slate-600 dark:text-slate-300">${note}</td>
-          </tr>
-        `;
-      });
-      tbody.innerHTML = html || `<tr><td colspan="6" class="text-center py-6 text-slate-400">本關卡尚無加分紀錄</td></tr>`;
-    }
-
-    function renderStudentDashboard() {
-      if (!currentUser || currentUser.role !== 'STUDENT') return;
-      const teamId = currentUser.id;
-
-      document.getElementById('studentTeamTitle').innerText = `${formatTeamName(teamId)} 闖關首頁`;
-
-      // Calculate team total score
-      const teamObj = localTeams.find(t => t.team_name === teamId);
-      const score = teamObj ? teamObj.total_score : 0;
-      document.getElementById('studentTotalScore').innerText = score;
-
-      // Completed stations set
-      const teamLogs = localLogs.filter(l => l.team_name === teamId);
-      const completedStations = new Set(teamLogs.map(l => l.station_id));
-      const completedCount = completedStations.size;
-
-      document.getElementById('studentCompletedCountText').innerText = `${completedCount}/10 關`;
-      document.getElementById('studentProgressBadge').innerText = `已過 ${completedCount} / 10 關`;
-
-      renderIntegratedStampGrid(completedStations);
-      renderStudentRouteStepper(teamId, completedStations);
-      renderStudentLogs(teamLogs);
-    }
-
-    function renderIntegratedStampGrid(completedStations) {
-      const grid = document.getElementById('stuStampGrid');
-      const bar = document.getElementById('stuStampProgressBar');
-      const text = document.getElementById('stuStampProgressText');
-
-      if (!grid) return;
-
-      const completedCount = completedStations.size;
-      const pct = Math.round((completedCount / 10) * 100);
-
-      if (bar) bar.style.width = `${pct}%`;
-      if (text) text.innerText = `${pct}% (${completedCount}/10關)`;
-
-      let html = '';
-      STATIONS.forEach(st => {
-        const isPassed = completedStations.has(st.id);
-        html += `
-          <div class="stamp-badge ${isPassed ? 'completed bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-500' : 'bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700'} p-3 rounded-2xl flex flex-col justify-between h-28 relative shadow-sm">
-            <div class="flex justify-between items-center">
-              <span class="w-6 h-6 rounded-full ${isPassed ? 'bg-amber-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'} font-black text-xs flex items-center justify-center">${st.id}</span>
-              <span class="text-[10px] font-bold ${isPassed ? 'text-amber-600' : 'text-slate-400'}">${isPassed ? '已集章' : '未到關'}</span>
-            </div>
-            <div class="my-auto text-center">
-              <p class="font-bold text-xs text-slate-800 dark:text-white line-clamp-1">${st.gameName}</p>
-              <p class="text-[10px] text-slate-500 truncate">${st.location}</p>
-            </div>
-          </div>
-        `;
-      });
-      grid.innerHTML = html;
-    }
-
-    function renderStudentRouteStepper(teamId, completedStations) {
-      const stepper = document.getElementById('routeStepper');
-      if (!stepper) return;
-
-      // Class team index to station route formula
-      const teamIndex = TEAM_NAMES.indexOf(teamId);
-      const activeSlotIndex = 0; // Current time slot demo index
-
-      let html = '';
-      TIME_SLOTS.forEach((slot, index) => {
-        const stationIdx = (teamIndex + index) % STATIONS.length;
-        const station = STATIONS[stationIdx];
-        const isCompleted = completedStations.has(station.id);
-        const isActive = (index === activeSlotIndex);
-
-        if (isActive) {
-          document.getElementById('stuActiveTimeSlotText').innerText = `時段 ${index + 1} (${slot})`;
-          document.getElementById('stuActiveStationTitle').innerText = station.name;
-          document.getElementById('stuActiveLocationText').innerText = station.location;
-          document.getElementById('stuActiveStaffText').innerText = `關主：${station.staff}`;
-          document.getElementById('stuActiveGameRulesText').innerText = `遊戲：${station.gameName}｜道具：${station.props}`;
+      
+      try {
+        const savedUser = localStorage.getItem('xshs_current_user');
+        if (savedUser) {
+          currentUser = JSON.parse(savedUser);
+          if (currentUser) {
+            const modal = document.getElementById('loginModal');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+            const userBadge = document.getElementById('userBadge');
+            if (userBadge) { userBadge.classList.remove('hidden'); userBadge.classList.add('flex'); }
+            document.getElementById('currentUserName').innerText = currentUser.name;
+            document.getElementById('currentUserRoleBadge').innerText = currentUser.role;
+            document.getElementById('loginBtnText').innerText = '登出系統';
+            document.getElementById('authBtnIcon').className = 'fa-solid fa-right-from-bracket text-xs';
+            if (currentUser.role === 'STUDENT') {
+              requestGpsPermission();
+            }
+            renderViewsForRole();
+          }
+        } else {
+          openLoginModal();
         }
-
-        html += `
-          <div class="p-3 rounded-2xl border flex items-center justify-between gap-3 ${isActive ? 'bg-amber-50 border-amber-400 dark:bg-amber-950/40 shadow-sm' : isCompleted ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}">
-            <div class="flex items-center gap-3">
-              <span class="w-8 h-8 rounded-xl ${isCompleted ? 'bg-emerald-500 text-white' : isActive ? 'bg-amber-500 text-white animate-pulse' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'} font-black text-xs flex items-center justify-center shrink-0">
-                ${station.id}
-              </span>
-              <div>
-                <p class="font-bold text-xs sm:text-sm text-slate-800 dark:text-white flex items-center gap-2">
-                  <span>${station.gameName}</span>
-                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">${slot}</span>
-                </p>
-                <p class="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5"><i class="fa-solid fa-location-dot text-rose-500"></i> ${station.location}</p>
-              </div>
-            </div>
-            <span class="text-xs font-bold shrink-0 ${isCompleted ? 'text-emerald-600' : isActive ? 'text-amber-600' : 'text-slate-400'}">
-              ${isCompleted ? '✓ 已過關' : isActive ? '🎯 當前目標' : '未到達'}
-            </span>
-          </div>
-        `;
-      });
-      stepper.innerHTML = html;
-    }
-
-    function renderStudentLogs(teamLogs) {
-      const tbody = document.getElementById('studentLogsTableBody');
-      if (!tbody) return;
-
-      let html = '';
-      teamLogs.forEach(l => {
-        const st = STATIONS.find(s => s.id === l.station_id);
-        const timeStr = l.created_at ? new Date(l.created_at).toLocaleString('zh-TW', { hour12: false }) : '-';
-        const ip = getRecordIp(l);
-        const note = cleanNoteText(l.note);
-
-        html += `
-          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-            <td class="px-3 sm:px-4 py-2.5 font-mono text-xs whitespace-nowrap">${timeStr}</td>
-            <td class="px-3 sm:px-4 py-2.5 font-bold text-slate-800 dark:text-white whitespace-nowrap">${st ? st.name : l.station_id}</td>
-            <td class="px-3 sm:px-4 py-2.5 text-right font-black font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap">+${l.points} 分</td>
-            <td class="px-3 sm:px-4 py-2.5 text-xs font-mono text-slate-500 whitespace-nowrap">${l.created_by || '關主'}</td>
-            <td class="px-3 sm:px-4 py-2.5 text-xs font-mono text-slate-400 whitespace-nowrap">${ip}</td>
-            <td class="px-3 sm:px-4 py-2.5 text-xs text-slate-600 dark:text-slate-300">${note}</td>
-          </tr>
-        `;
-      });
-      tbody.innerHTML = html || `<tr><td colspan="6" class="text-center py-6 text-slate-400">目前尚無過關得分紀錄</td></tr>`;
-    }
-
-    function renderRoutesTable() {
-      const container = document.getElementById('routesContainer');
-      if (!container) return;
-
-      let html = '';
-      TEAM_NAMES.forEach((team, tIdx) => {
-        html += `
-          <div class="glass-card p-3.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-2">
-            <h4 class="font-black text-sm text-teal-700 dark:text-teal-300 flex items-center gap-1.5"><i class="fa-solid fa-flag"></i> ${formatTeamName(team)} 動線表</h4>
-            <div class="space-y-1 text-xs">
-        `;
-        TIME_SLOTS.forEach((slot, sIdx) => {
-          const stIdx = (tIdx + sIdx) % STATIONS.length;
-          const st = STATIONS[stIdx];
-          html += `
-            <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-1.5 rounded-lg">
-              <span class="font-mono text-slate-500 text-[10px]">${slot}</span>
-              <span class="font-bold text-slate-800 dark:text-white">${st.id}關 (${st.gameName})</span>
-            </div>
-          `;
-        });
-        html += `</div></div>`;
-      });
-      container.innerHTML = html;
-    }
-
-    function openTeamQrModal() {
-      if (!currentUser) return;
-      const teamId = currentUser.id;
-      const modal = document.getElementById('teamQrModal');
-      const img = document.getElementById('qrImage');
-      const name = document.getElementById('teamQrName');
-
-      if (img) {
-        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(teamId)}`;
+      } catch(e) {
+        openLoginModal();
       }
-      if (name) name.innerText = formatTeamName(teamId);
-
-      if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
-    }
-
-    function closeTeamQrModal() {
-      const modal = document.getElementById('teamQrModal');
-      if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
-    }
+    });
 
     async function openQrScannerModal() {
       const modal = document.getElementById('qrScannerModal');
@@ -1870,295 +834,128 @@
         );
         if (statusEl) statusEl.innerText = '已開啟相機，請對準隊伍的 QR Code 進行簽到';
       } catch (err) {
-        console.error("Camera error:", err);
-        if (statusEl) statusEl.innerText = '無法啟動相機，請檢查硬體存取權限';
+        console.error("Camera access error:", err);
+        if (statusEl) statusEl.innerText = '無法存取相機，請確認已授予相機瀏覽權限！';
+        showToast('無法開啟鏡頭，請允許相機權限後再試', 'error');
       }
     }
-
-    function closeQrScannerModal() {
+    function onQrCodeSuccess(decodedText) {
+      const raw = (decodedText || '').trim().toUpperCase();
+      const matchedTeam = TEAM_NAMES.find(t => raw === t || raw.includes(t));
+      if (matchedTeam) {
+        const selectEl = document.getElementById('stationTeamSelect');
+        if (selectEl) selectEl.value = matchedTeam;
+        showToast(`🎉 成功掃描簽到：${formatTeamName(matchedTeam)}！`, 'success');
+        playBeep(880, 'sine', 0.25);
+        closeQrScannerModal();
+      } else {
+        showToast(`掃描到的無效內容：${decodedText}`, 'error');
+      }
+    }
+    function onQrCodeError() {}
+    async function closeQrScannerModal() {
       if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().catch(err => console.error(err));
+        try {
+          await html5QrCode.stop();
+        } catch (e) {
+          console.warn('Error stopping camera:', e);
+        }
       }
       const modal = document.getElementById('qrScannerModal');
       if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
     }
-
-    function onQrCodeSuccess(decodedText) {
-      playBeep(600, 'sine', 0.2);
-      closeQrScannerModal();
-
-      const matchedTeam = TEAM_NAMES.find(t => t.toLowerCase() === decodedText.trim().toLowerCase());
-      if (matchedTeam) {
-        const select = document.getElementById('stationTeamSelect');
-        if (select) select.value = matchedTeam;
-        showToast(`QR 碼帶入成功：${formatTeamName(matchedTeam)}`, 'success');
-      } else {
-        showToast(`掃描結果：${decodedText} (非有效隊伍碼)`, 'warning');
+    function requestGpsPermission() {
+      if (!navigator.geolocation) {
+        showToast('此裝置或瀏覽器不支援 GPS 地理定位', 'error');
+        return;
       }
+      const statusBadge = document.getElementById('stuGpsStatusBadge');
+      gpsWatchId = navigator.geolocation.watchPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const nowIso = new Date().toISOString();
+          if (statusBadge) {
+            statusBadge.className = "px-2.5 py-0.5 bg-emerald-900/85 border border-emerald-400 text-emerald-200 text-[10px] sm:text-xs font-bold rounded-md flex items-center gap-1";
+            statusBadge.innerHTML = `<i class="fa-solid fa-location-dot text-emerald-400"></i> GPS已連線 (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+          }
+          if (currentUser && currentUser.role === 'STUDENT') {
+            const teamId = currentUser.id;
+            if (!teamLocationHistory[teamId]) teamLocationHistory[teamId] = [];
+            teamLocationHistory[teamId].push({ lat, lng, time: nowIso });
+
+            await supabaseClient.from('teams').update({
+              lat: lat,
+              lng: lng,
+              gps_updated_at: nowIso
+            }).eq('team_name', teamId);
+          }
+        },
+        (error) => {
+          console.warn('GPS position warning:', error);
+          if (statusBadge) {
+            statusBadge.className = "px-2.5 py-0.5 bg-rose-900/85 border border-rose-400 text-rose-200 text-[10px] sm:text-xs font-bold rounded-md flex items-center gap-1";
+            statusBadge.innerHTML = `<i class="fa-solid fa-location-slash text-rose-400"></i> GPS未授權/收訊弱`;
+          }
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+      );
     }
-
-    function onQrCodeError(errorMessage) {}
-
-    function openEmergencyModal() {
-      const modal = document.getElementById('emergencyModal');
-      if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    function setupRealtimeSubscriptions() {
+      setInterval(refreshData, 3000);
     }
-
-    function closeEmergencyModal() {
-      const modal = document.getElementById('emergencyModal');
-      if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+    function formatTaiwanTime(isoString) {
+      if (!isoString) return '';
+      const d = new Date(isoString);
+      return d.toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
-
-    function openMapModal() {
-      const modal = document.getElementById('mapModal');
-      if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
-    }
-
-    function closeMapModal() {
-      const modal = document.getElementById('mapModal');
-      if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
-    }
-
-    function openConfirmModal(msg, action) {
-      pendingConfirmAction = action;
+    function openConfirmModal(msg, onConfirmFn) {
       document.getElementById('confirmModalMsg').innerText = msg;
+      pendingConfirmAction = onConfirmFn;
       const modal = document.getElementById('confirmModal');
       if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
     }
-
-    function closeConfirmModal(executed) {
+    function closeConfirmModal(confirmed) {
       const modal = document.getElementById('confirmModal');
       if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
-      if (executed && typeof pendingConfirmAction === 'function') {
+      if (confirmed && typeof pendingConfirmAction === 'function') {
         pendingConfirmAction();
       }
       pendingConfirmAction = null;
     }
-
-    function confirmResetData() {
-      localLogs = [];
-      localTeams.forEach(t => t.total_score = 0);
-      saveLocalDataToStorage();
-      showToast('已成功重置所有闖關成績與紀錄', 'success');
-      renderAdminDashboard();
+    function openEmergencyModal() {
+      const modal = document.getElementById('emergencyModal');
+      if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
     }
-
-    function toggleTimer() {
-      if (isStationTimerRunning) {
-        clearInterval(stationTimerInterval);
-        isStationTimerRunning = false;
-        document.getElementById('timerStartBtn').innerHTML = '<i class="fa-solid fa-play"></i> 開始計時';
-      } else {
-        isStationTimerRunning = true;
-        document.getElementById('timerStartBtn').innerHTML = '<i class="fa-solid fa-pause"></i> 暫停計時';
-        stationTimerInterval = setInterval(() => {
-          if (stationTimerMode === 'countdown') {
-            if (stationTimerSeconds > 0) {
-              stationTimerSeconds--;
-            } else {
-              clearInterval(stationTimerInterval);
-              isStationTimerRunning = false;
-              playBeep(880, 'square', 0.8);
-              showToast('⏰ 關卡計時結束！', 'warning');
-              document.getElementById('timerStartBtn').innerHTML = '<i class="fa-solid fa-play"></i> 開始計時';
-            }
-          } else {
-            stationTimerSeconds++;
-          }
-          updateTimerDisplay();
-        }, 1000);
+    function closeEmergencyModal() {
+      const modal = document.getElementById('emergencyModal');
+      if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+    }
+    async function submitEmergencyAlert() {
+      const type = document.getElementById('emergencyTypeSelect').value;
+      const msg = document.getElementById('emergencyMessageInput').value.trim();
+      if (!msg) { showToast('請填寫詳細狀況說明！', 'error'); return; }
+      const stationName = currentUser ? (STATIONS.find(s=>s.id===currentUser.id)?.name || currentUser.name) : '未知來源';
+      const operatorAccount = currentUser ? currentUser.id : '匿名/未知';
+      const newAlert = {
+        station_name: stationName,
+        type: type,
+        message: `${msg} [帳號: ${operatorAccount}] [IP: ${clientIp}]`,
+        status: 'PENDING',
+        created_at: new Date().toISOString()
+      };
+      
+      const { error } = await supabaseClient.from('alerts').insert([newAlert]);
+      if (error) {
+        console.warn('Supabase alert insert fallback:', error);
       }
+
+      localAlerts.unshift({ id: Date.now(), ...newAlert });
+      saveLocalAlertsToStorage();
+      closeEmergencyModal();
+      showToast('求助通報已成功發送至資料庫與大會！', 'success');
+      refreshData();
     }
-
-    function resetTimer() {
-      if (stationTimerInterval) clearInterval(stationTimerInterval);
-      isStationTimerRunning = false;
-      stationTimerSeconds = (stationTimerMode === 'countdown') ? 300 : 0;
-      document.getElementById('timerStartBtn').innerHTML = '<i class="fa-solid fa-play"></i> 開始計時';
-      updateTimerDisplay();
-    }
-
-    function setStationTimerMode(mode) {
-      stationTimerMode = mode;
-      document.getElementById('stTimerMode-countdown').className = mode === 'countdown' ? 'px-2 py-1 text-[10px] font-bold bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-300 shadow-sm rounded' : 'px-2 py-1 text-[10px] font-bold text-slate-500 rounded';
-      document.getElementById('stTimerMode-stopwatch').className = mode === 'stopwatch' ? 'px-2 py-1 text-[10px] font-bold bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-300 shadow-sm rounded' : 'px-2 py-1 text-[10px] font-bold text-slate-500 rounded';
-      resetTimer();
-    }
-
-    function setTimerSeconds(sec) {
-      stationTimerSeconds = sec;
-      updateTimerDisplay();
-    }
-
-    function adjustTimerSeconds(delta) {
-      stationTimerSeconds = Math.max(0, stationTimerSeconds + delta);
-      updateTimerDisplay();
-    }
-
-    function updateTimerDisplay() {
-      const min = Math.floor(stationTimerSeconds / 60);
-      const sec = stationTimerSeconds % 60;
-      const minStr = String(min).padStart(2, '0');
-      const secStr = String(sec).padStart(2, '0');
-      document.getElementById('timerDisplay').innerHTML = `${minStr}:${secStr}<span class="text-xl text-slate-400">.0</span>`;
-    }
-
-    function switchAdminTab(tab) {
-      currentAdminTab = tab;
-      const tabs = ['leaderboard', 'gps', 'logs', 'routes', 'alerts', 'auth', 'config'];
-      tabs.forEach(t => {
-        const btn = document.getElementById(`tabBtn-${t}`);
-        const view = document.getElementById(`adminTab-${t}`);
-        if (btn && view) {
-          if (t === tab) {
-            btn.className = 'px-3 py-2 rounded-lg transition whitespace-nowrap bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm font-bold';
-            view.classList.remove('hidden');
-          } else {
-            btn.className = 'px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900';
-            view.classList.add('hidden');
-          }
-        }
-      });
-
-      if (tab === 'gps') {
-        setTimeout(initGpsLeafletMap, 200);
-      }
-    }
-
-    function switchStudentTab(tab) {
-      currentStudentTab = tab;
-      const tabs = ['quest', 'history'];
-      tabs.forEach(t => {
-        const btn = document.getElementById(`stuTabBtn-${t}`);
-        const view = document.getElementById(`stuTab-${t}`);
-        if (btn && view) {
-          if (t === tab) {
-            btn.className = 'px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-amber-500 text-white shadow font-bold';
-            view.classList.remove('hidden');
-          } else {
-            btn.className = 'px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 font-bold';
-            view.classList.add('hidden');
-          }
-        }
-      });
-    }
-
-    function switchStationSubTab(tab) {
-      currentStationSubTab = tab;
-      const historyView = document.getElementById('stSubTab-history');
-      const rulesView = document.getElementById('stSubTab-rules');
-      const btnHistory = document.getElementById('stSubBtn-history');
-      const btnRules = document.getElementById('stSubBtn-rules');
-
-      if (tab === 'history') {
-        historyView.classList.remove('hidden');
-        rulesView.classList.add('hidden');
-        btnHistory.className = 'px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-teal-600 text-white shadow font-bold';
-        btnRules.className = 'px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 font-bold';
-      } else {
-        historyView.classList.add('hidden');
-        rulesView.classList.remove('hidden');
-        btnRules.className = 'px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-teal-600 text-white shadow font-bold';
-        btnHistory.className = 'px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 font-bold';
-      }
-    }
-
-    function toggleAudioMute() {
-      audioMuted = !audioMuted;
-      const icon = document.getElementById('audioIcon');
-      if (icon) {
-        icon.className = audioMuted ? 'fa-solid fa-volume-xmark text-slate-400' : 'fa-solid fa-volume-high text-amber-300';
-      }
-      showToast(audioMuted ? '靜音模式已開啟' : '音效已開啟', 'info');
-    }
-
-    function toggleDarkMode() {
-      isDarkMode = !isDarkMode;
-      document.body.classList.toggle('dark-mode', isDarkMode);
-      showToast(isDarkMode ? '深色模式' : '淺色模式', 'info');
-    }
-
-    function toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => console.log(err));
-      } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-      }
-    }
-
-    function updateBroadcastMessage() {
-      const msg = document.getElementById('broadcastInput').value.trim();
-      if (!msg) return;
-      const marquee = document.getElementById('marqueeBanner');
-      const marqueeText = document.getElementById('marqueeText');
-      if (marquee && marqueeText) {
-        marqueeText.innerText = msg;
-        marquee.classList.remove('hidden');
-        showToast('跑馬燈廣播已更新並推送！', 'success');
-      }
-    }
-
-    function fetchAccounts() {
-      const tbody = document.getElementById('accountsTableBody');
-      if (!tbody) return;
-
-      let html = '';
-      const defaultAccounts = [
-        { username: 'admin', display_name: '大會總管理員', role: 'ADMIN' },
-        ...STATIONS.map(s => ({ username: s.id, display_name: s.name, role: 'STATION' })),
-        ...TEAM_NAMES.map(t => ({ username: t, display_name: formatTeamName(t), role: 'STUDENT' }))
-      ];
-
-      defaultAccounts.forEach(acc => {
-        html += `
-          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-            <td class="px-3 sm:px-4 py-2.5 font-bold font-mono text-slate-800 dark:text-white">${acc.username}</td>
-            <td class="px-3 sm:px-4 py-2.5 font-medium text-slate-700 dark:text-slate-300">${acc.display_name}</td>
-            <td class="px-3 sm:px-4 py-2.5 font-bold text-xs"><span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700">${acc.role}</span></td>
-            <td class="px-3 sm:px-4 py-2.5"><input type="password" value="●●●●●●" class="px-2 py-1 border rounded text-xs dark:bg-slate-700 dark:text-white w-28"></td>
-            <td class="px-3 sm:px-4 py-2.5 text-center"><button onclick="showToast('變更已記錄', 'success')" class="px-2.5 py-1 bg-purple-600 text-white rounded-lg text-xs font-bold shadow">儲存</button></td>
-          </tr>
-        `;
-      });
-      tbody.innerHTML = html;
-    }
-
-    function exportCSV(type) {
-      let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-      if (type === 'leaderboard') {
-        csvContent += "名次,隊伍名稱,獲得總分數\n";
-        const sorted = [...localTeams].sort((a, b) => b.total_score - a.total_score);
-        sorted.forEach((t, i) => {
-          csvContent += `${i + 1},${formatTeamName(t.team_name)},${t.total_score}\n`;
-        });
-      } else {
-        csvContent += "時間,關卡ID,獲分隊伍,分數,操作帳號,IP,備註\n";
-        localLogs.forEach(l => {
-          csvContent += `"${l.created_at}",${l.station_id},${l.team_name},${l.points},${l.created_by},${getRecordIp(l)},"${l.note}"\n`;
-        });
-      }
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `XSHS_Game_${type}_${Date.now()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    function refreshData() {
-      showToast('資料已刷新', 'success');
-      if (currentUser) renderViewsForRole();
-    }
-
-    window.onload = function() {
-      fetchClientIp();
-      loadLocalDataFromStorage();
-      populateDropdowns();
-      checkAndTriggerEmergencyBanner();
-
-      openLoginModal();
-    };
   </script>
 </body>
 </html>
