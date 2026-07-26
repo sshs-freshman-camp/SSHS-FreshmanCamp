@@ -414,6 +414,19 @@
     // Double-submit prevention state flag
     let isActionPending = false;
 
+    function getNormalizedRole(rawRole, username) {
+      const u = String(username || '').trim().toUpperCase();
+      if (rawRole) {
+        const r = String(rawRole).trim().toUpperCase();
+        if (r === 'ADMIN' || r === 'MANAGER') return 'ADMIN';
+        if (r === 'STATION' || r === 'STAFF') return 'STATION';
+        if (r === 'STUDENT' || r === 'TEAM' || r === 'USER') return 'STUDENT';
+      }
+      if (u === 'ADMIN') return 'ADMIN';
+      if (STATIONS.some(s => s.id === u)) return 'STATION';
+      return 'STUDENT';
+    }
+
     function showToast(msg, type = 'info') {
       const container = document.getElementById('toastContainer');
       if (!container) return;
@@ -558,7 +571,8 @@
           return;
         }
 
-        currentUser = { id: account.username, name: account.display_name || account.username, role: account.role };
+        const role = getNormalizedRole(account.role, account.username);
+        currentUser = { id: account.username, name: account.display_name || account.username, role: role };
         try { localStorage.setItem('xshs_current_user', JSON.stringify(currentUser)); } catch(e){}
 
         document.getElementById('loginModal').classList.add('hidden');
@@ -797,24 +811,42 @@
     }
 
     function renderStudentView() {
-      if (!currentUser || currentUser.role !== 'STUDENT') return;
-      const myTeam = localTeams.find(t => t.team_name === currentUser.id) || { total_score: 0 };
-      const myLogs = localLogs.filter(l => l.team_name === currentUser.id);
+      if (!currentUser) return;
+      const role = getNormalizedRole(currentUser.role, currentUser.id);
+      if (role !== 'STUDENT') return;
 
-      document.getElementById('studentTotalScore').innerText = myTeam.total_score || 0;
+      const userUid = String(currentUser.id).toUpperCase();
+      const myTeam = localTeams.find(t => String(t.team_name).toUpperCase() === userUid) || { total_score: 0 };
+      const myLogs = localLogs.filter(l => String(l.team_name).toUpperCase() === userUid);
+
+      const scoreEl = document.getElementById('studentTotalScore');
+      if (scoreEl) scoreEl.innerText = myTeam.total_score || 0;
+
       const completedStations = new Set(myLogs.map(l => l.station_name));
-      document.getElementById('studentCompletedCountText').innerText = `${completedStations.size}/10 關`;
-      document.getElementById('studentProgressBadge').innerText = `已過 ${completedStations.size} / 10 關`;
+      const countTextEl = document.getElementById('studentCompletedCountText');
+      if (countTextEl) countTextEl.innerText = `${completedStations.size}/10 關`;
 
-      const tIdx = TEAM_NAMES.indexOf(currentUser.id);
+      const badgeEl = document.getElementById('studentProgressBadge');
+      if (badgeEl) badgeEl.innerText = `已過 ${completedStations.size} / 10 關`;
+
+      const tIdx = TEAM_NAMES.findIndex(name => name.toUpperCase() === userUid);
       const startIdx = tIdx >= 0 ? tIdx % 10 : 0;
-      const activeStation = STATIONS[(startIdx + completedStations.size) % 10];
+      const activeStation = STATIONS[(startIdx + completedStations.size) % 10] || STATIONS[0];
 
-      document.getElementById('stuActiveTimeSlotText').innerText = `時段 ${Math.min(completedStations.size + 1, 10)}`;
-      document.getElementById('stuActiveStationTitle').innerText = activeStation.name;
-      document.getElementById('stuActiveLocationText').innerText = activeStation.location;
-      document.getElementById('stuActiveStaffText').innerText = `關主：${activeStation.staff}`;
-      document.getElementById('stuActiveGameRulesText').innerText = `遊戲：${activeStation.gameName}`;
+      const slotEl = document.getElementById('stuActiveTimeSlotText');
+      if (slotEl) slotEl.innerText = `時段 ${Math.min(completedStations.size + 1, 10)}`;
+
+      const titleEl = document.getElementById('stuActiveStationTitle');
+      if (titleEl) titleEl.innerText = activeStation.name;
+
+      const locEl = document.getElementById('stuActiveLocationText');
+      if (locEl) locEl.innerText = activeStation.location;
+
+      const staffEl = document.getElementById('stuActiveStaffText');
+      if (staffEl) staffEl.innerText = `關主：${activeStation.staff}`;
+
+      const rulesEl = document.getElementById('stuActiveGameRulesText');
+      if (rulesEl) rulesEl.innerText = `遊戲：${activeStation.gameName}`;
 
       const stampGrid = document.getElementById('stuStampGrid');
       if (stampGrid) {
@@ -823,6 +855,12 @@
           return `<div class="stamp-badge ${isPassed ? 'completed bg-amber-50 border-amber-500' : 'bg-slate-50 border'} p-3 rounded-2xl flex flex-col justify-between h-24 text-center"><div class="font-black text-xs">${st.id}關</div><div class="font-bold text-[11px] truncate">${st.gameName}</div><div class="text-[10px] text-slate-400">${isPassed ? '✓已過關' : '未挑戰'}</div></div>`;
         }).join('');
       }
+
+      const pct = Math.round((completedStations.size / 10) * 100);
+      const progText = document.getElementById('stuStampProgressText');
+      if (progText) progText.innerText = `${pct}% (${completedStations.size}/10關)`;
+      const progBar = document.getElementById('stuStampProgressBar');
+      if (progBar) progBar.style.width = `${pct}%`;
 
       const stepper = document.getElementById('routeStepper');
       if (stepper) {
@@ -841,19 +879,25 @@
 
     function renderViewsForRole() {
       if (!currentUser) return;
-      document.getElementById('adminView').classList.toggle('hidden', currentUser.role !== 'ADMIN');
-      document.getElementById('stationView').classList.toggle('hidden', currentUser.role !== 'STATION');
-      document.getElementById('studentView').classList.toggle('hidden', currentUser.role !== 'STUDENT');
+      const role = getNormalizedRole(currentUser.role, currentUser.id);
 
-      if (currentUser.role === 'ADMIN') {
+      const adminView = document.getElementById('adminView');
+      const stationView = document.getElementById('stationView');
+      const studentView = document.getElementById('studentView');
+
+      if (adminView) adminView.classList.toggle('hidden', role !== 'ADMIN');
+      if (stationView) stationView.classList.toggle('hidden', role !== 'STATION');
+      if (studentView) studentView.classList.toggle('hidden', role !== 'STUDENT');
+
+      if (role === 'ADMIN') {
         renderAdminLeaderboard(); renderAdminGpsTab(); renderAdminLogs(); renderAdminRoutes(); renderAdminAlerts(); fetchAccounts();
-      } else if (currentUser.role === 'STATION') {
+      } else if (role === 'STATION') {
         const st = STATIONS.find(s => s.id === currentUser.id) || { id: currentUser.id, name: currentUser.name, location: currentUser.name, staff: '負責幹部', props: '無', rules: '無', advice: '無' };
         document.getElementById('stationTitle').innerText = st.name;
         document.getElementById('stationLocation').innerText = `地點：新社高中 - ${st.location}`;
         document.getElementById('stationStaffInfo').innerHTML = `<i class="fa-solid fa-user-gear mr-1"></i> 負責關主：${st.staff}`;
         renderStationLogs(); calculateStationStats();
-      } else if (currentUser.role === 'STUDENT') {
+      } else if (role === 'STUDENT') {
         document.getElementById('studentTeamTitle').innerText = formatTeamName(currentUser.id);
         renderStudentView();
       }
@@ -1208,6 +1252,7 @@
         const saved = localStorage.getItem('xshs_current_user');
         if (saved) {
           currentUser = JSON.parse(saved);
+          currentUser.role = getNormalizedRole(currentUser.role, currentUser.id);
           document.getElementById('loginModal').classList.add('hidden');
           document.getElementById('userBadge').classList.remove('hidden');
           document.getElementById('currentUserName').innerText = currentUser.name;
