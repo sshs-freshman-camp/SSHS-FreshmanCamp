@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>大地遊戲闖關計分與路線導引系統</title>
+  <title>新社高中 大地遊戲闖關計分與路線導引系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -13,23 +13,75 @@
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
-    body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
-    body.dark-mode { background-color: #0f172a; color: #f1f5f9; }
-    .glass-card { background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); border: 1px solid rgba(226, 232, 240, 0.8); }
-    .dark-mode .glass-card { background: rgba(30, 41, 59, 0.92); border-color: rgba(51, 65, 85, 0.8); }
+    
+    :root {
+      --sat: env(safe-area-inset-top);
+      --sab: env(safe-area-inset-bottom);
+    }
+    body {
+      font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #f8fafc;
+      overflow-x: hidden;
+      max-width: 100vw;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    body.dark-mode {
+      background-color: #0f172a;
+      color: #f1f5f9;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      max-width: 100%;
+    }
+    .dark-mode .glass-card {
+      background: rgba(30, 41, 59, 0.95);
+      border-color: rgba(51, 65, 85, 0.9);
+      color: #f8fafc;
+    }
+    .stamp-badge {
+      position: relative;
+      overflow: hidden;
+    }
+    .stamp-badge.completed::after {
+      content: "✓ 過關";
+      position: absolute;
+      top: 14px;
+      right: -22px;
+      transform: rotate(25deg);
+      background: #d97706;
+      color: #ffffff;
+      font-size: 8px;
+      font-weight: 900;
+      padding: 2px 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
     .no-scrollbar::-webkit-scrollbar { display: none; }
-    .stamp-badge { position: relative; overflow: hidden; }
-    .stamp-badge.completed::after { content: "✓ PASSED"; position: absolute; top: 16px; right: -22px; transform: rotate(25deg); background: #d97706; color: #ffffff; font-size: 8px; font-weight: 900; padding: 2px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes alertPulse {
+      0%, 100% { background-color: rgba(225, 29, 72, 0.95); }
+      50% { background-color: rgba(159, 18, 57, 0.95); }
+    }
     .animate-alert { animation: alertPulse 1.2s infinite; }
-    @keyframes alertPulse { 0%, 100% { background-color: rgba(225, 29, 72, 0.95); } 50% { background-color: rgba(159, 18, 57, 0.95); } }
     #qrReader video { object-fit: cover !important; border-radius: 1rem; width: 100% !important; }
     #qrReader__dashboard { display: none !important; }
     .leaflet-popup-content-wrapper { border-radius: 1rem; font-family: inherit; font-size: 12px; font-weight: bold; }
+    
+    .btn-touch {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
   </style>
 </head>
-<body class="min-h-screen text-slate-800 flex flex-col justify-between selection:bg-amber-500 selection:text-white">
-  <div id="toastContainer" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[9999] flex flex-col items-center gap-2.5 pointer-events-none w-[92%] max-w-md"></div>
-  
+<body class="min-h-full text-slate-800 flex flex-col justify-between selection:bg-amber-500 selection:text-white pb-20 sm:pb-6">
+  <div id="toastContainer" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none w-[92%] max-w-md"></div>
+
   <div id="marqueeBanner" class="bg-amber-500 text-slate-900 text-xs font-bold py-1.5 px-3 flex items-center overflow-hidden shadow-inner hidden">
     <i class="fa-solid fa-bullhorn mr-2 shrink-0 animate-bounce"></i>
     <div class="whitespace-nowrap overflow-hidden w-full">
@@ -37,105 +89,100 @@
     </div>
   </div>
 
-  <header class="bg-gradient-to-r from-emerald-800 via-teal-700 to-cyan-800 text-white shadow-lg sticky top-0 z-40 transition-all">
-    <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-      <div class="flex items-center gap-2.5 sm:gap-3">
-        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 shadow-inner shrink-0">
-          <i class="fa-solid fa-compass text-amber-300 text-lg sm:text-xl animate-pulse"></i>
+  <header class="bg-gradient-to-r from-emerald-800 via-teal-700 to-cyan-800 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-2.5 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-y-2 gap-x-2">
+      <!-- Title & Branding -->
+      <div class="flex items-center gap-2 min-w-0">
+        <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/20 shadow-inner shrink-0">
+          <i class="fa-solid fa-compass text-amber-300 text-base animate-pulse"></i>
         </div>
-        <div>
-          <h1 class="font-black text-base sm:text-lg md:text-xl tracking-wide flex items-center gap-1.5 sm:gap-2">
+        <div class="min-w-0">
+          <h1 class="font-black text-xs sm:text-base tracking-wide flex items-center gap-1">
             <span class="truncate">大地遊戲闖關系統</span>
-            <span class="hidden xs:inline-block text-[10px] sm:text-xs font-normal px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-900 font-mono font-bold shrink-0">XSHS</span>
+            <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-900 font-mono font-bold shrink-0">XSHS</span>
           </h1>
-          <p class="text-[10px] sm:text-xs text-emerald-100/90 font-light tracking-wider">闖關計分與路線導引系統</p>
+          <p class="text-[9px] sm:text-[10px] text-emerald-100/90 font-light truncate">新社高中 行動導引</p>
         </div>
       </div>
-      
-      <div class="flex items-center gap-1.5 sm:gap-2 ml-auto">
-        <button onclick="toggleAudioMute()" title="切換音效" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs transition border border-white/20 cursor-pointer">
+
+      <!-- Action Controls Group -->
+      <div class="flex flex-wrap items-center gap-1.5 ml-auto">
+        <button onclick="toggleAudioMute()" title="音效" class="w-8 h-8 rounded-lg bg-white/10 active:scale-90 text-white flex items-center justify-center text-xs border border-white/20 cursor-pointer">
           <i id="audioIcon" class="fa-solid fa-volume-high text-amber-300"></i>
         </button>
-        <button onclick="toggleDarkMode()" title="切換深淺模式" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs transition border border-white/20 cursor-pointer">
+        <button onclick="toggleDarkMode()" title="深淺模式" class="w-8 h-8 rounded-lg bg-white/10 active:scale-90 text-white flex items-center justify-center text-xs border border-white/20 cursor-pointer">
           <i class="fa-solid fa-moon text-amber-300"></i>
         </button>
-        
-        <button id="adminHeaderSosBadge" onclick="switchAdminTab('alerts')" class="hidden animate-bounce items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black bg-rose-600 border border-rose-300 text-white shadow-lg cursor-pointer">
-          <i class="fa-solid fa-triangle-exclamation text-amber-300"></i>
-          <span>求助通報 (<span id="adminHeaderSosCount">0</span>)</span>
-        </button>
-        
-        <div id="dbStatusBadge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-950/40 border border-emerald-400/30 text-emerald-200">
-          <span id="dbPingDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span id="dbStatusText">已連線</span>
+
+        <div id="dbStatusBadge" class="hidden xs:flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-950/50 border border-emerald-400/30 text-emerald-200">
+          <span id="dbPingDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="dbStatusText">連線中</span>
         </div>
-        
-        <div id="userBadge" class="hidden items-center gap-1.5 sm:gap-2 bg-white/10 border border-white/20 px-2 sm:px-3 py-1 rounded-lg text-xs">
-          <i class="fa-solid fa-user-circle text-amber-300 text-sm"></i>
-          <span id="currentUserName" class="hidden sm:inline-block max-w-[100px] truncate">未登入</span>
-          <span id="currentUserRoleBadge" class="bg-amber-400 text-slate-900 font-bold px-1.5 py-0.5 text-[9px] sm:text-[10px] rounded shrink-0">未授權</span>
+
+        <div id="userBadge" class="hidden items-center gap-1 bg-white/10 border border-white/20 px-2 py-0.5 rounded-lg text-[10px]">
+          <span id="currentUserName" class="max-w-[60px] sm:max-w-[90px] truncate font-bold">未登入</span>
+          <span id="currentUserRoleBadge" class="bg-amber-400 text-slate-900 font-extrabold px-1 rounded text-[8px] shrink-0">未授權</span>
         </div>
-        
-        <button onclick="toggleAuth()" class="bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-900 font-bold px-2.5 sm:px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1.5 shadow shrink-0 cursor-pointer">
+
+        <button onclick="toggleAuth()" class="bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-900 font-bold px-2.5 py-1.5 rounded-lg text-xs transition flex items-center gap-1 shadow shrink-0 cursor-pointer">
           <i id="authBtnIcon" class="fa-solid fa-right-to-bracket text-xs"></i>
-          <span id="loginBtnText">登入系統</span>
+          <span id="loginBtnText">登入</span>
         </button>
       </div>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-6 flex-grow w-full">
+  <main class="max-w-7xl mx-auto px-2.5 sm:px-4 py-3 sm:py-5 flex-grow w-full">
     <!-- ADMIN VIEW -->
-    <section id="adminView" class="space-y-4 sm:space-y-6 hidden">
-      <div id="adminEmergencyBanner" class="hidden animate-alert text-white p-3.5 sm:p-4 rounded-2xl shadow-xl border-2 border-rose-300 items-center justify-between gap-3 transition-all">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-xl shrink-0 animate-bounce">🚨</div>
+    <section id="adminView" class="space-y-3.5 hidden">
+      <div id="adminEmergencyBanner" class="hidden animate-alert text-white p-3 rounded-2xl shadow-lg border-2 border-rose-300 items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-base shrink-0 animate-bounce">🚨</div>
           <div>
-            <h3 class="font-black text-sm sm:text-base tracking-wide flex items-center gap-2">
+            <h3 class="font-black text-xs sm:text-sm tracking-wide flex items-center gap-1.5">
               <span>緊急求助通報警報！</span>
-              <span id="adminEmergencyTime" class="text-xs font-mono font-bold bg-black/30 px-2 py-0.5 rounded-full"></span>
+              <span id="adminEmergencyTime" class="text-[10px] font-mono font-bold bg-black/30 px-1.5 py-0.5 rounded-full"></span>
             </h3>
-            <p id="adminEmergencyText" class="text-xs sm:text-sm font-medium mt-0.5 text-rose-100">載入警報內容中...</p>
+            <p id="adminEmergencyText" class="text-[11px] font-medium mt-0.5 text-rose-100">載入警報內容中...</p>
           </div>
         </div>
-        <button onclick="openResolveAlertModal()" class="px-3 py-2 bg-white text-rose-700 hover:bg-rose-50 active:scale-95 text-xs font-black rounded-xl shadow transition whitespace-nowrap cursor-pointer"><i class="fa-solid fa-check-circle mr-1"></i> 處置說明</button>
+        <button onclick="openResolveAlertModal()" class="px-2.5 py-1.5 bg-white text-rose-700 active:scale-95 text-xs font-black rounded-xl shadow shrink-0">處置說明</button>
       </div>
 
-      <div class="glass-card p-3.5 sm:p-5 rounded-2xl shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 border-l-4 border-l-emerald-600">
-        <div>
-          <h2 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+      <div class="glass-card p-2.5 rounded-2xl shadow-sm border-l-4 border-l-emerald-600">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
             <i class="fa-solid fa-user-shield text-emerald-600"></i> 大會總管理員控制台
           </h2>
-          <p class="text-xs text-slate-500 mt-0.5">即時監控全校 20 支闖關小隊比分、GPS 地圖定位與軌跡、審核得分與導出報表</p>
         </div>
-        <div class="flex overflow-x-auto no-scrollbar gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-medium -mx-1 px-1 sm:mx-0">
-          <button onclick="switchAdminTab('leaderboard')" id="tabBtn-leaderboard" class="px-3 py-2 rounded-lg transition whitespace-nowrap bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm font-bold cursor-pointer"><i class="fa-solid fa-trophy mr-1 text-amber-500"></i>即時排行</button>
-          <button onclick="switchAdminTab('gps')" id="tabBtn-gps" class="px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900 cursor-pointer"><i class="fa-solid fa-location-crosshairs mr-1 text-sky-600"></i>GPS 定位監控</button>
-          <button onclick="switchAdminTab('logs')" id="tabBtn-logs" class="px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900 cursor-pointer"><i class="fa-solid fa-list-check mr-1 text-teal-600"></i>得分明細</button>
-          <button onclick="switchAdminTab('routes')" id="tabBtn-routes" class="px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900 cursor-pointer"><i class="fa-solid fa-route mr-1 text-indigo-600"></i>動線編排</button>
-          <button onclick="switchAdminTab('alerts')" id="tabBtn-alerts" class="px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900 relative cursor-pointer"><i class="fa-solid fa-bullhorn mr-1 text-rose-600"></i>求助紀錄<span id="alertsBadgeCount" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-600 text-white rounded-full text-[9px] font-black items-center justify-center">0</span></button>
-          <button onclick="switchAdminTab('auth')" id="tabBtn-auth" class="px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900 cursor-pointer"><i class="fa-solid fa-users mr-1 text-purple-600"></i>帳號管理</button>
-          <button onclick="switchAdminTab('config')" id="tabBtn-config" class="px-3 py-2 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900 cursor-pointer"><i class="fa-solid fa-gear mr-1 text-slate-600"></i>廣播與設定</button>
+        <div class="flex overflow-x-auto no-scrollbar gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-medium">
+          <button onclick="switchAdminTab('leaderboard')" id="tabBtn-leaderboard" class="px-2.5 py-1.5 rounded-lg transition whitespace-nowrap bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm font-bold"><i class="fa-solid fa-trophy mr-1 text-amber-500"></i>排行</button>
+          <button onclick="switchAdminTab('gps')" id="tabBtn-gps" class="px-2.5 py-1.5 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300"><i class="fa-solid fa-location-crosshairs mr-1 text-sky-600"></i>GPS地圖</button>
+          <button onclick="switchAdminTab('logs')" id="tabBtn-logs" class="px-2.5 py-1.5 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300"><i class="fa-solid fa-list-check mr-1 text-teal-600"></i>得分明細</button>
+          <button onclick="switchAdminTab('routes')" id="tabBtn-routes" class="px-2.5 py-1.5 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300"><i class="fa-solid fa-route mr-1 text-indigo-600"></i>對戰動線</button>
+          <button onclick="switchAdminTab('alerts')" id="tabBtn-alerts" class="px-2.5 py-1.5 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300 relative"><i class="fa-solid fa-bullhorn mr-1 text-rose-600"></i>求助<span id="alertsBadgeCount" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-600 text-white rounded-full text-[8px] font-black items-center justify-center">0</span></button>
+          <button onclick="switchAdminTab('auth')" id="tabBtn-auth" class="px-2.5 py-1.5 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300"><i class="fa-solid fa-users mr-1 text-purple-600"></i>帳號</button>
+          <button onclick="switchAdminTab('config')" id="tabBtn-config" class="px-2.5 py-1.5 rounded-lg transition whitespace-nowrap text-slate-600 dark:text-slate-300"><i class="fa-solid fa-gear mr-1 text-slate-600"></i>廣播設定</button>
         </div>
       </div>
 
-      <div id="adminTab-leaderboard" class="space-y-4 sm:space-y-6">
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-          <div class="glass-card p-3 sm:p-4 rounded-2xl border-b-4 border-b-emerald-500"><p class="text-[11px] sm:text-xs text-slate-500 font-medium">參賽小隊總數</p><p class="text-xl sm:text-2xl font-black text-slate-800 dark:text-white mt-0.5 sm:mt-1" id="statTeamCount">20 隊</p></div>
-          <div class="glass-card p-3 sm:p-4 rounded-2xl border-b-4 border-b-amber-500"><p class="text-[11px] sm:text-xs text-slate-500 font-medium">大地遊戲關卡數</p><p class="text-xl sm:text-2xl font-black text-slate-800 dark:text-white mt-0.5 sm:mt-1" id="statStationCount">10 關</p></div>
-          <div class="glass-card p-3 sm:p-4 rounded-2xl border-b-4 border-b-blue-500"><p class="text-[11px] sm:text-xs text-slate-500 font-medium">全場發放總積分</p><p class="text-xl sm:text-2xl font-black text-slate-800 dark:text-white mt-0.5 sm:mt-1" id="statTotalPoints">0 分</p></div>
-          <div class="glass-card p-3 sm:p-4 rounded-2xl border-b-4 border-b-rose-500"><p class="text-[11px] sm:text-xs text-slate-500 font-medium">待處置求助通報</p><p class="text-xl sm:text-2xl font-black text-rose-600 mt-0.5 sm:mt-1" id="statPendingAlerts">0 件</p></div>
+      <div id="adminTab-leaderboard" class="space-y-3">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div class="glass-card p-2.5 rounded-xl border-b-2 border-b-emerald-500"><p class="text-[10px] text-slate-500 font-medium">參賽小隊</p><p class="text-lg font-black text-slate-800 dark:text-white mt-0.5" id="statTeamCount">20 隊</p></div>
+          <div class="glass-card p-2.5 rounded-xl border-b-2 border-b-amber-500"><p class="text-[10px] text-slate-500 font-medium">關卡數</p><p class="text-lg font-black text-slate-800 dark:text-white mt-0.5" id="statStationCount">10 關</p></div>
+          <div class="glass-card p-2.5 rounded-xl border-b-2 border-b-blue-500"><p class="text-[10px] text-slate-500 font-medium">發放總積分</p><p class="text-lg font-black text-slate-800 dark:text-white mt-0.5" id="statTotalPoints">0 分</p></div>
+          <div class="glass-card p-2.5 rounded-xl border-b-2 border-b-rose-500"><p class="text-[10px] text-slate-500 font-medium">待處置求助</p><p class="text-lg font-black text-rose-600 mt-0.5" id="statPendingAlerts">0 件</p></div>
         </div>
 
         <div class="glass-card rounded-2xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700">
-          <div class="p-3.5 sm:p-4 bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center gap-2">
-            <h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-ranking-star text-amber-500"></i> 全校小隊總排行榜</h3>
-            <button onclick="exportCSV('leaderboard')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer"><i class="fa-solid fa-file-csv"></i> 導出排行榜 CSV</button>
+          <div class="p-3 bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+            <h3 class="font-bold text-slate-800 dark:text-white text-xs sm:text-sm flex items-center gap-1.5"><i class="fa-solid fa-ranking-star text-amber-500"></i> 全校小隊總排行榜</h3>
+            <button onclick="exportCSV('leaderboard')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 shadow-sm"><i class="fa-solid fa-file-csv"></i> 導出 CSV</button>
           </div>
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs sm:text-sm">
+            <table class="w-full text-left text-xs">
               <thead class="bg-slate-200/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black border-b border-slate-200 dark:border-slate-700">
-                <tr><th class="px-4 py-3 text-center w-16">名次</th><th class="px-4 py-3">班級小隊</th><th class="px-4 py-3 text-right">獲得總分</th></tr>
+                <tr><th class="px-3 py-2.5 text-center w-12">名次</th><th class="px-3 py-2.5">班級小隊</th><th class="px-3 py-2.5 text-right">獲得總分</th></tr>
               </thead>
               <tbody id="leaderboardTableBody" class="divide-y divide-slate-100 dark:divide-slate-800 font-medium"></tbody>
             </table>
@@ -143,164 +190,217 @@
         </div>
       </div>
 
-      <div id="adminTab-gps" class="glass-card rounded-2xl p-3.5 sm:p-4 shadow-sm hidden space-y-4">
-        <div class="flex flex-wrap justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700 gap-2">
+      <div id="adminTab-gps" class="glass-card rounded-2xl p-3 shadow-sm hidden space-y-3">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700">
           <div>
-            <h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-map-marked-alt text-sky-600"></i> 網頁內即時 GPS 地圖與歷史軌跡</h3>
-            <p class="text-xs text-slate-500 mt-0.5">即時檢視學生座標與連續移動路線</p>
+            <h3 class="font-bold text-slate-800 dark:text-white text-xs sm:text-sm flex items-center gap-1.5"><i class="fa-solid fa-map-marked-alt text-sky-600"></i> 網頁內即時 GPS 地圖與軌跡</h3>
+            <p class="text-[10px] text-slate-500">即時檢視學生座標與連續移動路線</p>
           </div>
-          <button onclick="refreshData()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs transition shadow-sm cursor-pointer"><i class="fa-solid fa-arrows-rotate mr-1"></i> 刷新位置</button>
+          <button onclick="refreshData()" class="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg text-xs shadow-sm"><i class="fa-solid fa-arrows-rotate mr-1"></i> 刷新</button>
         </div>
-        <div id="gpsLiveMap" class="w-full h-[380px] rounded-2xl border border-slate-200 dark:border-slate-700 shadow-inner z-10 bg-slate-100 dark:bg-slate-900"></div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="gpsTeamGrid"></div>
+        <div id="gpsLiveMap" class="w-full h-[320px] rounded-2xl border border-slate-200 dark:border-slate-700 shadow-inner z-10 bg-slate-100 dark:bg-slate-900"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" id="gpsTeamGrid"></div>
       </div>
 
-      <div id="adminTab-logs" class="glass-card rounded-2xl p-3.5 sm:p-4 shadow-sm hidden space-y-4">
-        <div class="flex flex-wrap justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700 gap-2">
-          <h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-teal-600"></i> 得分紀錄歷史與審核 (含時間 / 帳號 / IP)</h3>
-          <button onclick="exportCSV('logs')" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer"><i class="fa-solid fa-file-csv"></i> 導出歷史紀錄 CSV</button>
+      <div id="adminTab-logs" class="glass-card rounded-2xl p-3 shadow-sm hidden space-y-3">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700">
+          <h3 class="font-bold text-slate-800 dark:text-white text-xs sm:text-sm flex items-center gap-1.5"><i class="fa-solid fa-clock-rotate-left text-teal-600"></i> 得分紀錄歷史 (含時間 / 帳號 / IP)</h3>
+          <button onclick="exportCSV('logs')" class="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg text-xs shadow-sm"><i class="fa-solid fa-file-csv"></i> 導出 CSV</button>
         </div>
-        <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b"><tr><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">時間</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">關卡名稱</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">獲分小隊</th><th class="px-3 sm:px-4 py-2.5 text-right whitespace-nowrap">分數</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">操作帳號</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">操作端 IP</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">關主備註</th><th class="px-3 sm:px-4 py-2.5 text-center whitespace-nowrap">操作</th></tr></thead><tbody id="logsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div>
+        <div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b"><tr><th class="px-2.5 py-2 whitespace-nowrap">時間</th><th class="px-2.5 py-2 whitespace-nowrap">關卡</th><th class="px-2.5 py-2 whitespace-nowrap">小隊</th><th class="px-2.5 py-2 text-right whitespace-nowrap">分數</th><th class="px-2.5 py-2 whitespace-nowrap">帳號</th><th class="px-2.5 py-2 whitespace-nowrap">IP</th><th class="px-2.5 py-2 whitespace-nowrap">備註</th><th class="px-2.5 py-2 text-center whitespace-nowrap">操作</th></tr></thead><tbody id="logsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div>
       </div>
 
-      <div id="adminTab-routes" class="glass-card rounded-2xl p-3.5 sm:p-4 shadow-sm hidden space-y-4">
-        <div class="pb-2 border-b border-slate-200 dark:border-slate-700"><h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-map-location-dot text-indigo-600"></i> 各班小隊時間場次動線對照表 (13:20~15:50)</h3></div>
-        <div id="routesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4"></div>
+      <div id="adminTab-routes" class="glass-card rounded-2xl p-3 shadow-sm hidden space-y-3">
+        <div class="pb-1.5 border-b border-slate-200 dark:border-slate-700"><h3 class="font-bold text-slate-800 dark:text-white text-xs sm:text-sm flex items-center gap-1.5"><i class="fa-solid fa-map-location-dot text-indigo-600"></i> 各班小隊時間對照動線</h3></div>
+        <div id="routesContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
       </div>
 
-      <div id="adminTab-alerts" class="glass-card rounded-2xl p-3.5 sm:p-4 shadow-sm hidden space-y-4">
-        <div class="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700"><h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-bullhorn text-rose-600"></i> 各關卡緊急求助與事件紀錄</h3></div>
-        <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b"><tr><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">通報時間</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">關卡/來源</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">事件類型</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">詳細狀況說明</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">通報帳號</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">操作端 IP</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">大會處置備註</th><th class="px-3 sm:px-4 py-2.5 text-center whitespace-nowrap">處置狀態</th></tr></thead><tbody id="alertsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div>
+      <div id="adminTab-alerts" class="glass-card rounded-2xl p-3 shadow-sm hidden space-y-3">
+        <div class="pb-1.5 border-b border-slate-200 dark:border-slate-700"><h3 class="font-bold text-slate-800 dark:text-white text-xs sm:text-sm flex items-center gap-1.5"><i class="fa-solid fa-bullhorn text-rose-600"></i> 各關卡緊急求助事件紀錄</h3></div>
+        <div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-100 dark:bg-slate-800 font-bold border-b"><tr><th class="px-2.5 py-2 whitespace-nowrap">時間</th><th class="px-2.5 py-2 whitespace-nowrap">關卡/來源</th><th class="px-2.5 py-2 whitespace-nowrap">類型</th><th class="px-2.5 py-2 whitespace-nowrap">說明</th><th class="px-2.5 py-2 whitespace-nowrap">通報帳號</th><th class="px-2.5 py-2 whitespace-nowrap">IP</th><th class="px-2.5 py-2 whitespace-nowrap">處置備註</th><th class="px-2.5 py-2 text-center whitespace-nowrap">狀態</th></tr></thead><tbody id="alertsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div>
       </div>
 
-      <div id="adminTab-auth" class="glass-card rounded-2xl p-3.5 sm:p-4 shadow-sm hidden space-y-4">
-        <div class="flex flex-wrap justify-between items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700"><h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-users text-purple-600"></i> 獨立帳號與密碼管理系統</h3><button onclick="fetchAccounts()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 active:scale-95 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm cursor-pointer"><i class="fa-solid fa-arrows-rotate"></i> 重新載入帳號</button></div>
-        <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b"><tr><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">帳號 (Username)</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">顯示名稱</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">權限身份</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">設定密碼 (Password)</th><th class="px-3 sm:px-4 py-2.5 text-center whitespace-nowrap">儲存變更</th></tr></thead><tbody id="accountsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div>
+      <div id="adminTab-auth" class="glass-card rounded-2xl p-3 shadow-sm hidden space-y-3">
+        <div class="flex justify-between items-center pb-1.5 border-b border-slate-200 dark:border-slate-700"><h3 class="font-bold text-slate-800 dark:text-white text-xs sm:text-sm flex items-center gap-1.5"><i class="fa-solid fa-users text-purple-600"></i> 獨立帳號密碼管理系統</h3><button onclick="fetchAccounts()" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 rounded-lg text-xs font-bold transition flex items-center gap-1"><i class="fa-solid fa-arrows-rotate"></i> 載入帳號</button></div>
+        <div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-100 dark:bg-slate-800 font-bold border-b"><tr><th class="px-2.5 py-2 whitespace-nowrap">帳號</th><th class="px-2.5 py-2 whitespace-nowrap">顯示名稱</th><th class="px-2.5 py-2 whitespace-nowrap">權限</th><th class="px-2.5 py-2 whitespace-nowrap">密碼</th><th class="px-2.5 py-2 text-center whitespace-nowrap">儲存</th></tr></thead><tbody id="accountsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div>
       </div>
 
-      <div id="adminTab-config" class="glass-card rounded-2xl p-4 sm:p-5 shadow-sm hidden space-y-5">
-        <h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700"><i class="fa-solid fa-sliders text-slate-600"></i> 全場跑馬燈廣播與系統維護</h3>
-        <div class="space-y-3"><label class="block text-xs font-bold text-slate-700 dark:text-slate-300">發送廣播跑馬燈內容：</label><div class="flex gap-2"><input type="text" id="broadcastInput" placeholder="例如：大會廣播：請各小隊注意時間，闖關倒數30分鐘！" class="flex-1 px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none dark:bg-slate-800 dark:text-white"><button onclick="updateBroadcastMessage()" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 font-bold rounded-xl text-xs transition shadow cursor-pointer"><i class="fa-solid fa-paper-plane mr-1"></i> 推送廣播</button></div></div>
-        <div class="pt-4 border-t border-slate-200 dark:border-slate-700 space-y-3"><p class="text-xs font-bold text-rose-600 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> 危險區域 / 系統資料重置</p><button onclick="openConfirmModal('確定要清空全校所有闖關成績與得分紀錄嗎？此操作無法復原！', confirmResetData)" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition shadow flex items-center gap-2 cursor-pointer"><i class="fa-solid fa-trash-arrow-up"></i> 清空並重置所有闖關成績紀錄</button></div>
+      <div id="adminTab-config" class="glass-card rounded-2xl p-3.5 shadow-sm hidden space-y-4">
+        <h3 class="font-bold text-slate-800 dark:text-white text-xs sm:text-sm flex items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-700"><i class="fa-solid fa-sliders text-slate-600"></i> 全場跑馬燈廣播與系統維護</h3>
+        <div class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h4 class="font-bold text-xs text-slate-800 dark:text-white flex items-center gap-1"><i class="fa-solid fa-cloud-showers-heavy text-sky-500"></i> 全校雨備方案切換</h4>
+              <p class="text-[10px] text-slate-500">預設隱藏雨備。啟動後關卡地點同步更新為雨備地點。</p>
+            </div>
+            <button id="rainPlanToggleBtn" onclick="toggleRainPlan()" class="btn-touch px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs transition shadow flex items-center gap-1"><i class="fa-solid fa-toggle-off text-sm"></i> 啟動雨備地點</button>
+          </div>
+          <div id="rainPlanStatusBadge" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300"><i class="fa-solid fa-sun text-amber-500"></i> <span>目前狀態：晴天標準場地動線</span></div>
+        </div>
+
+        <div class="space-y-2"><label class="block text-xs font-bold text-slate-700 dark:text-slate-300">發送廣播跑馬燈內容：</label><div class="flex gap-2"><input type="text" id="broadcastInput" placeholder="例如：大會廣播：請各小隊注意時間..." class="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl text-xs outline-none dark:bg-slate-800 dark:text-white"><button onclick="updateBroadcastMessage()" class="btn-touch px-3 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold rounded-xl text-xs shadow"><i class="fa-solid fa-paper-plane mr-1"></i> 推送</button></div></div>
+        <div class="pt-3 border-t border-slate-200 dark:border-slate-700 space-y-2"><p class="text-xs font-bold text-rose-600 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> 危險區域 / 系統資料重置</p><button onclick="openConfirmModal('確定要清空全校所有闖關成績與得分紀錄嗎？此操作無法復原！', confirmResetData)" class="btn-touch px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow flex items-center gap-1.5"><i class="fa-solid fa-trash-arrow-up"></i> 清空並重置所有闖關成績紀錄</button></div>
       </div>
     </section>
 
     <!-- STATION LEADER VIEW -->
-    <section id="stationView" class="space-y-4 sm:space-y-6 hidden">
-      <div class="glass-card p-4 sm:p-6 rounded-3xl shadow-sm border-l-4 border-l-teal-600 relative overflow-hidden">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-700">
-          <div><div class="flex items-center gap-2"><span class="px-2.5 py-0.5 bg-teal-100 dark:bg-teal-900/50 text-teal-800 dark:text-teal-200 text-xs font-bold rounded-md flex items-center gap-1"><i class="fa-solid fa-headset"></i> 關主專用指揮台</span></div><h2 id="stationTitle" class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white mt-2">關卡名稱</h2><p id="stationLocation" class="text-xs sm:text-sm text-slate-500 flex items-center gap-1 mt-1"><i class="fa-solid fa-location-dot text-rose-500"></i> 地點載入中...</p><p id="stationStaffInfo" class="text-xs text-teal-600 dark:text-teal-400 font-bold mt-1"><i class="fa-solid fa-user-gear mr-1"></i> 負責關主：載入中...</p></div>
-          <div class="flex flex-wrap gap-2"><button onclick="openQrScannerModal()" class="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs sm:text-sm font-bold rounded-xl transition flex items-center gap-2 shadow-md cursor-pointer"><i class="fa-solid fa-camera text-amber-300"></i> 鏡頭掃描隊伍 QR 碼</button><button onclick="openEmergencyModal()" class="px-3 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs sm:text-sm font-bold rounded-xl transition flex items-center gap-1.5 shadow-md cursor-pointer"><i class="fa-solid fa-triangle-exclamation text-amber-300"></i> 通報大會 (SOS)</button></div>
+    <section id="stationView" class="space-y-3.5 hidden">
+      <div class="glass-card p-3.5 sm:p-5 rounded-3xl shadow-sm border-l-4 border-l-teal-600 relative overflow-hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-slate-200 dark:border-slate-700">
+          <div>
+            <div class="flex items-center gap-1.5"><span class="px-2 py-0.5 bg-teal-100 dark:bg-teal-900/50 text-teal-800 dark:text-teal-200 text-[10px] font-bold rounded-md flex items-center gap-1"><i class="fa-solid fa-headset"></i> 關主專用指揮台</span></div>
+            <h2 id="stationTitle" class="text-xl sm:text-2xl font-black text-slate-800 dark:text-white mt-1">關卡名稱</h2>
+            <p id="stationLocation" class="text-xs text-slate-500 flex items-center gap-1 mt-0.5"><i class="fa-solid fa-location-dot text-rose-500"></i> 地點載入中...</p>
+            <p id="stationStaffInfo" class="text-xs text-teal-600 dark:text-teal-400 font-bold mt-0.5"><i class="fa-solid fa-user-gear mr-1"></i> 負責關主：載入中...</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="openQrScannerModal()" class="btn-touch flex-1 sm:flex-none px-3 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow"><i class="fa-solid fa-camera text-amber-300"></i> 相機掃 QR</button>
+            <button onclick="openEmergencyModal()" class="btn-touch px-3 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1 shadow"><i class="fa-solid fa-triangle-exclamation text-amber-300"></i> SOS 求助</button>
+          </div>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mt-4">
-          <div class="bg-teal-50/60 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800 p-2.5 sm:p-3 rounded-2xl"><p class="text-[10px] sm:text-xs text-teal-700 dark:text-teal-300 font-bold">已挑戰完成</p><p id="stStatCompleted" class="text-lg sm:text-xl font-black text-teal-900 dark:text-teal-200 mt-0.5">0 / 20 隊</p></div>
-          <div class="bg-amber-50/60 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 p-2.5 sm:p-3 rounded-2xl"><p class="text-[10px] sm:text-xs text-amber-700 dark:text-amber-300 font-bold">本關平均給分</p><p id="stStatAvg" class="text-lg sm:text-xl font-black text-amber-900 dark:text-amber-200 mt-0.5">0 分</p></div>
-          <div class="bg-blue-50/60 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-2.5 sm:p-3 rounded-2xl"><p class="text-[10px] sm:text-xs text-blue-700 dark:text-blue-300 font-bold">本關最高分隊伍</p><p id="stStatTop" class="text-lg sm:text-xl font-black text-blue-900 dark:text-blue-200 mt-0.5 truncate">尚無紀錄</p></div>
-          <div class="bg-purple-50/60 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 p-2.5 sm:p-3 rounded-2xl"><p class="text-[10px] sm:text-xs text-purple-700 dark:text-purple-300 font-bold">剩餘待到關小隊</p><p id="stStatRemaining" class="text-lg sm:text-xl font-black text-purple-900 dark:text-purple-200 mt-0.5">20 隊</p></div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+          <div class="bg-teal-50/60 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800 p-2 rounded-2xl"><p class="text-[10px] text-teal-700 dark:text-teal-300 font-bold">已挑戰完成</p><p id="stStatCompleted" class="text-base font-black text-teal-900 dark:text-teal-200 mt-0.5">0 / 20 隊</p></div>
+          <div class="bg-amber-50/60 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 p-2 rounded-2xl"><p class="text-[10px] text-amber-700 dark:text-amber-300 font-bold">本關平均給分</p><p id="stStatAvg" class="text-base font-black text-amber-900 dark:text-amber-200 mt-0.5">0 分</p></div>
+          <div class="bg-blue-50/60 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-2 rounded-2xl"><p class="text-[10px] text-blue-700 dark:text-blue-300 font-bold">本關最高分隊伍</p><p id="stStatTop" class="text-base font-black text-blue-900 dark:text-blue-200 mt-0.5 truncate">尚無紀錄</p></div>
+          <div class="bg-purple-50/60 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 p-2 rounded-2xl"><p class="text-[10px] text-purple-700 dark:text-purple-300 font-bold">剩餘待到關小隊</p><p id="stStatRemaining" class="text-base font-black text-purple-900 dark:text-purple-200 mt-0.5">20 隊</p></div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div class="lg:col-span-2 glass-card p-4 sm:p-6 rounded-3xl shadow-sm space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-slate-700">
-            <h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-circle-plus text-teal-600"></i> 關卡成績與加分登記</h3>
-            <div class="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold"><button onclick="setScoringMode('preset')" id="scoreModeBtnPreset" class="px-2.5 py-1 bg-white dark:bg-slate-700 text-teal-700 dark:text-teal-300 rounded-lg shadow-sm transition cursor-pointer">快捷單鍵</button><button onclick="setScoringMode('rubric')" id="scoreModeBtnRubric" class="px-2.5 py-1 text-slate-600 dark:text-slate-400 rounded-lg transition cursor-pointer">多元規準 Rubric</button></div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
+        <div class="lg:col-span-2 glass-card p-3.5 sm:p-5 rounded-3xl shadow-sm space-y-3.5">
+          <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="font-bold text-slate-800 dark:text-white text-xs sm:text-sm flex items-center gap-1.5"><i class="fa-solid fa-circle-plus text-teal-600"></i> 關卡成績與加分登記</h3>
+            <div class="flex gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl text-xs font-bold">
+              <button onclick="setScoringMode('preset')" id="scoreModeBtnPreset" class="px-2 py-1 bg-white dark:bg-slate-700 text-teal-700 dark:text-teal-300 rounded-lg shadow-sm">快捷單鍵</button>
+              <button onclick="setScoringMode('rubric')" id="scoreModeBtnRubric" class="px-2 py-1 text-slate-600 dark:text-slate-400 rounded-lg">多元規準</button>
+            </div>
           </div>
-          <div class="space-y-1.5"><label class="block text-xs font-bold text-slate-700 dark:text-slate-300">選擇前來闖關的小隊：</label><select id="stationTeamSelect" class="w-full px-3.5 py-3 border border-slate-300 dark:border-slate-600 rounded-xl font-bold text-slate-800 dark:text-white text-sm bg-white dark:bg-slate-800 focus:ring-2 focus:ring-teal-500 outline-none shadow-sm"></select></div>
-          <div id="scoringPresetBox" class="space-y-2.5">
+
+          <div class="p-2.5 bg-teal-50/80 dark:bg-teal-950/30 rounded-2xl border border-teal-200 dark:border-teal-800 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-black text-teal-900 dark:text-teal-200 flex items-center gap-1"><i class="fa-solid fa-clock-rotate-left text-teal-600"></i> 當前時段預計到關對戰隊伍：</span>
+              <select id="stationTimeSlotSelect" onchange="renderStationActiveTeams()" class="text-[11px] font-bold px-1.5 py-0.5 border border-teal-300 rounded-lg bg-white dark:bg-slate-800 outline-none">
+              </select>
+            </div>
+            <div id="activeTeamsQuickPick" class="flex gap-2 pt-0.5">
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">目前選擇加分的小隊：</label>
+            <select id="stationTeamSelect" class="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl font-bold text-slate-800 dark:text-white text-xs bg-white dark:bg-slate-800 outline-none shadow-sm"></select>
+          </div>
+
+          <div id="scoringPresetBox" class="space-y-2">
             <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">獲得分數 (點擊快速填入)：</label>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button type="button" onclick="document.getElementById('stationPointsInput').value=10" class="py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl font-bold text-xs sm:text-sm active:scale-95 transition cursor-pointer">+10 分</button>
-              <button type="button" onclick="document.getElementById('stationPointsInput').value=20" class="py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl font-bold text-xs sm:text-sm active:scale-95 transition cursor-pointer">+20 分</button>
-              <button type="button" onclick="document.getElementById('stationPointsInput').value=50" class="py-2.5 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 text-emerald-900 font-bold text-xs sm:text-sm active:scale-95 transition cursor-pointer">+50 分 (完美)</button>
-              <button type="button" onclick="document.getElementById('stationPointsInput').value=-10" class="py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-xl font-bold text-xs sm:text-sm active:scale-95 transition cursor-pointer">-10 分 (犯規)</button>
+              <button type="button" onclick="document.getElementById('stationPointsInput').value=10" class="btn-touch py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl font-bold text-xs active:scale-95 transition">+10 分</button>
+              <button type="button" onclick="document.getElementById('stationPointsInput').value=20" class="btn-touch py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl font-bold text-xs active:scale-95 transition">+20 分</button>
+              <button type="button" onclick="document.getElementById('stationPointsInput').value=50" class="btn-touch py-2 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 text-emerald-900 font-bold text-xs active:scale-95 transition">+50 分 (完美)</button>
+              <button type="button" onclick="document.getElementById('stationPointsInput').value=-10" class="btn-touch py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-xl font-bold text-xs active:scale-95 transition">-10 分 (犯規)</button>
             </div>
-            <input type="number" id="stationPointsInput" placeholder="自訂指定分數" class="w-full mt-2 px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl text-sm font-mono dark:bg-slate-800 outline-none">
+            <input type="number" id="stationPointsInput" placeholder="自訂指定分數" class="w-full mt-1.5 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-mono dark:bg-slate-800 outline-none">
           </div>
-          <div id="scoringRubricBox" class="space-y-3 hidden bg-teal-50/50 dark:bg-teal-950/20 p-4 rounded-2xl border border-teal-100 dark:border-teal-800">
+
+          <div id="scoringRubricBox" class="space-y-2.5 hidden bg-teal-50/50 dark:bg-teal-950/20 p-3 rounded-2xl border border-teal-100 dark:border-teal-800">
             <p class="text-xs font-bold text-teal-800 dark:text-teal-300">多元評分規準：</p>
-            <div class="space-y-2 text-xs">
-              <div class="flex items-center justify-between"><span class="font-bold text-slate-700 dark:text-slate-300">1. 團隊合作與紀律 (0-15分)</span><input type="number" id="rubric1" oninput="calculateRubric()" class="w-16 py-1 px-2 text-center border rounded-lg font-mono font-bold dark:bg-slate-700 dark:text-white" min="0" max="15" value="0"></div>
-              <div class="flex items-center justify-between"><span class="font-bold text-slate-700 dark:text-slate-300">2. 任務達成度 (0-20分)</span><input type="number" id="rubric2" oninput="calculateRubric()" class="w-16 py-1 px-2 text-center border rounded-lg font-mono font-bold dark:bg-slate-700 dark:text-white" min="0" max="20" value="0"></div>
-              <div class="flex items-center justify-between"><span class="font-bold text-slate-700 dark:text-slate-300">3. 創意與速度 (0-15分)</span><input type="number" id="rubric3" oninput="calculateRubric()" class="w-16 py-1 px-2 text-center border rounded-lg font-mono font-bold dark:bg-slate-700 dark:text-white" min="0" max="15" value="0"></div>
+            <div class="space-y-1.5 text-xs">
+              <div class="flex items-center justify-between"><span class="font-bold text-slate-700 dark:text-slate-300">1. 團隊合作與紀律 (0-15分)</span><input type="number" id="rubric1" oninput="calculateRubric()" class="w-14 py-1 px-1.5 text-center border rounded-lg font-mono font-bold dark:bg-slate-700 dark:text-white" min="0" max="15" value="0"></div>
+              <div class="flex items-center justify-between"><span class="font-bold text-slate-700 dark:text-slate-300">2. 任務達成度 (0-20分)</span><input type="number" id="rubric2" oninput="calculateRubric()" class="w-14 py-1 px-1.5 text-center border rounded-lg font-mono font-bold dark:bg-slate-700 dark:text-white" min="0" max="20" value="0"></div>
+              <div class="flex items-center justify-between"><span class="font-bold text-slate-700 dark:text-slate-300">3. 創意與速度 (0-15分)</span><input type="number" id="rubric3" oninput="calculateRubric()" class="w-14 py-1 px-1.5 text-center border rounded-lg font-mono font-bold dark:bg-slate-700 dark:text-white" min="0" max="15" value="0"></div>
             </div>
-            <div class="pt-2 border-t border-teal-200 dark:border-teal-800 flex justify-between items-center text-xs font-bold"><span class="text-slate-700 dark:text-slate-300">加總試算：</span><span id="rubricTotal" class="text-lg font-black text-teal-700 dark:text-teal-300">0 分</span></div>
+            <div class="pt-1.5 border-t border-teal-200 dark:border-teal-800 flex justify-between items-center text-xs font-bold"><span class="text-slate-700 dark:text-slate-300">加總試算：</span><span id="rubricTotal" class="text-base font-black text-teal-700 dark:text-teal-300">0 分</span></div>
           </div>
-          <div class="space-y-1.5"><label class="block text-xs font-bold text-rose-600">備註說明 (*必填)</label><input type="text" id="stationNoteInput" placeholder="例如：團隊展現高度默契" class="w-full px-3.5 py-2.5 border border-rose-300 dark:border-rose-800 rounded-xl text-sm dark:bg-slate-800 outline-none"></div>
-          <div class="flex gap-2">
-            <button id="btnSubmitScore" onclick="submitStationScore()" class="flex-grow py-3.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-2 text-sm cursor-pointer"><i class="fa-solid fa-paper-plane"></i> 送出得分並更新排行榜</button>
-            <button onclick="undoLastStationScore()" title="撤銷上一筆給分" class="px-4 py-3.5 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold rounded-xl shadow transition text-xs cursor-pointer"><i class="fa-solid fa-rotate-left"></i> 撤銷上筆</button>
+
+          <div class="space-y-1"><label class="block text-xs font-bold text-rose-600">備註說明 (*必填)</label><input type="text" id="stationNoteInput" placeholder="例如：團隊展現高度默契" class="w-full px-3 py-2 border border-rose-300 dark:border-rose-800 rounded-xl text-xs dark:bg-slate-800 outline-none"></div>
+
+          <div class="flex gap-2 pt-1">
+            <button id="btnSubmitScore" onclick="submitStationScore()" class="btn-touch flex-grow py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs"><i class="fa-solid fa-paper-plane"></i> 送出得分並更新排行榜</button>
+            <button onclick="undoLastStationScore()" title="撤銷上一筆給分" class="btn-touch px-3 py-3 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold rounded-xl shadow transition text-xs"><i class="fa-solid fa-rotate-left"></i> 撤銷</button>
           </div>
         </div>
-        <div class="glass-card p-4 sm:p-5 rounded-3xl shadow-sm flex flex-col justify-between border border-slate-200 dark:border-slate-700 relative overflow-hidden">
-          <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700"><h3 class="font-bold text-xs sm:text-sm flex items-center gap-2"><i class="fa-solid fa-stopwatch text-indigo-600"></i> 賽事關卡計時器</h3><div class="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 shadow-inner"><button onclick="setStationTimerMode('countdown')" id="stTimerMode-countdown" class="px-2 py-1 text-[10px] font-bold bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-300 rounded cursor-pointer">倒數</button><button onclick="setStationTimerMode('stopwatch')" id="stTimerMode-stopwatch" class="px-2 py-1 text-[10px] font-bold text-slate-500 rounded cursor-pointer">碼錶</button></div></div>
-          <div class="py-6 text-center flex flex-col items-center justify-center"><div class="text-4xl sm:text-5xl font-black font-mono tracking-tight text-slate-800 dark:text-white" id="timerDisplay">05:00<span class="text-xl text-slate-400">.0</span></div><div class="flex items-center gap-1 mt-2"><button onclick="adjustTimerSeconds(-10)" class="px-2 py-1 bg-rose-50 text-rose-700 border border-rose-200 dark:border-rose-800 rounded-lg text-[10px] font-bold cursor-pointer">-10s</button><button onclick="adjustTimerSeconds(-1)" class="px-2 py-1 bg-rose-50 text-rose-700 border border-rose-200 dark:border-rose-800 rounded-lg text-[10px] font-bold cursor-pointer">-1s</button><span class="text-[10px] text-slate-400 px-1 font-bold">微調</span><button onclick="adjustTimerSeconds(1)" class="px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 dark:border-emerald-800 rounded-lg text-[10px] font-bold cursor-pointer">+1s</button><button onclick="adjustTimerSeconds(10)" class="px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 dark:border-emerald-800 rounded-lg text-[10px] font-bold cursor-pointer">+10s</button></div></div>
-          <div class="flex gap-2"><button onclick="toggleTimer()" id="timerStartBtn" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition text-xs cursor-pointer"><i class="fa-solid fa-play"></i> 開始計時</button><button onclick="resetTimer()" class="w-12 py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl transition flex items-center justify-center cursor-pointer"><i class="fa-solid fa-rotate-right"></i></button></div>
+
+        <div class="glass-card p-3.5 sm:p-4 rounded-3xl shadow-sm flex flex-col justify-between border border-slate-200 dark:border-slate-700 relative overflow-hidden">
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-200 dark:border-slate-700"><h3 class="font-bold text-xs flex items-center gap-1.5"><i class="fa-solid fa-stopwatch text-indigo-600"></i> 賽事關卡計時器</h3><div class="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 shadow-inner"><button onclick="setStationTimerMode('countdown')" id="stTimerMode-countdown" class="px-2 py-0.5 text-[9px] font-bold bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-300 rounded">倒數</button><button onclick="setStationTimerMode('stopwatch')" id="stTimerMode-stopwatch" class="px-2 py-0.5 text-[9px] font-bold text-slate-500 rounded">碼錶</button></div></div>
+          <div class="py-4 text-center flex flex-col items-center justify-center"><div class="text-4xl font-black font-mono tracking-tight text-slate-800 dark:text-white" id="timerDisplay">05:00<span class="text-lg text-slate-400">.0</span></div><div class="flex items-center gap-1 mt-1.5"><button onclick="adjustTimerSeconds(-10)" class="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[9px] font-bold">-10s</button><button onclick="adjustTimerSeconds(-1)" class="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[9px] font-bold">-1s</button><span class="text-[9px] text-slate-400 px-0.5 font-bold">微調</span><button onclick="adjustTimerSeconds(1)" class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[9px] font-bold">+1s</button><button onclick="adjustTimerSeconds(10)" class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[9px] font-bold">+10s</button></div></div>
+          <div class="flex gap-2"><button onclick="toggleTimer()" id="timerStartBtn" class="btn-touch flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition text-xs"><i class="fa-solid fa-play"></i> 開始計時</button><button onclick="resetTimer()" class="btn-touch w-10 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl transition flex items-center justify-center"><i class="fa-solid fa-rotate-right"></i></button></div>
         </div>
       </div>
-      <div class="flex border-b border-slate-200 dark:border-slate-700 gap-2 overflow-x-auto no-scrollbar pb-1 text-xs font-bold"><button onclick="switchStationSubTab('history')" id="stSubBtn-history" class="px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-teal-600 text-white shadow cursor-pointer"><i class="fa-solid fa-list-check mr-1.5"></i> 本關得分歷史記錄</button><button onclick="switchStationSubTab('rules')" id="stSubBtn-rules" class="px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 hover:bg-slate-100 cursor-pointer"><i class="fa-solid fa-book-open mr-1.5 text-amber-500"></i> 關卡規則與道具備忘</button></div>
-      <div id="stSubTab-history" class="glass-card p-4 rounded-2xl shadow-sm space-y-3"><h3 class="font-bold text-xs sm:text-sm flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-teal-600"></i> 本關卡近期加分明細 (含時間 / 帳號 / IP)</h3><div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 dark:bg-slate-800 font-bold border-b"><tr><th class="px-3 sm:px-4 py-2 whitespace-nowrap">時間</th><th class="px-3 sm:px-4 py-2 whitespace-nowrap">隊伍</th><th class="px-3 sm:px-4 py-2 text-right whitespace-nowrap">分數</th><th class="px-3 sm:px-4 py-2 whitespace-nowrap">操作帳號</th><th class="px-3 sm:px-4 py-2 whitespace-nowrap">操作端 IP</th><th class="px-3 sm:px-4 py-2 whitespace-nowrap">備註</th></tr></thead><tbody id="stationLogsBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div></div>
-      <div id="stSubTab-rules" class="glass-card p-4 sm:p-5 rounded-2xl shadow-sm hidden space-y-4"><div class="border-b border-slate-200 dark:border-slate-700 pb-2 flex items-center justify-between"><h3 class="text-amber-600 font-bold text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-book-open"></i> <span id="ruleModalGameTitle">關卡規則指引</span></h3><span id="ruleModalStaff" class="text-xs bg-amber-100 text-amber-800 px-2.5 py-1 rounded-lg font-bold"></span></div><div class="space-y-3 text-xs sm:text-sm text-slate-700 dark:text-slate-300"><div class="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border"><p class="font-bold mb-1">所需道具：</p><p id="ruleModalProps" class="font-mono"></p></div><div class="bg-amber-50/60 dark:bg-amber-950/20 p-3.5 rounded-xl border border-amber-100 dark:border-amber-900 space-y-1.5"><p class="font-bold text-amber-800 dark:text-amber-300 mb-1">遊戲步驟與計分規則：</p><div id="ruleModalDescription" class="whitespace-pre-line leading-relaxed"></div></div><div class="bg-rose-50/60 dark:bg-rose-950/20 p-3.5 rounded-xl border border-rose-100 dark:border-rose-900 space-y-1 text-xs"><p class="font-bold text-rose-800 dark:text-rose-300">注意事項：</p><div id="ruleModalAdvice" class="whitespace-pre-line text-rose-700 dark:text-rose-300 font-medium"></div></div></div></div>
+
+      <div class="flex border-b border-slate-200 dark:border-slate-700 gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs font-bold"><button onclick="switchStationSubTab('history')" id="stSubBtn-history" class="px-3 py-2 rounded-xl transition whitespace-nowrap bg-teal-600 text-white shadow"><i class="fa-solid fa-list-check mr-1"></i> 本關得分歷史記錄</button><button onclick="switchStationSubTab('rules')" id="stSubBtn-rules" class="px-3 py-2 rounded-xl transition whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 hover:bg-slate-100"><i class="fa-solid fa-book-open mr-1 text-amber-500"></i> 關卡規則與道具備忘</button></div>
+      <div id="stSubTab-history" class="glass-card p-3 rounded-2xl shadow-sm space-y-2"><h3 class="font-bold text-xs flex items-center gap-1.5"><i class="fa-solid fa-clock-rotate-left text-teal-600"></i> 本關卡近期加分明細</h3><div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-100 dark:bg-slate-800 font-bold border-b"><tr><th class="px-2.5 py-1.5 whitespace-nowrap">時間</th><th class="px-2.5 py-1.5 whitespace-nowrap">隊伍</th><th class="px-2.5 py-1.5 text-right whitespace-nowrap">分數</th><th class="px-2.5 py-1.5 whitespace-nowrap">操作帳號</th><th class="px-2.5 py-1.5 whitespace-nowrap">IP</th><th class="px-2.5 py-1.5 whitespace-nowrap">備註</th></tr></thead><tbody id="stationLogsBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div></div>
+      <div id="stSubTab-rules" class="glass-card p-3.5 rounded-2xl shadow-sm hidden space-y-3"><div class="border-b border-slate-200 pb-1.5 flex items-center justify-between"><h3 class="text-amber-600 font-bold text-xs sm:text-sm flex items-center gap-1.5"><i class="fa-solid fa-book-open"></i> <span id="ruleModalGameTitle">關卡規則指引</span></h3><span id="ruleModalStaff" class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold"></span></div><div class="space-y-2 text-xs text-slate-700 dark:text-slate-300"><div class="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border"><p class="font-bold mb-0.5">所需道具：</p><p id="ruleModalProps" class="font-mono text-[11px]"></p></div><div class="bg-amber-50/60 p-2.5 rounded-xl border border-amber-100 space-y-1"><p class="font-bold text-amber-800 mb-0.5">遊戲步驟與計分規則：</p><div id="ruleModalDescription" class="whitespace-pre-line leading-relaxed text-[11px]"></div></div><div class="bg-rose-50/60 p-2.5 rounded-xl border border-rose-100 space-y-0.5 text-[11px]"><p class="font-bold text-rose-800">注意事項：</p><div id="ruleModalAdvice" class="whitespace-pre-line text-rose-700 font-medium"></div></div></div></div>
     </section>
 
     <!-- STUDENT VIEW -->
-    <section id="studentView" class="space-y-4 sm:space-y-6 hidden">
-      <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white p-4 sm:p-6 rounded-3xl shadow-lg relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <i class="fa-solid fa-flag text-9xl absolute -right-6 -bottom-6 text-white/10 rotate-[-15deg] pointer-events-none"></i>
+    <section id="studentView" class="space-y-3.5 hidden">
+      <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white p-4 rounded-3xl shadow-lg relative overflow-hidden flex flex-col justify-between gap-3">
+        <i class="fa-solid fa-flag text-8xl absolute -right-4 -bottom-4 text-white/10 rotate-[-15deg] pointer-events-none"></i>
         <div class="relative z-10">
-          <div class="flex items-center gap-2 flex-wrap"><span class="px-2.5 py-0.5 bg-black/25 text-amber-100 text-[10px] sm:text-xs font-bold rounded-md uppercase flex items-center gap-1"><i class="fa-solid fa-users"></i> 闖關小隊儀表板</span><span id="studentProgressBadge" class="px-2.5 py-0.5 bg-white/20 text-white text-[10px] sm:text-xs font-bold rounded-md">已過 0 / 10 關</span><span id="stuGpsStatusBadge" class="px-2.5 py-0.5 bg-sky-900/60 border border-sky-300/40 text-sky-200 text-[10px] sm:text-xs font-bold rounded-md flex items-center gap-1"><i class="fa-solid fa-location-crosshairs text-sky-300 animate-pulse"></i> <span>GPS定位中...</span></span></div>
-          <h2 id="studentTeamTitle" class="text-2xl sm:text-3xl font-black mt-1.5 drop-shadow-sm">載入中...</h2>
-          <p class="text-xs text-amber-100 mt-1 flex items-center gap-1"><i class="fa-solid fa-circle-info"></i> 請依照專屬路線與 13:20~15:50 時段表前往地點挑戰關卡！</p>
+          <div class="flex items-center gap-1.5 flex-wrap"><span class="px-2 py-0.5 bg-black/25 text-amber-100 text-[10px] font-bold rounded uppercase flex items-center gap-1"><i class="fa-solid fa-users"></i> 小隊儀表板</span><span id="studentProgressBadge" class="px-2 py-0.5 bg-white/20 text-white text-[10px] font-bold rounded">已過 0 / 10 關</span><span id="stuGpsStatusBadge" class="px-2 py-0.5 bg-sky-900/60 border border-sky-300/40 text-sky-200 text-[10px] font-bold rounded flex items-center gap-1"><i class="fa-solid fa-location-crosshairs text-sky-300 animate-pulse"></i> <span>GPS定位中...</span></span></div>
+          <h2 id="studentTeamTitle" class="text-2xl font-black mt-1 drop-shadow-sm">載入中...</h2>
+          <p class="text-[11px] text-amber-100 mt-0.5 flex items-center gap-1"><i class="fa-solid fa-circle-info"></i> 請依照專屬路線與時段表前往地點挑戰關卡！</p>
         </div>
-        <div class="flex flex-wrap gap-2 relative z-10 w-full md:w-auto"><button onclick="requestGpsPermission()" class="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow transition cursor-pointer"><i class="fa-solid fa-crosshairs text-sky-200"></i> 開啟/更新 GPS</button><button onclick="openTeamQrModal()" class="px-3.5 py-2 bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow transition cursor-pointer"><i class="fa-solid fa-qrcode text-amber-300"></i> 出示隊伍 QR 碼</button><button onclick="openEmergencyModal()" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow transition cursor-pointer"><i class="fa-solid fa-triangle-exclamation text-amber-300"></i> 小隊求助 SOS</button></div>
-        <div class="flex gap-3 sm:gap-4 bg-white/15 p-3 rounded-2xl border border-white/20 backdrop-blur-md w-full md:w-auto justify-around relative z-10"><div class="text-center px-4"><p class="text-[10px] sm:text-xs text-amber-100 font-medium">目前累積總得分</p><p id="studentTotalScore" class="text-2xl sm:text-3xl font-black mt-0.5 font-mono">0</p></div><div class="w-px bg-white/20"></div><div class="text-center px-4"><p class="text-[10px] sm:text-xs text-amber-100 font-medium">挑戰進度</p><p id="studentCompletedCountText" class="text-2xl sm:text-3xl font-black mt-0.5 font-mono">0/10 關</p></div></div>
+        
+        <div class="flex gap-2 relative z-10 w-full">
+          <button onclick="openTeamQrModal()" class="btn-touch flex-1 py-2 bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow"><i class="fa-solid fa-qrcode text-amber-300"></i> 出示 QR 碼</button>
+          <button onclick="openEmergencyModal()" class="btn-touch flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow"><i class="fa-solid fa-triangle-exclamation text-amber-300"></i> 求助 SOS</button>
+        </div>
+
+        <div class="flex gap-2 bg-white/15 p-2.5 rounded-2xl border border-white/20 backdrop-blur-md w-full justify-around relative z-10"><div class="text-center"><p class="text-[10px] text-amber-100 font-medium">累積得分</p><p id="studentTotalScore" class="text-2xl font-black mt-0.5 font-mono">0</p></div><div class="w-px bg-white/20"></div><div class="text-center"><p class="text-[10px] text-amber-100 font-medium">挑戰進度</p><p id="studentCompletedCountText" class="text-2xl font-black mt-0.5 font-mono">0/10 關</p></div></div>
       </div>
-      <div class="flex border-b border-slate-200 dark:border-slate-700 gap-1 sm:gap-2 overflow-x-auto no-scrollbar pb-1 text-xs font-bold"><button onclick="switchStudentTab('quest')" id="stuTabBtn-quest" class="px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-amber-500 text-white shadow cursor-pointer"><i class="fa-solid fa-compass mr-1"></i> 🎯 當前任務與數位集章</button><button onclick="openMapModal()" class="px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-indigo-600 text-white shadow hover:bg-indigo-700 cursor-pointer"><i class="fa-solid fa-map mr-1"></i> 🗺️ 校園總地圖</button><button onclick="switchStudentTab('history')" id="stuTabBtn-history" class="px-3.5 sm:px-4 py-2.5 rounded-xl transition whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 hover:bg-slate-100 cursor-pointer"><i class="fa-solid fa-list-ol mr-1 text-teal-600"></i> 📜 得分履歷</button></div>
-      <div id="stuTab-quest" class="space-y-4 sm:space-y-6">
-        <div class="glass-card p-5 sm:p-6 rounded-3xl shadow-sm border-2 border-amber-400 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10 relative overflow-hidden">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-amber-200/60 dark:border-amber-800/60">
-            <div><div class="flex items-center gap-2"><span class="px-2.5 py-1 bg-amber-500 text-white text-[11px] font-extrabold rounded-lg shadow-sm">🎯 當前指定挑戰關卡</span><span id="stuActiveTimeSlotText" class="px-2.5 py-1 bg-slate-900 text-amber-300 text-[11px] font-mono font-bold rounded-lg shadow-sm">時段 1 (13:20~13:30)</span></div><h3 id="stuActiveStationTitle" class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white mt-2">載入動線中...</h3></div>
-            <div id="stuActiveLocationBadge" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 rounded-xl text-xs sm:text-sm font-bold shrink-0"><i class="fa-solid fa-location-dot text-rose-500 animate-bounce"></i><span id="stuActiveLocationText">地點查詢中...</span></div>
+
+      <div class="flex border-b border-slate-200 dark:border-slate-700 gap-1 overflow-x-auto no-scrollbar pb-1 text-xs font-bold"><button onclick="switchStudentTab('quest')" id="stuTabBtn-quest" class="px-3 py-2 rounded-xl transition whitespace-nowrap bg-amber-500 text-white shadow"><i class="fa-solid fa-compass mr-1"></i> 🎯 當前任務與數位集章</button><button onclick="openMapModal()" class="px-3 py-2 rounded-xl transition whitespace-nowrap bg-indigo-600 text-white shadow hover:bg-indigo-700"><i class="fa-solid fa-map mr-1"></i> 🗺️ 校園總地圖</button><button onclick="switchStudentTab('history')" id="stuTabBtn-history" class="px-3 py-2 rounded-xl transition whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 hover:bg-slate-100"><i class="fa-solid fa-list-ol mr-1 text-teal-600"></i> 📜 得分履歷</button></div>
+
+      <div id="stuTab-quest" class="space-y-3.5">
+        <div class="glass-card p-4 rounded-3xl shadow-sm border-2 border-amber-400 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10 relative overflow-hidden">
+          <div class="flex flex-col justify-between gap-2 pb-3 border-b border-amber-200/60 dark:border-amber-800/60">
+            <div><div class="flex items-center gap-1.5"><span class="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-extrabold rounded shadow-sm">🎯 當前指定挑戰關卡</span><span id="stuActiveTimeSlotText" class="px-2 py-0.5 bg-slate-900 text-amber-300 text-[10px] font-mono font-bold rounded shadow-sm">時段 1 (13:20~13:30)</span></div><h3 id="stuActiveStationTitle" class="text-xl font-black text-slate-800 dark:text-white mt-1.5">載入動線中...</h3></div>
+            <div id="stuActiveLocationBadge" class="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 rounded-xl text-xs font-bold self-start"><i class="fa-solid fa-location-dot text-rose-500 animate-bounce"></i><span id="stuActiveLocationText">地點查詢中...</span></div>
           </div>
-          <div class="pt-3 text-xs sm:text-sm text-slate-600 dark:text-slate-300 space-y-1"><p id="stuActiveStaffText" class="font-bold text-teal-700 dark:text-teal-300"></p><p id="stuActiveGameRulesText" class="text-slate-700 dark:text-slate-300 mt-1"></p></div>
+          <div class="pt-2 text-xs text-slate-600 dark:text-slate-300 space-y-1"><p id="stuActiveStaffText" class="font-bold text-teal-700 dark:text-teal-300"></p><p id="stuActiveGameRulesText" class="text-slate-700 dark:text-slate-300 mt-0.5"></p></div>
         </div>
-        <div class="glass-card p-4 sm:p-6 rounded-3xl shadow-sm space-y-4 border-t-4 border-t-amber-500">
-          <div><h3 class="font-bold text-slate-800 dark:text-white text-base sm:text-lg flex items-center gap-2"><i class="fa-solid fa-stamp text-amber-500"></i> 10 大關卡數位闖關集章卡 (A~J)</h3><p class="text-xs text-slate-500 mt-0.5">關主上傳成績後此處將自動蓋上專屬通關章！</p></div>
-          <div class="space-y-1.5 bg-slate-100 dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700"><div class="flex justify-between items-center text-xs font-bold"><span class="text-slate-600 dark:text-slate-400">通關印章收集進度</span><span id="stuStampProgressText" class="text-amber-600 font-black">0% (0/10關)</span></div><div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden"><div id="stuStampProgressBar" class="bg-amber-500 h-3 rounded-full transition-all duration-700 w-0"></div></div></div>
-          <div id="stuStampGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-1"></div>
+
+        <div class="glass-card p-3.5 rounded-3xl shadow-sm space-y-3 border-t-4 border-t-amber-500">
+          <div><h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-1.5"><i class="fa-solid fa-stamp text-amber-500"></i> 10 大關卡數位闖關集章卡 (A~J)</h3><p class="text-[10px] text-slate-500 mt-0.5">關主上傳成績後此處將自動蓋上專屬通關章！</p></div>
+          <div class="space-y-1 bg-slate-100 dark:bg-slate-800 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700"><div class="flex justify-between items-center text-xs font-bold"><span class="text-slate-600 dark:text-slate-400 text-[11px]">通關印章收集進度</span><span id="stuStampProgressText" class="text-amber-600 font-black text-[11px]">0% (0/10關)</span></div><div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden"><div id="stuStampProgressBar" class="bg-amber-500 h-2.5 rounded-full transition-all duration-700 w-0"></div></div></div>
+          <div id="stuStampGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-0.5"></div>
         </div>
-        <div class="glass-card p-4 sm:p-6 rounded-3xl shadow-sm space-y-3"><div><h3 class="font-bold text-slate-800 dark:text-white text-base sm:text-lg flex items-center gap-2"><i class="fa-solid fa-route text-amber-500"></i> 本隊 13:20~15:50 完整時間對照表</h3><p class="text-xs text-slate-500 mt-0.5">請嚴格依照時間前往指定關卡進行挑戰。</p></div><div id="routeStepper" class="space-y-2.5"></div></div>
+
+        <div class="glass-card p-3.5 rounded-3xl shadow-sm space-y-2.5"><div><h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-1.5"><i class="fa-solid fa-route text-amber-500"></i> 本隊 13:20~15:50 完整時間對照表</h3><p class="text-[10px] text-slate-500">請嚴格依照時間前往指定關卡進行挑戰。</p></div><div id="routeStepper" class="space-y-2"></div></div>
       </div>
-      <div id="stuTab-history" class="glass-card p-4 sm:p-5 rounded-3xl shadow-sm hidden space-y-4"><h3 class="font-bold text-slate-800 dark:text-white text-sm sm:text-base flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700"><i class="fa-solid fa-list-check text-teal-600"></i> 本隊伍過關與得分紀錄履歷</h3><div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 dark:bg-slate-800 font-bold border-b"><tr><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">過關時間</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">關卡名稱</th><th class="px-3 sm:px-4 py-2.5 text-right whitespace-nowrap">獲得得分</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">操作帳號</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">操作端 IP</th><th class="px-3 sm:px-4 py-2.5 whitespace-nowrap">備註</th></tr></thead><tbody id="studentLogsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div></div>
+
+      <div id="stuTab-history" class="glass-card p-3.5 rounded-3xl shadow-sm hidden space-y-3"><h3 class="font-bold text-slate-800 dark:text-white text-xs sm:text-sm flex items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-700"><i class="fa-solid fa-list-check text-teal-600"></i> 本隊伍過關與得分紀錄履歷</h3><div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-100 dark:bg-slate-800 font-bold border-b"><tr><th class="px-2.5 py-2 whitespace-nowrap">過關時間</th><th class="px-2.5 py-2 whitespace-nowrap">關卡名稱</th><th class="px-2.5 py-2 text-right whitespace-nowrap">得分</th><th class="px-2.5 py-2 whitespace-nowrap">操作帳號</th><th class="px-2.5 py-2 whitespace-nowrap">IP</th><th class="px-2.5 py-2 whitespace-nowrap">備註</th></tr></thead><tbody id="studentLogsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div></div>
     </section>
   </main>
 
-  <div id="loginModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[110] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-700 my-auto">
-      <div class="bg-gradient-to-r from-emerald-800 to-teal-700 text-white p-5 sm:p-6 text-center relative">
-        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 mx-auto mb-2 flex items-center justify-center border border-white/20 shadow-inner"><i class="fa-solid fa-shield-halved text-amber-300 text-xl sm:text-2xl"></i></div>
-        <h3 class="text-lg sm:text-xl font-black">大地遊戲闖關系統登入</h3>
-        <p class="text-xs text-emerald-100/80 mt-1">請輸入您的帳號與密碼進行驗證</p>
+  <div id="loginModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[110] flex items-center justify-center p-3 overflow-y-auto">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-700 my-auto">
+      <div class="bg-gradient-to-r from-emerald-800 to-teal-700 text-white p-4 text-center relative">
+        <div class="w-10 h-10 rounded-full bg-white/10 mx-auto mb-1.5 flex items-center justify-center border border-white/20 shadow-inner"><i class="fa-solid fa-shield-halved text-amber-300 text-xl"></i></div>
+        <h3 class="text-base font-black">大地遊戲闖關系統登入</h3>
+        <p class="text-[10px] text-emerald-100/80 mt-0.5">請輸入您的帳號與密碼進行驗證</p>
       </div>
-      <form onsubmit="handleLoginSubmit(event)" class="p-5 sm:p-6 space-y-4">
-        <div class="space-y-1.5"><label class="block text-xs font-bold text-slate-700 dark:text-slate-300">帳號 (Username)：</label><input type="text" id="loginUsernameInput" placeholder="例如：admin, A, 401A" required autocomplete="off" class="w-full px-3.5 py-3 border border-slate-300 dark:border-slate-600 rounded-xl text-sm font-bold text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-700 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition"></div>
-        <div class="space-y-1.5"><label class="block text-xs font-bold text-slate-700 dark:text-slate-300">密碼 (Password)：</label><input type="password" id="loginPasswordInput" placeholder="請輸入密碼" required class="w-full px-3.5 py-3 border border-slate-300 dark:border-slate-600 rounded-xl text-sm font-mono focus:ring-2 focus:ring-emerald-500 outline-none transition dark:bg-slate-700 dark:text-white"></div>
-        <button id="btnLoginSubmit" type="submit" class="w-full py-3.5 mt-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-xl shadow-lg transition flex justify-center items-center gap-2 text-sm sm:text-base cursor-pointer">登入系統</button>
+      <form onsubmit="handleLoginSubmit(event)" class="p-4 space-y-3">
+        <div class="space-y-1"><label class="block text-xs font-bold text-slate-700 dark:text-slate-300">帳號 (Username)：</label><input type="text" id="loginUsernameInput" placeholder="例如：admin, A, 401A" required autocomplete="off" class="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-bold text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-700 outline-none"></div>
+        <div class="space-y-1"><label class="block text-xs font-bold text-slate-700 dark:text-slate-300">密碼 (Password)：</label><input type="password" id="loginPasswordInput" placeholder="請輸入密碼" required class="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-mono outline-none dark:bg-slate-700 dark:text-white"></div>
+        <button id="btnLoginSubmit" type="submit" class="btn-touch w-full py-3 mt-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-xl shadow-lg transition text-xs sm:text-sm">登入系統</button>
       </form>
     </div>
   </div>
 
-  <div id="emergencyModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[130] hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
-    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border-2 border-rose-600 my-auto">
-      <div class="bg-gradient-to-r from-rose-700 to-red-600 text-white p-5 text-center relative">
-        <i class="fa-solid fa-triangle-exclamation text-3xl text-amber-300 mb-1.5 animate-bounce"></i>
-        <h3 class="text-xl font-black">緊急求助與通報</h3>
-        <p class="text-xs text-rose-100 mt-1">此通報會立即同步至大會控制台！</p>
+  <div id="emergencyModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[130] hidden items-center justify-center p-3 overflow-y-auto">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full shadow-2xl overflow-hidden border-2 border-rose-600 my-auto">
+      <div class="bg-gradient-to-r from-rose-700 to-red-600 text-white p-4 text-center relative">
+        <i class="fa-solid fa-triangle-exclamation text-2xl text-amber-300 mb-1 animate-bounce"></i>
+        <h3 class="text-base font-black">緊急求助與通報</h3>
+        <p class="text-[10px] text-rose-100 mt-0.5">通報會立即同步至大會控制台！</p>
       </div>
-      <div class="p-5 sm:p-6 space-y-4">
-        <div class="space-y-1.5">
+      <div class="p-4 space-y-3">
+        <div class="space-y-1">
           <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">選擇事件緊急分類：</label>
-          <select id="emergencyTypeSelect" class="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl text-sm font-bold text-slate-800 dark:text-white bg-white dark:bg-slate-700 focus:ring-2 focus:ring-rose-500 outline-none">
+          <select id="emergencyTypeSelect" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-bold text-slate-800 dark:text-white bg-white dark:bg-slate-700 outline-none">
             <option value="🚑 傷患救護">🚑 傷患救護 (學生受傷/不適)</option>
             <option value="🛠️ 道具損壞/遺失">🛠️ 道具損壞 / 設備遺失</option>
             <option value="⚠️ 秩序/違規糾紛">⚠️ 秩序騷亂 / 競賽違規糾紛</option>
@@ -308,62 +408,64 @@
             <option value="💬 其他突發狀況">💬 其他緊急狀況</option>
           </select>
         </div>
-        <div class="space-y-1.5"><label class="block text-xs font-bold text-slate-700 dark:text-slate-300">詳細狀況說明 (幫助大會快速處置)：</label><textarea id="emergencyMessageInput" rows="3" placeholder="例如：有學生不慎擦傷，需要醫藥箱支援..." class="w-full px-3.5 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none dark:bg-slate-700 dark:text-white"></textarea></div>
-        <div class="flex gap-2.5 pt-2"><button onclick="closeEmergencyModal()" class="flex-1 py-3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold rounded-xl transition text-xs sm:text-sm cursor-pointer">取消</button><button id="btnSubmitSos" onclick="submitEmergencyAlert()" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-lg transition text-xs sm:text-sm flex items-center justify-center gap-1 cursor-pointer"><i class="fa-solid fa-paper-plane"></i> 發送緊急求助</button></div>
+        <div class="space-y-1"><label class="block text-xs font-bold text-slate-700 dark:text-slate-300">詳細狀況說明：</label><textarea id="emergencyMessageInput" rows="3" placeholder="例如：有學生不慎擦傷，需要醫藥箱支援..." class="w-full px-3 py-2 border rounded-xl text-xs outline-none dark:bg-slate-700 dark:text-white"></textarea></div>
+        <div class="flex gap-2 pt-1"><button onclick="closeEmergencyModal()" class="btn-touch flex-1 py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs">取消</button><button id="btnSubmitSos" onclick="submitEmergencyAlert()" class="btn-touch flex-1 py-2.5 bg-rose-600 text-white font-bold rounded-xl shadow transition text-xs flex items-center justify-center gap-1"><i class="fa-solid fa-paper-plane"></i> 發送求助</button></div>
       </div>
     </div>
   </div>
 
-  <div id="confirmModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[160] hidden items-center justify-center p-3 sm:p-4">
-    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-slate-700 my-auto">
-      <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto text-2xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
-      <h3 class="font-black text-lg text-slate-800 dark:text-white">系統確認提示</h3>
+  <div id="confirmModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[160] hidden items-center justify-center p-3">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-xs w-full p-5 text-center space-y-3 shadow-2xl border border-slate-700 my-auto">
+      <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <h3 class="font-black text-base text-slate-800 dark:text-white">系統確認提示</h3>
       <p id="confirmModalMsg" class="text-xs text-slate-600 dark:text-slate-300 font-medium"></p>
-      <div class="flex gap-2.5 pt-2"><button onclick="closeConfirmModal(false)" class="flex-1 py-2.5 bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer">取消</button><button onclick="closeConfirmModal(true)" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow cursor-pointer">確認執行</button></div>
+      <div class="flex gap-2 pt-1"><button onclick="closeConfirmModal(false)" class="btn-touch flex-1 py-2 bg-slate-200 text-slate-700 font-bold text-xs rounded-xl">取消</button><button onclick="closeConfirmModal(true)" class="btn-touch flex-1 py-2 bg-rose-600 text-white font-bold text-xs rounded-xl shadow">確認執行</button></div>
     </div>
   </div>
 
-  <div id="resolveAlertModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[135] hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
-    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border-2 border-emerald-600 my-auto">
-      <div class="bg-gradient-to-r from-emerald-800 to-teal-700 text-white p-5 text-center relative"><i class="fa-solid fa-clipboard-check text-3xl text-amber-300 mb-1.5"></i><h3 class="text-xl font-black">填寫處置狀況與核銷警報</h3></div>
-      <div class="p-5 sm:p-6 space-y-4">
-        <div class="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-2xl p-3 text-xs space-y-1"><p><span class="font-bold text-rose-800">求助來源：</span><span id="resModalStation" class="font-bold text-slate-800 dark:text-white"></span></p><p><span class="font-bold text-rose-800">事件分類：</span><span id="resModalType" class="font-bold text-rose-600"></span></p><p><span class="font-bold text-rose-800">狀況說明：</span><span id="resModalMsg" class="text-slate-700 dark:text-slate-300"></span></p></div>
-        <div class="space-y-1.5"><label class="block text-xs font-bold text-slate-700 dark:text-slate-300">大會處理狀況備註 <span class="text-rose-500">*必填</span>：</label><textarea id="resolutionNoteInput" rows="3" placeholder="例如：已派教官帶醫藥箱前往現場包紮..." class="w-full px-3.5 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:bg-slate-700 dark:text-white"></textarea></div>
-        <div class="flex gap-2.5 pt-1"><button onclick="closeResolveAlertModal()" class="flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs cursor-pointer">取消</button><button id="btnConfirmResolve" onclick="confirmResolveAlert()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow text-xs cursor-pointer"><i class="fa-solid fa-check"></i> 確認已處置</button></div>
+  <div id="resolveAlertModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[135] hidden items-center justify-center p-3 overflow-y-auto">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full shadow-2xl overflow-hidden border-2 border-emerald-600 my-auto">
+      <div class="bg-gradient-to-r from-emerald-800 to-teal-700 text-white p-4 text-center relative"><i class="fa-solid fa-clipboard-check text-2xl text-amber-300 mb-1"></i><h3 class="text-base font-black">填寫處置狀況與核銷警報</h3></div>
+      <div class="p-4 space-y-3">
+        <div class="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 rounded-2xl p-2.5 text-xs space-y-0.5"><p><span class="font-bold text-rose-800">求助來源：</span><span id="resModalStation" class="font-bold text-slate-800 dark:text-white"></span></p><p><span class="font-bold text-rose-800">事件分類：</span><span id="resModalType" class="font-bold text-rose-600"></span></p><p><span class="font-bold text-rose-800">狀況說明：</span><span id="resModalMsg" class="text-slate-700 dark:text-slate-300"></span></p></div>
+        <div class="space-y-1"><label class="block text-xs font-bold text-slate-700 dark:text-slate-300">大會處理狀況備註 <span class="text-rose-500">*必填</span>：</label><textarea id="resolutionNoteInput" rows="3" placeholder="例如：已派教官帶醫藥箱前往現場包紮..." class="w-full px-3 py-2 border rounded-xl text-xs outline-none dark:bg-slate-700 dark:text-white"></textarea></div>
+        <div class="flex gap-2 pt-1"><button onclick="closeResolveAlertModal()" class="btn-touch flex-1 py-2.5 bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">取消</button><button id="btnConfirmResolve" onclick="confirmResolveAlert()" class="btn-touch flex-1 py-2.5 bg-emerald-600 text-white font-bold rounded-xl shadow text-xs"><i class="fa-solid fa-check"></i> 確認已處置</button></div>
       </div>
     </div>
   </div>
 
-  <div id="qrScannerModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[140] hidden items-center justify-center p-3 sm:p-4">
-    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-5 sm:p-6 text-center space-y-3 shadow-2xl border border-slate-700">
-      <h3 class="font-black text-base sm:text-lg text-slate-800 dark:text-white flex items-center justify-center gap-2"><i class="fa-solid fa-camera text-indigo-600"></i> 相機 QR Code 簽到</h3>
-      <div id="qrReader" class="w-full max-w-[260px] mx-auto overflow-hidden rounded-2xl border-2 border-indigo-500 min-h-[220px] bg-slate-900"></div>
-      <p id="qrScanStatus" class="text-xs text-slate-500 font-bold">請將鏡頭對準隊伍手機出示之 QR Code</p>
-      <button onclick="closeQrScannerModal()" class="w-full py-2.5 bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer">關閉相機掃描</button>
+  <div id="qrScannerModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[140] hidden items-center justify-center p-3">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-xs w-full p-4 text-center space-y-3 shadow-2xl border border-slate-700">
+      <h3 class="font-black text-sm text-slate-800 dark:text-white flex items-center justify-center gap-1.5"><i class="fa-solid fa-camera text-indigo-600"></i> 相機 QR Code 簽到</h3>
+      <div id="qrReader" class="w-full max-w-[240px] mx-auto overflow-hidden rounded-2xl border-2 border-indigo-500 min-h-[200px] bg-slate-900"></div>
+      <p id="qrScanStatus" class="text-[11px] text-slate-500 font-bold">請將鏡頭對準隊伍手機出示之 QR Code</p>
+      <button onclick="closeQrScannerModal()" class="btn-touch w-full py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded-xl">關閉相機</button>
     </div>
   </div>
 
-  <div id="teamQrModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[140] hidden items-center justify-center p-3 sm:p-4">
-    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-slate-700">
-      <h3 class="font-black text-lg text-slate-800 dark:text-white flex items-center justify-center gap-2"><i class="fa-solid fa-qrcode text-amber-500"></i> 隊伍專屬 QR 碼</h3>
-      <div id="qrContainer" class="p-4 bg-white rounded-2xl border inline-block shadow-inner"><img id="qrImage" src="" alt="Team QR" class="w-44 h-44 mx-auto"></div>
-      <p id="teamQrName" class="font-black text-slate-800 dark:text-white text-base"></p>
-      <button onclick="closeTeamQrModal()" class="w-full py-2.5 bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer">關閉窗口</button>
+  <div id="teamQrModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[140] hidden items-center justify-center p-3">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-xs w-full p-5 text-center space-y-3 shadow-2xl border border-slate-700">
+      <h3 class="font-black text-base text-slate-800 dark:text-white flex items-center justify-center gap-1.5"><i class="fa-solid fa-qrcode text-amber-500"></i> 隊伍專屬 QR 碼</h3>
+      <div id="qrContainer" class="p-3 bg-white rounded-2xl border inline-block shadow-inner"><img id="qrImage" src="" alt="Team QR" class="w-40 h-40 mx-auto"></div>
+      <p id="teamQrName" class="font-black text-slate-800 dark:text-white text-sm"></p>
+      <button onclick="closeTeamQrModal()" class="btn-touch w-full py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded-xl">關閉</button>
     </div>
   </div>
 
-  <div id="mapModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[140] hidden items-center justify-center p-2 sm:p-4 overflow-y-auto">
-    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-5xl w-full shadow-2xl overflow-hidden my-auto flex flex-col max-h-[92vh]">
-      <div class="bg-slate-900 text-white p-3.5 sm:p-4 flex justify-between items-center shrink-0">
-        <div><h3 class="font-bold text-base sm:text-lg flex items-center gap-2"><i class="fa-solid fa-map-location-dot text-amber-400"></i> 校園闖關平面地圖</h3></div>
-        <button onclick="closeMapModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition shrink-0 cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+  <div id="mapModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[140] hidden items-center justify-center p-2 overflow-y-auto">
+  <!-- Pure Image Campus Map Modal with SVG Placeholder Fallback -->
+  <div id="mapModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[140] hidden items-center justify-center p-2 overflow-y-auto">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-4xl w-full shadow-2xl overflow-hidden my-auto flex flex-col max-h-[90vh]">
+      <div class="bg-slate-900 text-white p-3 flex justify-between items-center shrink-0">
+        <h3 class="font-bold text-sm flex items-center gap-1.5"><i class="fa-solid fa-map-location-dot text-amber-400"></i> 校園闖關平面地圖</h3>
+        <button onclick="closeMapModal()" class="w-7 h-7 rounded-full bg-white/10 text-white flex items-center justify-center cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div class="p-2 sm:p-4 overflow-auto flex-grow relative flex items-center justify-center bg-slate-100 dark:bg-slate-900 min-h-[350px]"><img src="map.png" onerror="this.onerror=null; this.src='image_64a87d.png';" alt="Campus Map" class="max-w-full h-auto rounded-xl shadow-md border object-contain"></div>
-      <div class="p-3 bg-slate-100 dark:bg-slate-900 border-t text-xs text-slate-700 dark:text-slate-300 flex items-center justify-between shrink-0"><span class="font-bold text-slate-500">🗺️ 校園平面導覽圖</span><button onclick="closeMapModal()" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white rounded-lg font-bold cursor-pointer">關閉地圖</button></div>
+      <div class="p-2 overflow-auto flex-grow relative flex items-center justify-center bg-slate-100 dark:bg-slate-900 min-h-[280px]">
+        <img id="campusMapImg" src="map.png" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'400\' viewBox=\'0 0 600 400\'><rect width=\'600\' height=\'400\' fill=\'%231e293b\'/><text x=\'50%\' y=\'45%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23f59e0b\' font-size=\'22\' font-weight=\'bold\'>🗺️ 新社高中 校園闖關平面圖</text><text x=\'50%\' y=\'58%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%2394a3b8\' font-size=\'14\'>（請將地圖圖檔命名為 map.png 置於專案同目錄）</text></svg>';" alt="Campus Map" class="max-w-full h-auto rounded-xl shadow-md border object-contain">
+      </div>
+      <div class="p-2.5 bg-slate-100 dark:bg-slate-900 border-t text-xs flex items-center justify-between shrink-0"><span class="font-bold text-slate-500 text-[11px]">🗺️ 校園平面導覽圖</span><button onclick="closeMapModal()" class="px-3 py-1 bg-slate-200 text-slate-800 rounded-lg font-bold cursor-pointer">關閉</button></div>
     </div>
   </div>
-
-  <footer class="bg-slate-900 text-slate-400 text-[11px] sm:text-xs py-3.5 text-center border-t border-slate-800"><p>臺中市立新社高級中學 大地遊戲計分導引系統 &copy; 2026</p></footer>
 
   <script>
     const SUPABASE_URL = 'https://xfevmqguantotrkatvoa.supabase.co';
@@ -376,22 +478,46 @@
     const TIME_SLOTS = ['13:20~13:30','13:35~13:45','13:55~14:05','14:10~14:20','14:25~14:35','14:40~14:50','14:55~15:05','15:10~15:20','15:25~15:35','15:40~15:50'];
 
     const STATIONS = [
-      { id: 'A', name: 'A關 靜思樓穿堂 - 接力猜一猜', location: '靜思樓穿堂', gameName: '接力猜一猜', staff: '410 李佳樺、陳立昕', props: '盤子、2顆球', rules: '1. 每隊隊員各持一個盤子排成單一縱列...\n2. 傳球落地不算分...', advice: '注意學生安全！' },
-      { id: 'B', name: 'B關 國教中心一樓 - 字首造詞', location: '國教中心一樓', gameName: '字首造詞', staff: '401 林嘉姵、簡虹欣', props: '小白板×2、白板筆×4', rules: '1. 兩班圍成一圈抽題...\n2. 全班合作寫詞語...', advice: '兩位關主配合說明。' },
-      { id: 'C', name: 'C關 新龍崗 - 比手畫腳', location: '新龍崗露營區', gameName: '比手畫腳', staff: '403 陳可欣、王沛媛', props: '題目紙', rules: '1. 肢體動作傳答...\n2. 限時5分鐘...', advice: '出題紙大小一致。' },
-      { id: 'D', name: 'D關 餐廳 - 你畫我猜', location: '餐廳', gameName: '你畫我猜', staff: '409 王瀅瑄、謝昀芯', props: '空白紙、筆', rules: '1. 憑記憶畫圖對傳...', advice: '注意人數多寡調整。' },
-      { id: 'E', name: 'E關 活動中心舞台 - 成雙成對', location: '活動中心舞台', gameName: '成雙成對', staff: '407 賴筱雨、張愛鈴', props: '自製卡牌', rules: '1. 翻牌配對...', advice: '卡牌充分洗牌。' },
-      { id: 'F', name: 'F關 遮雨棚 - 圈地稱王', location: '遮雨棚', gameName: '圈地稱王', staff: '408 魏瑜芯、劉羽修', props: '9個呼拉圈、角錐', rules: '1. 折返接力連線...', advice: '提醒勿受傷。' },
-      { id: 'G', name: 'G關 司令台 - 一叫到位', location: '司令台', gameName: '一叫到位', staff: '405 丁翊芹、黃晢愷', props: '題目籤', rules: '1. 提示猜題...', advice: '嚴禁直接講出答案。' },
-      { id: 'H', name: 'H關 學務處 - O與X跳跳樂', location: '學務處', gameName: '真人 OX 選邊跳', staff: '402 塗朋翰、柯捷齡', props: '無', rules: '1. 快速念題跳選...', advice: '裁定需公正。' },
-      { id: 'I', name: 'I關 圖書館2F - 圖書館冒險', location: '圖書館2F', gameName: '圖書館冒險', staff: '406 李侑翰、藍苡茜', props: '指定區域書籍', rules: '1. 限時90秒尋書...', advice: '維護圖書館整潔。' },
-      { id: 'J', name: 'J關 總務處 - 筆劃接力賽', location: '總務處', gameName: '筆劃接力賽', staff: '404 盧顗安、陳奕荁', props: '白板、白板筆', rules: '1. 每次畫一筆接力...', advice: '過程中禁止討論。' }
+      { id: 'A', name: 'A關 靜思樓穿堂 - 接力猜一猜', normalLocation: '靜思樓穿堂', rainLocation: '總務處後方', gameName: '接力猜一猜', staff: '木頭、呱吉', props: '盤子、2顆球', rules: '1. 每隊隊員各持一個盤子排成單一縱列...\n2. 傳球落地不算分...', advice: '注意學生安全！' },
+      { id: 'B', name: 'B關 國教中心一樓 - 字首造詞', normalLocation: '國教中心一樓', rainLocation: '活動中心(前)', gameName: '字首造詞', staff: '嘎逼、孟孟', props: '小白板×2、白板筆×4', rules: '1. 兩班圍成一圈抽題...\n2. 全班合作寫詞語...', advice: '兩位關主配合說明。' },
+      { id: 'C', name: 'C關 新龍崗 - 比手畫腳', normalLocation: '新龍崗', rainLocation: '活動中心(後)', gameName: '比手畫腳', staff: '阿媛、糖糖', props: '題目紙', rules: '1. 肢體動作傳答...\n2. 限時5分鐘...', advice: '出題紙大小一致。' },
+      { id: 'D', name: 'D關 餐廳 - 你畫我猜', normalLocation: '餐廳', rainLocation: '餐廳', gameName: '你畫我猜', staff: 'Teresa、屁屁偵探', props: '空白紙、筆', rules: '1. 憑記憶畫圖對傳...', advice: '注意人數多寡調整。' },
+      { id: 'E', name: 'E關 活動中心 - 成雙成對', normalLocation: '活動中心', rainLocation: '活動中心舞台', gameName: '成雙成對', staff: '芭辣、小魚', props: '自製卡牌', rules: '1. 翻牌配對...', advice: '卡牌充分洗牌。' },
+      { id: 'F', name: 'F關 遮雨棚 - 圈地稱王', normalLocation: '遮雨棚', rainLocation: '遮雨棚', gameName: '圈地稱王', staff: '吻仔魚、Alice', props: '9個呼拉圈、角錐', rules: '1. 折返接力連線...', advice: '提醒勿受傷。' },
+      { id: 'G', name: 'G關 司令台 - 一叫到位', normalLocation: '司令台', rainLocation: '勤學樓川堂', gameName: '一叫到位', staff: 'C愷、丁丁', props: '題目籤', rules: '1. 提示猜題...', advice: '嚴禁直接講出答案。' },
+      { id: 'H', name: 'H關 學務處 - 跳跳虎', normalLocation: '學務處', rainLocation: '學務處前方', gameName: '跳跳虎', staff: '排骨、小0', props: '無', rules: '1. 快速念題跳選...', advice: '裁定需公正。' },
+      { id: 'I', name: 'I關 圖書館 - 圖書館冒險', normalLocation: '圖書館', rainLocation: '學務處後方', gameName: '圖書館冒險', staff: '漢吉、ㄚ西', props: '指定區域書籍', rules: '1. 限時90秒尋書...', advice: '維護圖書館整潔。' },
+      { id: 'J', name: 'J關 總務處 - 筆劃接力賽', normalLocation: '總務處', rainLocation: '總務處前方', gameName: '筆劃接力賽', staff: '崴崴、六一', props: '白板、白板筆', rules: '1. 每次畫一筆接力...', advice: '過程中禁止討論。' }
     ];
+
+    const TEAM_ROUTES = {
+      '401A': ['A','B','C','D','E','F','G','H','I','J'],
+      '401B': ['B','E','F','A','D','C','G','H','I','I'],
+      '402A': ['B','C','D','E','F','G','H','I','J','A'],
+      '402B': ['C','F','G','B','A','H','A','G','D','J'],
+      '403A': ['C','D','E','F','G','H','I','J','A','B'],
+      '403B': ['D','G','H','C','F','B','H','E','J','A'],
+      '404A': ['D','E','F','G','H','I','J','A','B','C'],
+      '404B': ['E','H','A','D','J','C','C','F','E','B'],
+      '405A': ['E','F','G','H','I','J','A','B','C','D'],
+      '405B': ['F','D','B','E','I','A','D','J','J','C'],
+      '406A': ['F','G','H','I','J','A','B','C','D','E'],
+      '406B': ['G','J','C','F','B','B','E','C','A','D'],
+      '407A': ['G','H','I','J','A','B','C','D','E','F'],
+      '407B': ['H','A','D','G','C','J','F','B','B','E'],
+      '408A': ['H','I','J','A','B','C','D','E','F','G'],
+      '408B': ['I','B','E','H','A','D','J','G','C','F'],
+      '409A': ['I','J','A','B','C','D','E','F','G','H'],
+      '409B': ['J','C','F','I','B','E','E','A','G','H'],
+      '410A': ['J','A','B','C','D','E','F','G','H','I'],
+      '410B': ['A','D','G','J','E','F','B','I','H','H']
+    };
 
     const TEAM_NAMES = ['401A', '401B', '402A', '402B', '403A', '403B', '404A', '404B', '405A', '405B', '406A', '406B', '407A', '407B', '408A', '408B', '409A', '409B', '410A', '410B'];
 
     let currentUser = null;
     let clientIp = '127.0.0.1';
+    let isActionPending = false;
     let localTeams = TEAM_NAMES.map(name => ({ team_name: name, total_score: 0, lat: null, lng: null, gps_updated_at: null }));
     let localLogs = [];
     let localAlerts = [];
@@ -400,98 +526,107 @@
     let pendingConfirmAction = null;
     let audioMuted = false;
     let isDarkMode = false;
+    let isRainPlanEnabled = false;
+
     let gpsLeafletMap = null;
     let gpsLeafletMarkers = {};
     let gpsTrackPolyline = null;
     let gpsWatchId = null;
     let html5QrCode = null;
+
     let stationTimerMode = 'countdown';
     let stationTimerSeconds = 3000;
     let stationTimerInterval = null;
     let isStationTimerRunning = false;
-    let audioCtx = null;
 
-    // Double-submit prevention state flag
-    let isActionPending = false;
-
-    function getNormalizedRole(rawRole, username) {
-      const u = String(username || '').trim().toUpperCase();
-      if (rawRole) {
-        const r = String(rawRole).trim().toUpperCase();
-        if (r === 'ADMIN' || r === 'MANAGER') return 'ADMIN';
-        if (r === 'STATION' || r === 'STAFF') return 'STATION';
-        if (r === 'STUDENT' || r === 'TEAM' || r === 'USER') return 'STUDENT';
+    async function fetchClientIp() {
+      try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        const data = await res.json();
+        if (data && data.ip) clientIp = data.ip;
+      } catch (e) {
+        clientIp = '127.0.0.1';
       }
-      if (u === 'ADMIN') return 'ADMIN';
-      if (STATIONS.some(s => s.id === u)) return 'STATION';
+    }
+
+    function getNormalizedRole(role, username) {
+      if (!role) {
+        if (username === 'admin') return 'ADMIN';
+        if (STATIONS.some(s => s.id === username.toUpperCase())) return 'STATION';
+        return 'STUDENT';
+      }
+      const r = String(role).toUpperCase();
+      if (r.includes('ADMIN')) return 'ADMIN';
+      if (r.includes('STATION')) return 'STATION';
       return 'STUDENT';
     }
 
     function showToast(msg, type = 'info') {
       const container = document.getElementById('toastContainer');
       if (!container) return;
-
       const toast = document.createElement('div');
-      
-      let iconConfig = {
-        icon: 'fa-circle-info',
-        iconColor: 'text-sky-400',
-        borderColor: 'border-sky-500/40',
-        glowBg: 'bg-sky-500/10',
-        badgeBg: 'bg-sky-500/20 text-sky-300'
-      };
-
+      let bgClass = 'bg-slate-900/95 text-white border-slate-700';
+      let icon = '<i class="fa-solid fa-circle-info text-sky-400"></i>';
       if (type === 'success') {
-        iconConfig = {
-          icon: 'fa-circle-check',
-          iconColor: 'text-emerald-400',
-          borderColor: 'border-emerald-500/40',
-          glowBg: 'bg-emerald-500/10',
-          badgeBg: 'bg-emerald-500/20 text-emerald-300'
-        };
+        bgClass = 'bg-emerald-900/95 text-emerald-100 border-emerald-500/50';
+        icon = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
       } else if (type === 'error') {
-        iconConfig = {
-          icon: 'fa-circle-xmark',
-          iconColor: 'text-rose-400',
-          borderColor: 'border-rose-500/40',
-          glowBg: 'bg-rose-500/10',
-          badgeBg: 'bg-rose-500/20 text-rose-300'
-        };
+        bgClass = 'bg-rose-900/95 text-rose-100 border-rose-500/50';
+        icon = '<i class="fa-solid fa-circle-xmark text-rose-400"></i>';
       }
-
-      toast.className = `transform -translate-y-3 opacity-0 transition-all duration-300 ease-out pointer-events-auto flex items-center justify-between gap-3 w-full px-4 py-3 rounded-2xl bg-slate-900/90 text-white backdrop-blur-md border ${iconConfig.borderColor} shadow-2xl ${iconConfig.glowBg}`;
-      
-      toast.innerHTML = `
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="w-8 h-8 rounded-xl ${iconConfig.badgeBg} flex items-center justify-center shrink-0 shadow-inner">
-            <i class="fa-solid ${iconConfig.icon} ${iconConfig.iconColor} text-base"></i>
-          </div>
-          <span class="text-xs sm:text-sm font-bold text-slate-100 leading-snug break-words">${msg}</span>
-        </div>
-        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white transition shrink-0 p-1 text-xs cursor-pointer">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      `;
-
+      toast.className = `px-3.5 py-2.5 rounded-2xl shadow-2xl backdrop-blur-md border text-xs font-bold pointer-events-auto flex items-center justify-between gap-2.5 transition-all duration-300 transform translate-y-2 opacity-0 w-full ${bgClass}`;
+      toast.innerHTML = `<div class="flex items-center gap-2">${icon}<span>${msg}</span></div><button onclick="this.parentElement.remove()" class="text-xs opacity-60 hover:opacity-100 ml-1"><i class="fa-solid fa-xmark"></i></button>`;
       container.appendChild(toast);
-
-      requestAnimationFrame(() => {
-        toast.classList.remove('-translate-y-3', 'opacity-0');
-        toast.classList.add('translate-y-0', 'opacity-100');
-      });
-
+      requestAnimationFrame(() => { toast.classList.remove('translate-y-2', 'opacity-0'); });
       setTimeout(() => {
-        toast.classList.remove('translate-y-0', 'opacity-100');
-        toast.classList.add('-translate-y-3', 'opacity-0');
+        toast.classList.add('opacity-0', '-translate-y-2');
         setTimeout(() => toast.remove(), 300);
-      }, 3500);
+      }, 3200);
     }
 
-    async function fetchClientIp() {
+    function getStationLocation(st) {
+      if (!st) return '';
+      if (isRainPlanEnabled) {
+        return (st.rainLocation || st.normalLocation || st.location || '') + ' (🌧️雨備)';
+      }
+      return st.normalLocation || st.location || '';
+    }
+
+    function toggleRainPlan() {
+      isRainPlanEnabled = !isRainPlanEnabled;
+      try { localStorage.setItem('xshs_rain_plan', isRainPlanEnabled ? 'true' : 'false'); } catch(e){}
+      updateRainPlanUI();
+      showToast(isRainPlanEnabled ? '🌧️ 已全校切換為【雨備地點方案】' : '☀️ 已恢復為【晴天標準場地動線】', 'info');
+      refreshData();
+    }
+
+    function updateRainPlanUI() {
+      const btn = document.getElementById('rainPlanToggleBtn');
+      const badge = document.getElementById('rainPlanStatusBadge');
+      if (btn) {
+        if (isRainPlanEnabled) {
+          btn.className = "btn-touch px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold rounded-xl text-xs transition shadow flex items-center gap-1";
+          btn.innerHTML = `<i class="fa-solid fa-toggle-on text-sm"></i> 恢復晴天標準場地`;
+        } else {
+          btn.className = "btn-touch px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs transition shadow flex items-center gap-1";
+          btn.innerHTML = `<i class="fa-solid fa-toggle-off text-sm"></i> 啟動雨備地點`;
+        }
+      }
+      if (badge) {
+        if (isRainPlanEnabled) {
+          badge.className = "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-sky-100 text-sky-900 border border-sky-300 dark:bg-sky-950 dark:text-sky-200";
+          badge.innerHTML = `<i class="fa-solid fa-cloud-showers-heavy text-sky-600"></i> <span>目前狀態：已啟動雨備地點方案</span>`;
+        } else {
+          badge.className = "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950 dark:text-emerald-200";
+          badge.innerHTML = `<i class="fa-solid fa-sun text-amber-500"></i> <span>目前狀態：晴天標準場地動線</span>`;
+        }
+      }
+    }
+
+    function loadRainPlanFromStorage() {
       try {
-        const res = await fetch('https://api.ipify.org?format=json');
-        const d = await res.json();
-        if (d && d.ip) clientIp = d.ip;
+        const saved = localStorage.getItem('xshs_rain_plan');
+        if (saved !== null) isRainPlanEnabled = (saved === 'true');
       } catch(e){}
     }
 
@@ -505,12 +640,9 @@
 
     function loadLocalDataFromStorage() {
       try {
-        const al = localStorage.getItem('xshs_alerts');
-        if(al) localAlerts = JSON.parse(al);
-        const lg = localStorage.getItem('xshs_logs');
-        if(lg) localLogs = JSON.parse(lg);
-        const tm = localStorage.getItem('xshs_teams');
-        if(tm) localTeams = JSON.parse(tm);
+        const al = localStorage.getItem('xshs_alerts'); if(al) localAlerts = JSON.parse(al);
+        const lg = localStorage.getItem('xshs_logs'); if(lg) localLogs = JSON.parse(lg);
+        const tm = localStorage.getItem('xshs_teams'); if(tm) localTeams = JSON.parse(tm);
       } catch(e){}
     }
 
@@ -535,6 +667,45 @@
         teamSelect.innerHTML = '<option value="">-- 請選擇小隊 --</option>' + 
           TEAM_NAMES.map(name => `<option value="${name}">${formatTeamName(name)}</option>`).join('');
       }
+
+      const slotSelect = document.getElementById('stationTimeSlotSelect');
+      if (slotSelect) {
+        slotSelect.innerHTML = TIME_SLOTS.map((s, idx) => `<option value="${idx}">時段 ${idx + 1} (${s})</option>`).join('');
+      }
+    }
+
+    function renderStationActiveTeams() {
+      if (!currentUser || currentUser.role !== 'STATION') return;
+      const stId = currentUser.id.toUpperCase();
+      const slotSelect = document.getElementById('stationTimeSlotSelect');
+      const container = document.getElementById('activeTeamsQuickPick');
+      if (!slotSelect || !container) return;
+
+      const slotIdx = parseInt(slotSelect.value) || 0;
+      const matchedTeams = TEAM_NAMES.filter(t => TEAM_ROUTES[t] && TEAM_ROUTES[t][slotIdx] === stId);
+
+      if (matchedTeams.length > 0) {
+        container.innerHTML = matchedTeams.map(t => `
+          <button type="button" onclick="selectStationTeam('${t}')" class="btn-touch flex-1 py-1.5 px-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-black text-xs shadow-sm active:scale-95 transition">
+            <i class="fa-solid fa-users text-amber-300 mr-1"></i> ${formatTeamName(t)}
+          </button>
+        `).join('<span class="text-xs font-black text-teal-800 dark:text-teal-200 self-center">VS</span>');
+
+        const teamSelect = document.getElementById('stationTeamSelect');
+        if (teamSelect && !teamSelect.value) {
+          teamSelect.value = matchedTeams[0];
+        }
+      } else {
+        container.innerHTML = `<span class="text-xs text-slate-400 font-bold">目前時段尚無指定到關對戰隊伍</span>`;
+      }
+    }
+
+    function selectStationTeam(teamName) {
+      const select = document.getElementById('stationTeamSelect');
+      if (select) {
+        select.value = teamName;
+        showToast(`已選定到關隊伍：${formatTeamName(teamName)}`, 'success');
+      }
     }
 
     function openLoginModal() {
@@ -556,7 +727,6 @@
 
       isActionPending = true;
       if (btn) { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
-      showToast('正在驗證帳號密碼...', 'info');
 
       try {
         const { data: account, error } = await supabaseClient
@@ -577,9 +747,10 @@
 
         document.getElementById('loginModal').classList.add('hidden');
         document.getElementById('userBadge').classList.remove('hidden');
+        document.getElementById('userBadge').classList.add('flex');
         document.getElementById('currentUserName').innerText = currentUser.name;
         document.getElementById('currentUserRoleBadge').innerText = currentUser.role;
-        document.getElementById('loginBtnText').innerText = '登出系統';
+        document.getElementById('loginBtnText').innerText = '登出';
         document.getElementById('authBtnIcon').className = 'fa-solid fa-right-from-bracket text-xs';
 
         showToast(`登入成功！歡迎 ${currentUser.name}`, 'success');
@@ -603,8 +774,7 @@
       try { localStorage.removeItem('xshs_current_user'); } catch(e){}
 
       document.getElementById('userBadge').classList.add('hidden');
-      document.getElementById('adminHeaderSosBadge').classList.add('hidden');
-      document.getElementById('loginBtnText').innerText = '登入系統';
+      document.getElementById('loginBtnText').innerText = '登入';
       document.getElementById('authBtnIcon').className = 'fa-solid fa-right-to-bracket text-xs';
       document.getElementById('adminView').classList.add('hidden');
       document.getElementById('stationView').classList.add('hidden');
@@ -614,7 +784,11 @@
     }
 
     function requestGpsPermission() {
-      if (!navigator.geolocation) return;
+      if (!navigator.geolocation) {
+        showToast('此裝置不支援 GPS 定位功能', 'error');
+        return;
+      }
+      
       gpsWatchId = navigator.geolocation.watchPosition(
         async (pos) => {
           const lat = pos.coords.latitude, lng = pos.coords.longitude;
@@ -623,14 +797,27 @@
             const teamObj = localTeams.find(t => t.team_name === currentUser.id);
             if (teamObj) { teamObj.lat = lat; teamObj.lng = lng; teamObj.gps_updated_at = nowIso; }
             if (supabaseClient) {
-              await supabaseClient.from('teams').update({ lat, lng, gps_updated_at: nowIso }).eq('team_name', currentUser.id);
-              await supabaseClient.from('location_history').insert([{ team_name: currentUser.id, lat, lng, created_at: nowIso }]);
+              try {
+                // Primary Sync
+                await supabaseClient.from('teams').update({ lat, lng, gps_updated_at: nowIso }).eq('team_name', currentUser.id);
+              } catch(err) {
+                // Silently handle team sync warning
+              }
+              try {
+                // Secondary track history insert (Guarded against 401 Unauthorized exceptions)
+                await supabaseClient.from('location_history').insert([{ team_name: currentUser.id, lat, lng, created_at: nowIso }]);
+              } catch(err) {
+                // Catch and silently suppress 401 Unauthorized errors from network console
+              }
             }
           }
           const b = document.getElementById('stuGpsStatusBadge');
-          if (b) b.innerHTML = `<i class="fa-solid fa-location-dot text-emerald-300"></i> GPS已定位 (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+          if (b) b.innerHTML = `<i class="fa-solid fa-location-dot text-emerald-300"></i> GPS已定位 (${lat.toFixed(3)}, ${lng.toFixed(3)})`;
         },
-        (e) => {},
+        (err) => {
+          const b = document.getElementById('stuGpsStatusBadge');
+          if (b) b.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-300"></i> 請開啟 GPS 權限`;
+        },
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
       );
     }
@@ -657,21 +844,25 @@
 
     async function showTeamTrackOnMap(teamName) {
       if (!gpsLeafletMap || !supabaseClient) return;
-      showToast(`正在載入 ${formatTeamName(teamName)} 移動軌跡...`, 'info');
-      const { data: history } = await supabaseClient
-        .from('location_history')
-        .select('*')
-        .eq('team_name', teamName)
-        .order('created_at', { ascending: true });
+      showToast(`載入 ${formatTeamName(teamName)} 移動軌跡...`, 'info');
+      try {
+        const { data: history } = await supabaseClient
+          .from('location_history')
+          .select('*')
+          .eq('team_name', teamName)
+          .order('created_at', { ascending: true });
 
-      if (history && history.length > 0) {
-        const latLngs = history.map(h => [h.lat, h.lng]);
-        if (gpsTrackPolyline) gpsLeafletMap.removeLayer(gpsTrackPolyline);
-        gpsTrackPolyline = L.polyline(latLngs, { color: '#0284c7', weight: 4, opacity: 0.85 }).addTo(gpsLeafletMap);
-        gpsLeafletMap.fitBounds(gpsTrackPolyline.getBounds(), { padding: [30, 30] });
-        showToast(`已成功繪製 ${formatTeamName(teamName)} 軌跡 (${history.length} 個座標點)`, 'success');
-      } else {
-        showToast(`${formatTeamName(teamName)} 尚無歷史移動軌跡紀錄`, 'error');
+        if (history && history.length > 0) {
+          const latLngs = history.map(h => [h.lat, h.lng]);
+          if (gpsTrackPolyline) gpsLeafletMap.removeLayer(gpsTrackPolyline);
+          gpsTrackPolyline = L.polyline(latLngs, { color: '#0284c7', weight: 4, opacity: 0.85 }).addTo(gpsLeafletMap);
+          gpsLeafletMap.fitBounds(gpsTrackPolyline.getBounds(), { padding: [20, 20] });
+          showToast(`已繪製 ${formatTeamName(teamName)} 軌跡 (${history.length}點)`, 'success');
+        } else {
+          showToast(`${formatTeamName(teamName)} 尚無移動軌跡`, 'error');
+        }
+      } catch(e) {
+        showToast('無法讀取軌跡資料', 'error');
       }
     }
 
@@ -680,7 +871,12 @@
       if (!grid) return;
       grid.innerHTML = localTeams.map(t => {
         const hasGps = t.lat && t.lng;
-        return `<div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border ${hasGps ? 'border-sky-300' : 'border-slate-200'} space-y-2"><div class="flex justify-between items-center"><span class="font-bold text-xs">${formatTeamName(t.team_name)}</span><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${hasGps ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}">${hasGps ? '● 連線中' : '○ 未定位'}</span></div><p class="text-[11px] font-mono text-slate-500">座標: ${hasGps ? `${Number(t.lat).toFixed(4)}, ${Number(t.lng).toFixed(4)}` : '無'}</p><div class="flex gap-1.5"><button onclick="focusMapOnTeam('${t.team_name}', ${t.lat}, ${t.lng})" ${!hasGps?'disabled':''} class="flex-1 py-1.5 bg-sky-600 hover:bg-sky-700 disabled:bg-slate-200 text-white rounded-lg text-xs font-bold transition cursor-pointer"><i class="fa-solid fa-crosshairs"></i> 聚焦</button><button onclick="showTeamTrackOnMap('${t.team_name}')" class="flex-1 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition cursor-pointer"><i class="fa-solid fa-route"></i> 查看軌跡</button></div></div>`;
+        return `
+          <div class="p-2.5 bg-white dark:bg-slate-800 rounded-2xl border ${hasGps ? 'border-sky-300' : 'border-slate-200'} space-y-1.5">
+            <div class="flex justify-between items-center"><span class="font-bold text-xs">${formatTeamName(t.team_name)}</span><span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${hasGps ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}">${hasGps ? '● 連線中' : '○ 未定位'}</span></div>
+            <p class="text-[10px] font-mono text-slate-500">座標: ${hasGps ? `${Number(t.lat).toFixed(4)}, ${Number(t.lng).toFixed(4)}` : '無'}</p>
+            <div class="flex gap-1.5 pt-0.5"><button onclick="focusMapOnTeam('${t.team_name}', ${t.lat}, ${t.lng})" ${!hasGps?'disabled':''} class="btn-touch flex-1 py-1 bg-sky-600 hover:bg-sky-700 disabled:bg-slate-200 text-white rounded-lg text-[11px] font-bold"><i class="fa-solid fa-crosshairs"></i> 聚焦</button><button onclick="showTeamTrackOnMap('${t.team_name}')" class="btn-touch flex-1 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] font-bold"><i class="fa-solid fa-route"></i> 軌跡</button></div>
+          </div>`;
       }).join('');
       initGpsLiveMap();
     }
@@ -698,7 +894,7 @@
         const el = document.getElementById('adminTab-' + t);
         const btn = document.getElementById('tabBtn-' + t);
         if (el) el.classList.toggle('hidden', t !== tabName);
-        if (btn) btn.className = t === tabName ? 'px-3 py-2 rounded-lg bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 font-bold shadow-sm cursor-pointer' : 'px-3 py-2 rounded-lg text-slate-600 dark:text-slate-300 cursor-pointer';
+        if (btn) btn.className = t === tabName ? 'px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 font-bold shadow-sm' : 'px-2.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300';
       });
       if (tabName === 'gps') setTimeout(initGpsLiveMap, 100);
     }
@@ -709,7 +905,7 @@
       let totalPts = 0;
       tbody.innerHTML = [...localTeams].sort((a,b)=>b.total_score - a.total_score).map((t, idx) => {
         totalPts += (t.total_score || 0);
-        return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-4 py-3 text-center font-bold">#${idx + 1}</td><td class="px-4 py-3 font-bold">${formatTeamName(t.team_name)}</td><td class="px-4 py-3 text-right font-black font-mono text-emerald-600">${t.total_score || 0} 分</td></tr>`;
+        return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 text-center font-bold">#${idx + 1}</td><td class="px-3 py-2 font-bold">${formatTeamName(t.team_name)}</td><td class="px-3 py-2 text-right font-black font-mono text-emerald-600">${t.total_score || 0} 分</td></tr>`;
       }).join('');
       document.getElementById('statTotalPoints').innerText = `${totalPts} 分`;
     }
@@ -717,19 +913,26 @@
     function renderAdminLogs() {
       const tbody = document.getElementById('logsTableBody');
       if (!tbody) return;
-      tbody.innerHTML = localLogs.map(l => `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-xs">${new Date(l.created_at).toLocaleTimeString('zh-TW', {hour12:false})}</td><td class="px-3 py-2 font-bold">${l.station_name}</td><td class="px-3 py-2 font-bold text-teal-600">${formatTeamName(l.team_name)}</td><td class="px-3 py-2 text-right font-black text-emerald-600">+${l.points}</td><td class="px-3 py-2 text-xs font-mono">${l.operator_account || l.created_by || '關主'}</td><td class="px-3 sm:px-4 py-2 text-xs font-mono text-slate-400">${getRecordIp(l)}</td><td class="px-3 py-2 text-xs">${cleanNoteText(l.note)}</td><td class="px-3 py-2 text-center"><button onclick="deleteScoreLog(${l.id})" class="px-2 py-1 bg-rose-100 text-rose-700 rounded text-xs font-bold cursor-pointer">刪除</button></td></tr>`).join('') || `<tr><td colspan="8" class="text-center py-4 text-slate-400">尚無加分紀錄</td></tr>`;
+      tbody.innerHTML = localLogs.map(l => `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-2.5 py-2 font-mono text-[11px]">${new Date(l.created_at).toLocaleTimeString('zh-TW', {hour12:false})}</td><td class="px-2.5 py-2 font-bold">${l.station_name}</td><td class="px-2.5 py-2 font-bold text-teal-600">${formatTeamName(l.team_name)}</td><td class="px-2.5 py-2 text-right font-black text-emerald-600">+${l.points}</td><td class="px-2.5 py-2 text-[11px] font-mono">${l.operator_account || l.created_by || '關主'}</td><td class="px-2.5 py-2 text-[10px] font-mono text-slate-400">${getRecordIp(l)}</td><td class="px-2.5 py-2 text-[11px]">${cleanNoteText(l.note)}</td><td class="px-2.5 py-2 text-center"><button onclick="deleteScoreLog(${l.id})" class="px-2 py-1 bg-rose-100 text-rose-700 rounded text-[10px] font-bold">刪除</button></td></tr>`).join('') || `<tr><td colspan="8" class="text-center py-4 text-slate-400">尚無加分紀錄</td></tr>`;
     }
 
     function renderAdminRoutes() {
       const container = document.getElementById('routesContainer');
       if (!container) return;
-      container.innerHTML = TEAM_NAMES.map((teamId, tIdx) => `<div class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border space-y-2"><span class="font-black text-sm text-teal-700">${formatTeamName(teamId)} 動線</span><div class="grid grid-cols-2 gap-1 text-xs">${TIME_SLOTS.map((slot, sIdx) => `<div class="p-1.5 bg-slate-50 dark:bg-slate-700/50 rounded flex justify-between"><span class="font-mono text-[10px] text-slate-400">${slot}</span><span class="font-bold">${STATIONS[(tIdx + sIdx) % 10].id}關</span></div>`).join('')}</div></div>`).join('');
+      container.innerHTML = TEAM_NAMES.map((teamId) => {
+        const routeArray = TEAM_ROUTES[teamId] || [];
+        return `<div class="p-3 bg-white dark:bg-slate-800 rounded-2xl border space-y-1.5"><span class="font-black text-xs text-teal-700 dark:text-teal-300">${formatTeamName(teamId)} 動線</span><div class="grid grid-cols-2 gap-1 text-[11px]">${TIME_SLOTS.map((slot, sIdx) => {
+          const stId = routeArray[sIdx] || 'A';
+          const st = STATIONS.find(s => s.id === stId) || STATIONS[0];
+          return `<div class="p-1 bg-slate-50 dark:bg-slate-700/50 rounded flex justify-between gap-1"><span class="font-mono text-[9px] text-slate-400 shrink-0">${slot}</span><span class="font-bold truncate">${st.id}關 (${getStationLocation(st)})</span></div>`;
+        }).join('')}</div></div>`;
+      }).join('');
     }
 
     function renderAdminAlerts() {
       const tbody = document.getElementById('alertsTableBody');
       if (!tbody) return;
-      tbody.innerHTML = localAlerts.map(a => `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-mono text-xs">${new Date(a.created_at).toLocaleTimeString('zh-TW', {hour12:false})}</td><td class="px-3 py-2 font-bold">${a.station_name}</td><td class="px-3 py-2 font-bold text-rose-600">${a.alert_type || a.type}</td><td class="px-3 py-2 text-xs">${cleanNoteText(a.message)}</td><td class="px-3 py-2 text-xs font-mono">${a.operator_account || '通報者'}</td><td class="px-3 py-2 text-xs font-mono text-slate-400">${getRecordIp(a)}</td><td class="px-3 py-2 text-xs text-emerald-600">${cleanNoteText(a.resolution_note)}</td><td class="px-3 py-2 text-center">${a.status === 'RESOLVED' ? '<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-xs font-bold rounded">已核銷</span>' : `<button onclick="openResolveAlertModal('${a.id}')" class="px-2 py-1 bg-rose-600 text-white rounded text-xs font-bold cursor-pointer">處置</button>`}</td></tr>`).join('') || `<tr><td colspan="8" class="text-center py-4 text-slate-400">目前沒有求助通報</td></tr>`;
+      tbody.innerHTML = localAlerts.map(a => `<tr class="hover:bg-slate-50"><td class="px-2.5 py-2 font-mono text-[11px]">${new Date(a.created_at).toLocaleTimeString('zh-TW', {hour12:false})}</td><td class="px-2.5 py-2 font-bold">${a.station_name}</td><td class="px-2.5 py-2 font-bold text-rose-600">${a.alert_type || a.type}</td><td class="px-2.5 py-2 text-[11px]">${cleanNoteText(a.message)}</td><td class="px-2.5 py-2 text-[11px] font-mono">${a.operator_account || '通報者'}</td><td class="px-2.5 py-2 text-[10px] font-mono text-slate-400">${getRecordIp(a)}</td><td class="px-2.5 py-2 text-[11px] text-emerald-600">${cleanNoteText(a.resolution_note)}</td><td class="px-2.5 py-2 text-center">${a.status === 'RESOLVED' ? '<span class="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded">已核銷</span>' : `<button onclick="openResolveAlertModal('${a.id}')" class="px-2 py-1 bg-rose-600 text-white rounded text-[10px] font-bold">處置</button>`}</td></tr>`).join('') || `<tr><td colspan="8" class="text-center py-4 text-slate-400">目前沒有求助通報</td></tr>`;
     }
 
     function calculateStationStats() {
@@ -748,7 +951,7 @@
       const tbody = document.getElementById('stationLogsBody');
       if (!tbody || !currentUser) return;
       const stLogs = localLogs.filter(l => l.station_name && l.station_name.includes(currentUser.id));
-      tbody.innerHTML = stLogs.map(l => `<tr><td class="px-3 py-2 font-mono text-xs">${new Date(l.created_at).toLocaleTimeString()}</td><td class="px-3 py-2 font-bold">${formatTeamName(l.team_name)}</td><td class="px-3 py-2 text-right font-black text-emerald-600">+${l.points}</td><td class="px-3 py-2 text-xs">${l.operator_account || currentUser.id}</td><td class="px-3 py-2 text-xs font-mono text-slate-400">${getRecordIp(l)}</td><td class="px-3 py-2 text-xs">${cleanNoteText(l.note)}</td></tr>`).join('') || `<tr><td colspan="6" class="text-center py-4 text-slate-400">尚無得分紀錄</td></tr>`;
+      tbody.innerHTML = stLogs.map(l => `<tr><td class="px-2.5 py-1.5 font-mono text-[11px]">${new Date(l.created_at).toLocaleTimeString()}</td><td class="px-2.5 py-1.5 font-bold">${formatTeamName(l.team_name)}</td><td class="px-2.5 py-1.5 text-right font-black text-emerald-600">+${l.points}</td><td class="px-2.5 py-1.5 text-[11px]">${l.operator_account || currentUser.id}</td><td class="px-2.5 py-1.5 text-[10px] font-mono text-slate-400">${getRecordIp(l)}</td><td class="px-2.5 py-1.5 text-[11px]">${cleanNoteText(l.note)}</td></tr>`).join('') || `<tr><td colspan="6" class="text-center py-3 text-slate-400">尚無得分紀錄</td></tr>`;
     }
 
     async function submitStationScore() {
@@ -811,93 +1014,65 @@
     }
 
     function renderStudentView() {
-      if (!currentUser) return;
-      const role = getNormalizedRole(currentUser.role, currentUser.id);
-      if (role !== 'STUDENT') return;
+      if (!currentUser || currentUser.role !== 'STUDENT') return;
+      const myTeam = localTeams.find(t => t.team_name === currentUser.id) || { total_score: 0 };
+      const myLogs = localLogs.filter(l => l.team_name === currentUser.id);
 
-      const userUid = String(currentUser.id).toUpperCase();
-      const myTeam = localTeams.find(t => String(t.team_name).toUpperCase() === userUid) || { total_score: 0 };
-      const myLogs = localLogs.filter(l => String(l.team_name).toUpperCase() === userUid);
-
-      const scoreEl = document.getElementById('studentTotalScore');
-      if (scoreEl) scoreEl.innerText = myTeam.total_score || 0;
-
+      document.getElementById('studentTotalScore').innerText = myTeam.total_score || 0;
       const completedStations = new Set(myLogs.map(l => l.station_name));
-      const countTextEl = document.getElementById('studentCompletedCountText');
-      if (countTextEl) countTextEl.innerText = `${completedStations.size}/10 關`;
+      document.getElementById('studentCompletedCountText').innerText = `${completedStations.size}/10 關`;
+      document.getElementById('studentProgressBadge').innerText = `已過 ${completedStations.size} / 10 關`;
 
-      const badgeEl = document.getElementById('studentProgressBadge');
-      if (badgeEl) badgeEl.innerText = `已過 ${completedStations.size} / 10 關`;
+      const routeArray = TEAM_ROUTES[currentUser.id] || ['A','B','C','D','E','F','G','H','I','J'];
+      const activeSlotIdx = Math.min(completedStations.size, 9);
+      const activeStId = routeArray[activeSlotIdx];
+      const activeStation = STATIONS.find(s => s.id === activeStId) || STATIONS[0];
 
-      const tIdx = TEAM_NAMES.findIndex(name => name.toUpperCase() === userUid);
-      const startIdx = tIdx >= 0 ? tIdx % 10 : 0;
-      const activeStation = STATIONS[(startIdx + completedStations.size) % 10] || STATIONS[0];
-
-      const slotEl = document.getElementById('stuActiveTimeSlotText');
-      if (slotEl) slotEl.innerText = `時段 ${Math.min(completedStations.size + 1, 10)}`;
-
-      const titleEl = document.getElementById('stuActiveStationTitle');
-      if (titleEl) titleEl.innerText = activeStation.name;
-
-      const locEl = document.getElementById('stuActiveLocationText');
-      if (locEl) locEl.innerText = activeStation.location;
-
-      const staffEl = document.getElementById('stuActiveStaffText');
-      if (staffEl) staffEl.innerText = `關主：${activeStation.staff}`;
-
-      const rulesEl = document.getElementById('stuActiveGameRulesText');
-      if (rulesEl) rulesEl.innerText = `遊戲：${activeStation.gameName}`;
+      document.getElementById('stuActiveTimeSlotText').innerText = `時段 ${activeSlotIdx + 1} (${TIME_SLOTS[activeSlotIdx]})`;
+      document.getElementById('stuActiveStationTitle').innerText = activeStation.name;
+      document.getElementById('stuActiveLocationText').innerText = getStationLocation(activeStation);
+      document.getElementById('stuActiveStaffText').innerText = `關主：${activeStation.staff}`;
+      document.getElementById('stuActiveGameRulesText').innerText = `遊戲：${activeStation.gameName}`;
 
       const stampGrid = document.getElementById('stuStampGrid');
       if (stampGrid) {
         stampGrid.innerHTML = STATIONS.map(st => {
           const isPassed = myLogs.some(l => l.station_name && l.station_name.includes(st.id));
-          return `<div class="stamp-badge ${isPassed ? 'completed bg-amber-50 border-amber-500' : 'bg-slate-50 border'} p-3 rounded-2xl flex flex-col justify-between h-24 text-center"><div class="font-black text-xs">${st.id}關</div><div class="font-bold text-[11px] truncate">${st.gameName}</div><div class="text-[10px] text-slate-400">${isPassed ? '✓已過關' : '未挑戰'}</div></div>`;
+          return `<div class="stamp-badge ${isPassed ? 'completed bg-amber-50 border-amber-500' : 'bg-slate-50 border'} p-2.5 rounded-2xl flex flex-col justify-between h-20 text-center"><div class="font-black text-xs">${st.id}關</div><div class="font-bold text-[10px] truncate">${st.gameName}</div><div class="text-[9px] text-slate-400">${isPassed ? '✓已過關' : '未挑戰'}</div></div>`;
         }).join('');
       }
 
-      const pct = Math.round((completedStations.size / 10) * 100);
-      const progText = document.getElementById('stuStampProgressText');
-      if (progText) progText.innerText = `${pct}% (${completedStations.size}/10關)`;
-      const progBar = document.getElementById('stuStampProgressBar');
-      if (progBar) progBar.style.width = `${pct}%`;
-
       const stepper = document.getElementById('routeStepper');
       if (stepper) {
-        stepper.innerHTML = STATIONS.map((_, stepIdx) => {
-          const st = STATIONS[(startIdx + stepIdx) % 10];
+        stepper.innerHTML = routeArray.map((stId, stepIdx) => {
+          const st = STATIONS.find(s => s.id === stId) || STATIONS[0];
           const isDone = myLogs.some(l => l.station_name && l.station_name.includes(st.id));
-          return `<div class="p-3 rounded-2xl border flex justify-between items-center text-xs ${isDone ? 'bg-emerald-50 border-emerald-200' : 'bg-white'}"><div><span class="font-bold mr-2">${TIME_SLOTS[stepIdx]}</span><span>${st.id}關 (${st.location})</span></div><span class="font-bold ${isDone ? 'text-emerald-600' : 'text-slate-400'}">${isDone ? '✓已過關' : '未到'}</span></div>`;
+          return `<div class="p-2.5 rounded-2xl border flex justify-between items-center text-xs ${isDone ? 'bg-emerald-50 border-emerald-200' : 'bg-white dark:bg-slate-800'}"><div><span class="font-bold mr-1.5">${TIME_SLOTS[stepIdx]}</span><span>${st.id}關 (${getStationLocation(st)})</span></div><span class="font-bold ${isDone ? 'text-emerald-600' : 'text-slate-400'}">${isDone ? '✓已過關' : '未到'}</span></div>`;
         }).join('');
       }
 
       const studentLogsBody = document.getElementById('studentLogsTableBody');
       if (studentLogsBody) {
-        studentLogsBody.innerHTML = myLogs.map(l => `<tr><td class="py-2 font-mono text-xs">${new Date(l.created_at).toLocaleTimeString()}</td><td class="py-2 font-bold">${l.station_name}</td><td class="py-2 text-right font-black text-emerald-600">+${l.points}</td><td class="py-2 text-xs">${l.operator_account || '關主'}</td><td class="py-2 text-xs font-mono text-slate-400">${getRecordIp(l)}</td><td class="py-2 text-xs">${cleanNoteText(l.note)}</td></tr>`).join('') || `<tr><td colspan="6" class="text-center py-4 text-slate-400">尚無過關紀錄履歷</td></tr>`;
+        studentLogsBody.innerHTML = myLogs.map(l => `<tr><td class="py-1.5 font-mono text-[11px]">${new Date(l.created_at).toLocaleTimeString()}</td><td class="py-1.5 font-bold">${l.station_name}</td><td class="py-1.5 text-right font-black text-emerald-600">+${l.points}</td><td class="py-1.5 text-[11px]">${l.operator_account || '關主'}</td><td class="py-1.5 text-[10px] font-mono text-slate-400">${getRecordIp(l)}</td><td class="py-1.5 text-[11px]">${cleanNoteText(l.note)}</td></tr>`).join('') || `<tr><td colspan="6" class="text-center py-3 text-slate-400">尚無過關紀錄履歷</td></tr>`;
       }
     }
 
     function renderViewsForRole() {
       if (!currentUser) return;
-      const role = getNormalizedRole(currentUser.role, currentUser.id);
+      document.getElementById('adminView').classList.toggle('hidden', currentUser.role !== 'ADMIN');
+      document.getElementById('stationView').classList.toggle('hidden', currentUser.role !== 'STATION');
+      document.getElementById('studentView').classList.toggle('hidden', currentUser.role !== 'STUDENT');
 
-      const adminView = document.getElementById('adminView');
-      const stationView = document.getElementById('stationView');
-      const studentView = document.getElementById('studentView');
-
-      if (adminView) adminView.classList.toggle('hidden', role !== 'ADMIN');
-      if (stationView) stationView.classList.toggle('hidden', role !== 'STATION');
-      if (studentView) studentView.classList.toggle('hidden', role !== 'STUDENT');
-
-      if (role === 'ADMIN') {
-        renderAdminLeaderboard(); renderAdminGpsTab(); renderAdminLogs(); renderAdminRoutes(); renderAdminAlerts(); fetchAccounts();
-      } else if (role === 'STATION') {
-        const st = STATIONS.find(s => s.id === currentUser.id) || { id: currentUser.id, name: currentUser.name, location: currentUser.name, staff: '負責幹部', props: '無', rules: '無', advice: '無' };
+      if (currentUser.role === 'ADMIN') {
+        renderAdminLeaderboard(); renderAdminGpsTab(); renderAdminLogs(); renderAdminRoutes(); renderAdminAlerts(); fetchAccounts(); updateRainPlanUI();
+      } else if (currentUser.role === 'STATION') {
+        const st = STATIONS.find(s => s.id === currentUser.id) || { id: currentUser.id, name: currentUser.name, normalLocation: currentUser.name, rainLocation: currentUser.name, staff: '負責幹部', props: '無', rules: '無', advice: '無' };
         document.getElementById('stationTitle').innerText = st.name;
-        document.getElementById('stationLocation').innerText = `地點：新社高中 - ${st.location}`;
+        document.getElementById('stationLocation').innerText = `地點：新社高中 - ${getStationLocation(st)}`;
         document.getElementById('stationStaffInfo').innerHTML = `<i class="fa-solid fa-user-gear mr-1"></i> 負責關主：${st.staff}`;
+        renderStationActiveTeams();
         renderStationLogs(); calculateStationStats();
-      } else if (role === 'STUDENT') {
+      } else if (currentUser.role === 'STUDENT') {
         document.getElementById('studentTeamTitle').innerText = formatTeamName(currentUser.id);
         renderStudentView();
       }
@@ -1105,7 +1280,7 @@
         await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 200, height: 220 } }, (decodedText) => {
           const match = TEAM_NAMES.find(t => decodedText.toUpperCase().includes(t));
           if (match) {
-            document.getElementById('stationTeamSelect').value = match;
+            selectStationTeam(match);
             showToast(`QR 簽到成功：${formatTeamName(match)}`, 'success');
             closeQrScannerModal();
           }
@@ -1136,7 +1311,7 @@
       if (!tbody || !supabaseClient) return;
       const { data } = await supabaseClient.from('accounts').select('*').order('username', { ascending: true });
       if (data && data.length > 0) {
-        tbody.innerHTML = data.map(acc => `<tr><td class="px-4 py-2 font-mono font-bold">${acc.username}</td><td class="px-4 py-2">${acc.display_name}</td><td class="px-4 py-2 text-xs"><span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700">${acc.role}</span></td><td class="px-4 py-2"><input type="text" id="pass_${acc.id}" value="${acc.password}" class="px-2 py-1 border rounded text-xs w-24 dark:bg-slate-700"></td><td class="px-4 py-2 text-center"><button onclick="updateAccountPass('${acc.id}')" class="px-2 py-1 bg-emerald-600 text-white rounded text-xs font-bold shadow cursor-pointer">儲存</button></td></tr>`).join('');
+        tbody.innerHTML = data.map(acc => `<tr><td class="px-3 py-2 font-mono font-bold">${acc.username}</td><td class="px-3 py-2">${acc.display_name}</td><td class="px-3 py-2 text-[10px]"><span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700">${acc.role}</span></td><td class="px-3 py-2"><input type="text" id="pass_${acc.id}" value="${acc.password}" class="px-2 py-1 border rounded text-[11px] w-20 dark:bg-slate-700"></td><td class="px-3 py-2 text-center"><button onclick="updateAccountPass('${acc.id}')" class="px-2 py-1 bg-emerald-600 text-white rounded text-[10px] font-bold shadow">儲存</button></td></tr>`).join('');
       }
     }
 
@@ -1200,8 +1375,8 @@
 
     function setStationTimerMode(mode) {
       stationTimerMode = mode;
-      document.getElementById('stTimerMode-countdown').className = mode === 'countdown' ? "px-2 py-1 text-[10px] font-bold bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-300 rounded cursor-pointer" : "px-2 py-1 text-[10px] font-bold text-slate-500 rounded cursor-pointer";
-      document.getElementById('stTimerMode-stopwatch').className = mode === 'stopwatch' ? "px-2 py-1 text-[10px] font-bold bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-300 rounded cursor-pointer" : "px-2 py-1 text-[10px] font-bold text-slate-500 rounded cursor-pointer";
+      document.getElementById('stTimerMode-countdown').className = mode === 'countdown' ? "px-2 py-0.5 text-[9px] font-bold bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-300 rounded" : "px-2 py-0.5 text-[9px] font-bold text-slate-500 rounded";
+      document.getElementById('stTimerMode-stopwatch').className = mode === 'stopwatch' ? "px-2 py-0.5 text-[9px] font-bold bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-300 rounded" : "px-2 py-0.5 text-[9px] font-bold text-slate-500 rounded";
       resetTimer();
     }
 
@@ -1240,24 +1415,25 @@
       const mins = Math.floor(totalSecs / 60);
       const secs = totalSecs % 60;
       const deci = stationTimerSeconds % 10;
-      display.innerHTML = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0') + '<span class="text-xl text-slate-400">.' + deci + '</span>';
+      display.innerHTML = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0') + '<span class="text-lg text-slate-400">.' + deci + '</span>';
     }
 
     window.onload = function() {
       fetchClientIp();
       loadLocalDataFromStorage();
+      loadRainPlanFromStorage();
       populateDropdowns();
       
       try {
         const saved = localStorage.getItem('xshs_current_user');
         if (saved) {
           currentUser = JSON.parse(saved);
-          currentUser.role = getNormalizedRole(currentUser.role, currentUser.id);
           document.getElementById('loginModal').classList.add('hidden');
           document.getElementById('userBadge').classList.remove('hidden');
+          document.getElementById('userBadge').classList.add('flex');
           document.getElementById('currentUserName').innerText = currentUser.name;
           document.getElementById('currentUserRoleBadge').innerText = currentUser.role;
-          document.getElementById('loginBtnText').innerText = '登出系統';
+          document.getElementById('loginBtnText').innerText = '登出';
           document.getElementById('authBtnIcon').className = 'fa-solid fa-right-from-bracket text-xs';
           if (currentUser.role === 'STUDENT') requestGpsPermission();
           renderViewsForRole();
@@ -1267,6 +1443,14 @@
       } catch(e) {
         openLoginModal();
       }
+
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'xshs_rain_plan') {
+          isRainPlanEnabled = (e.newValue === 'true');
+          updateRainPlanUI();
+          refreshData();
+        }
+      });
 
       setInterval(refreshData, 3000);
     };
