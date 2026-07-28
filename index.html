@@ -573,18 +573,23 @@
   <script>
     const SUPABASE_URL = 'https://xfevmqguantotrkatvoa.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_uQcbXqsRGxU-uLRagPtwHQ_6SSAUT59';
-    
-    // Safe initialization wrapper for Supabase client
-    let supabaseClient = null;
-    try {
-      if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-          auth: { persistSession: false },
-          realtime: { autoConnect: false }
-        });
+    const supabaseClient = (typeof window.supabase !== 'undefined') ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: false },
+      realtime: { autoConnect: false }
+    }) : null;
+
+    let currentUser = null;
+    let clientIp = '127.0.0.1';
+    let isActionPending = false;
+
+    async function fetchClientIp() {
+      try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        const data = await res.json();
+        if (data && data.ip) clientIp = data.ip;
+      } catch (e) {
+        clientIp = '127.0.0.1';
       }
-    } catch(err) {
-      console.warn("Supabase initial setup fallback to offline local mode.", err);
     }
 
     function formatTWTime(dateStr) {
@@ -662,15 +667,11 @@
 
     const TEAM_NAMES = ['401A', '401B', '402A', '402B', '403A', '403B', '404A', '404B', '405A', '405B', '406A', '406B', '407A', '407B', '408A', '408B', '409A', '409B', '410A', '410B'];
 
-    let currentUser = null;
-    let clientIp = '127.0.0.1';
-    let isActionPending = false;
-    let localBroadcasts = [];
-    let localBroadcastHistory = [];
-
     let localTeams = TEAM_NAMES.map(name => ({ team_name: name, total_score: 0, lat: null, lng: null, gps_updated_at: null }));
     let localLogs = [];
     let localAlerts = [];
+    let localBroadcasts = [];
+    let localBroadcastHistory = [];
     let currentAdminTab = 'leaderboard';
     let pendingResolveAlertId = null;
     let pendingConfirmAction = null;
@@ -680,26 +681,16 @@
 
     let gpsLeafletMap = null;
     let gpsLeafletTileLayer = null;
-    let currentMapStyle = 'street';
     let gpsLeafletMarkers = {};
     let gpsTrackPolyline = null;
     let gpsWatchId = null;
     let html5QrCode = null;
+    let currentMapStyle = 'street';
 
     let stationTimerMode = 'countdown';
     let stationTimerSeconds = 3000;
     let stationTimerInterval = null;
     let isStationTimerRunning = false;
-
-    async function fetchClientIp() {
-      try {
-        const res = await fetch('https://api.ipify.org?format=json');
-        const data = await res.json();
-        if (data && data.ip) clientIp = data.ip;
-      } catch (e) {
-        clientIp = '127.0.0.1';
-      }
-    }
 
     function getNormalizedRole(role, username) {
       if (!role) {
@@ -747,9 +738,6 @@
     function toggleRainPlan() {
       isRainPlanEnabled = !isRainPlanEnabled;
       try { localStorage.setItem('xshs_rain_plan', isRainPlanEnabled ? 'true' : 'false'); } catch(e){}
-      if (supabaseClient) {
-        supabaseClient.from('system_config').upsert({ key: 'rain_plan', value: isRainPlanEnabled ? 'true' : 'false' }).catch(()=>{});
-      }
       updateRainPlanUI();
       showToast(isRainPlanEnabled ? '已切換為【雨備地點方案】' : '已恢復為【標準場地動線】', 'info');
       refreshData();
@@ -827,12 +815,26 @@
       } catch(e){}
       if (supabaseClient) {
         try {
-          await supabaseClient.from('system_config').upsert({
-            key: 'broadcast_list',
-            value: JSON.stringify(localBroadcasts),
-            updated_at: new Date().toISOString()
-          });
-        } catch(e){}
+          const { error } = await supabaseClient.from('system_config').upsert(
+            {
+              key: 'broadcast_list',
+              value: JSON.stringify(localBroadcasts),
+              updated_at: new Date().toISOString()
+            },
+            { onConflict: 'key' }
+          );
+          if (error) {
+            console.error('Supabase broadcast_list upsert error:', error);
+            if (error.code === '42501') {
+              showToast('廣播已於本地生效！請至 Supabase SQL Editor 執行更新後的 schema.sql', 'info');
+            } else {
+              showToast('資料庫廣播同步失敗：' + error.message, 'error');
+            }
+          }
+        } catch(e) {
+          console.error('Broadcast save exception:', e);
+          showToast('廣播連線資料庫異常', 'error');
+        }
       }
       renderBroadcastList();
       updateMarqueeBanner();
@@ -1405,14 +1407,27 @@
       }
     }
 
+    function checkWebSocketSupport() {
+      if (typeof WebSocket === 'undefined') return false;
+      try {
+        // Test constructing a WebSocket instance to catch SecurityError synchronously in sandboxed Canvas/iframes
+        const ws = new WebSocket('wss://xfevmqguantotrkatvoa.supabase.co/realtime/v1/websocket');
+        ws.close();
+        return true;
+      } catch (e) {
+        // Catches SecurityError synchronously when WebSockets are forbidden by environment security policies
+        return false;
+      }
+    }
+
     function setupRealtimeSubscriptions() {
       if (!supabaseClient) return;
-      try {
-        if (typeof WebSocket === 'undefined') {
-          console.warn("WebSocket unavailable. HTTP polling active.");
-          return;
-        }
+      if (!checkWebSocketSupport()) {
+        console.warn("WebSocket connections are restricted in this preview environment. Operating via automatic HTTP polling.");
+        return;
+      }
 
+      try {
         const channel = supabaseClient.channel('public-realtime-channel');
         channel
           .on('postgres_changes', { event: '*', schema: 'public', table: 'score_logs' }, () => {
@@ -1437,7 +1452,7 @@
           })
           .subscribe((status, err) => {
             if (err || status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT') {
-              console.warn("Realtime WebSocket unavailable in sandboxed environment. HTTP polling active.");
+              console.warn("Realtime WebSocket channel error. HTTP polling active.");
             }
           });
       } catch (err) {
@@ -1497,6 +1512,10 @@
 
       updateMarqueeBanner();
       updateRainPlanUI();
+
+      if (currentUser && currentUser.role === 'ADMIN') {
+        renderBroadcastList();
+      }
 
       const pendingCount = localAlerts.filter(a => a.status === 'PENDING').length;
       const statPending = document.getElementById('statPendingAlerts');
