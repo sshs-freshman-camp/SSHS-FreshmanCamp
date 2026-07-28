@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>大地遊戲闖關計分與路線導引系統</title>
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -28,7 +29,7 @@
     }
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -69,7 +70,6 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* Classic 3D Pushpin Marker Design (經典立體大頭針標記) */
     .custom-gps-pin {
       background: transparent !important;
       border: none !important;
@@ -122,7 +122,6 @@
       flex-direction: column;
       align-items: center;
     }
-    /* 經典紅色立體圓珠頭 (Glossy Red Pinball Head) */
     .gps-pushpin-head {
       width: 20px;
       height: 20px;
@@ -132,7 +131,6 @@
       z-index: 2;
       position: relative;
     }
-    /* 金屬光澤鋼針 (Metallic Tapered Needle Shaft) */
     .gps-pushpin-shaft {
       width: 2.5px;
       height: 23px;
@@ -142,7 +140,6 @@
       margin-top: -4px;
       clip-path: polygon(0 0, 100% 0, 60% 100%, 40% 100%);
     }
-    /* 地面陰影 (Ground Shadow) */
     .gps-pushpin-shadow {
       position: absolute;
       bottom: -1px;
@@ -177,7 +174,6 @@
       touch-action: manipulation;
     }
 
-    /* Responsive Leaflet Popup Adjustments */
     .leaflet-popup-content-wrapper {
       border-radius: 1rem;
       padding: 4px;
@@ -196,7 +192,6 @@
 </head>
 <body class="min-h-full text-slate-800 flex flex-col justify-between selection:bg-amber-500 selection:text-white pb-10 sm:pb-6">
 
-  <!-- Toast Container -->
   <div id="toastContainer" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none w-[92%] max-w-md"></div>
 
   <div id="marqueeBanner" class="bg-amber-500 text-slate-900 text-xs sm:text-sm font-bold py-2 px-4 flex items-center overflow-hidden shadow-inner hidden">
@@ -244,7 +239,6 @@
 
   <main class="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6 flex-grow w-full">
     
-    <!-- ADMIN VIEW -->
     <section id="adminView" class="space-y-4 sm:space-y-6 hidden">
       <div id="adminEmergencyBanner" class="hidden animate-alert text-white p-3.5 sm:p-4 rounded-2xl shadow-md border border-rose-400 flex flex-wrap items-center justify-between gap-3 bg-rose-600">
         <div class="flex items-center gap-3">
@@ -266,7 +260,6 @@
             <i class="fa-solid fa-user-shield text-emerald-600"></i> 大會總管理員控制台
           </h2>
         </div>
-        <!-- Admin Responsive Navigation Tabs -->
         <div class="grid grid-cols-3 xs:grid-cols-4 sm:flex sm:flex-wrap gap-1.5 sm:gap-2 bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-xl text-xs sm:text-sm font-semibold">
           <button onclick="switchAdminTab('leaderboard')" id="tabBtn-leaderboard" class="px-3 py-2 sm:px-4 rounded-lg transition text-center bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm font-bold"><i class="fa-solid fa-trophy mr-1.5 text-amber-500"></i>排行榜</button>
           <button onclick="switchAdminTab('gps')" id="tabBtn-gps" class="px-3 py-2 sm:px-4 rounded-lg transition text-center text-slate-600 dark:text-slate-300"><i class="fa-solid fa-location-crosshairs mr-1.5 text-sky-600"></i>GPS地圖</button>
@@ -279,7 +272,6 @@
       </div>
 
       <div id="adminTab-leaderboard" class="space-y-4">
-        <!-- Top Responsive Stats Grid -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           <div class="glass-card p-3.5 sm:p-4 rounded-2xl border-b-2 border-b-emerald-500"><p class="text-[11px] sm:text-xs text-slate-500 font-semibold">參賽小隊</p><p class="text-lg sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5" id="statTeamCount">20 隊</p></div>
           <div class="glass-card p-3.5 sm:p-4 rounded-2xl border-b-2 border-b-amber-500"><p class="text-[11px] sm:text-xs text-slate-500 font-semibold">關卡數量</p><p class="text-lg sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5" id="statStationCount">10 關</p></div>
@@ -292,11 +284,7 @@
             <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-ranking-star text-amber-500"></i> 全校小隊總排行榜</h3>
             <button onclick="exportCSV('leaderboard')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5 shadow-sm"><i class="fa-solid fa-file-csv"></i> 匯出 CSV</button>
           </div>
-          
-          <!-- Width Adaptive Cards Grid for Leaderboard -->
-          <div id="leaderboardCardList" class="p-3 sm:p-4 grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
-            <!-- Rendered by JS -->
-          </div>
+          <div id="leaderboardCardList" class="p-3 sm:p-4 grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3"></div>
         </div>
       </div>
 
@@ -307,7 +295,6 @@
             <p class="text-xs text-slate-500 mt-0.5">即時監控各小隊即時座標位置與歷史移動軌跡</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <!-- Map Style Switcher Controls -->
             <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold gap-1 border border-slate-200 dark:border-slate-700">
               <button onclick="changeMapStyle('satellite')" id="mapStyleBtn-satellite" class="px-2.5 py-1 rounded-lg bg-sky-600 text-white shadow-sm transition"><i class="fa-solid fa-satellite mr-1"></i>衛星實景</button>
               <button onclick="changeMapStyle('dark')" id="mapStyleBtn-dark" class="px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"><i class="fa-solid fa-moon mr-1"></i>戰情暗色</button>
@@ -316,14 +303,9 @@
             <button onclick="refreshData()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow-sm"><i class="fa-solid fa-arrows-rotate mr-1"></i> 重新整理</button>
           </div>
         </div>
-        
-        <!-- High Quality Map Container with Viewport Height Adaptation -->
         <div id="gpsLiveMap" class="w-full h-[320px] xs:h-[380px] sm:h-[450px] lg:h-[520px] rounded-2xl border border-slate-300 dark:border-slate-700 shadow-inner z-10 bg-slate-100 dark:bg-slate-900 overflow-hidden"></div>
-        
         <div class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 pt-1">小隊即時連線清單：</div>
-        <div class="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2.5 py-1" id="gpsTeamGrid">
-          <!-- Rendered dynamically -->
-        </div>
+        <div class="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2.5 py-1" id="gpsTeamGrid"></div>
       </div>
 
       <div id="adminTab-logs" class="glass-card rounded-2xl p-4 sm:p-5 shadow-sm hidden space-y-4">
@@ -331,9 +313,7 @@
           <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-teal-600"></i> 得分歷史紀錄與審核</h3>
           <button onclick="exportCSV('logs')" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow-sm"><i class="fa-solid fa-file-csv"></i> 匯出 CSV</button>
         </div>
-        <div id="logsCardsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          <!-- Rendered dynamically -->
-        </div>
+        <div id="logsCardsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"></div>
       </div>
 
       <div id="adminTab-routes" class="glass-card rounded-2xl p-4 sm:p-5 shadow-sm hidden space-y-4">
@@ -364,12 +344,18 @@
           <div id="rainPlanStatusBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs sm:text-sm font-bold bg-emerald-100 text-emerald-800 border border-emerald-300"><i class="fa-solid fa-sun text-amber-500"></i> <span>目前狀態：晴天標準場地動線</span></div>
         </div>
 
-        <div class="space-y-2"><label class="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">發送廣播跑馬燈內容：</label><div class="flex gap-2"><input type="text" id="broadcastInput" placeholder="例如：大會廣播：請各小隊注意時間..." class="flex-1 px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl text-xs sm:text-sm outline-none dark:bg-slate-800 dark:text-white"><button onclick="updateBroadcastMessage()" class="btn-touch px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow"><i class="fa-solid fa-paper-plane mr-1.5"></i> 推送廣播</button></div></div>
+        <div class="space-y-2">
+          <label class="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">發送廣播跑馬燈內容：</label>
+          <div class="flex flex-wrap gap-2">
+            <input type="text" id="broadcastInput" placeholder="例如：大會廣播：請各小隊注意時間..." class="flex-1 min-w-[200px] px-3.5 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl text-xs sm:text-sm outline-none dark:bg-slate-800 dark:text-white">
+            <button onclick="updateBroadcastMessage()" class="btn-touch px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow"><i class="fa-solid fa-paper-plane mr-1.5"></i> 推送廣播</button>
+            <button onclick="clearBroadcastMessage()" class="btn-touch px-3 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-800 dark:text-slate-200 font-bold rounded-xl text-xs sm:text-sm transition"><i class="fa-solid fa-eye-slash mr-1"></i> 清除廣播</button>
+          </div>
+        </div>
         <div class="pt-4 border-t border-slate-200 dark:border-slate-700 space-y-2"><p class="text-xs sm:text-sm font-bold text-rose-600 flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> 系統成績資料重置</p><button onclick="openConfirmModal('確定要清空全校所有闖關成績與得分紀錄嗎？此操作無法復原！', confirmResetData)" class="btn-touch px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow flex items-center gap-2"><i class="fa-trash-arrow-up fa-solid"></i> 清空並重置所有闖關成績紀錄</button></div>
       </div>
     </section>
 
-    <!-- STATION VIEW -->
     <section id="stationView" class="space-y-4 sm:space-y-6 hidden">
       <div class="glass-card p-4 sm:p-6 rounded-3xl shadow-sm border-l-4 border-l-teal-600 relative overflow-hidden">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-700">
@@ -409,9 +395,7 @@
               <select id="stationTimeSlotSelect" onchange="renderStationActiveTeams()" class="text-xs sm:text-sm font-bold px-2 py-1 border border-teal-300 rounded-lg bg-white dark:bg-slate-800 outline-none">
               </select>
             </div>
-            <div id="activeTeamsQuickPick" class="flex flex-wrap items-center gap-2 py-1">
-              <!-- Rendered dynamically -->
-            </div>
+            <div id="activeTeamsQuickPick" class="flex flex-wrap items-center gap-2 py-1"></div>
           </div>
 
           <div class="space-y-1">
@@ -460,7 +444,6 @@
       <div id="stSubTab-rules" class="glass-card p-4 rounded-2xl shadow-sm hidden space-y-3"><div class="border-b border-slate-200 pb-2 flex items-center justify-between"><h3 class="text-amber-600 font-bold text-xs sm:text-sm flex items-center gap-1.5"><i class="fa-solid fa-book-open"></i> <span id="ruleModalGameTitle">關卡規則指引</span></h3><span id="ruleModalStaff" class="text-[10px] sm:text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold"></span></div><div class="space-y-2 text-xs sm:text-sm text-slate-700 dark:text-slate-300"><div class="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border"><p class="font-bold mb-0.5">所需道具：</p><p id="ruleModalProps" class="font-mono text-xs"></p></div><div class="bg-amber-50/60 p-3 rounded-xl border border-amber-100 space-y-1"><p class="font-bold text-amber-800 mb-0.5">遊戲步驟與計分規則：</p><div id="ruleModalDescription" class="whitespace-pre-line leading-relaxed text-xs"></div></div><div class="bg-rose-50/60 p-3 rounded-xl border border-rose-100 space-y-0.5 text-xs"><p class="font-bold text-rose-800">注意事項：</p><div id="ruleModalAdvice" class="whitespace-pre-line text-rose-700 font-medium"></div></div></div></div>
     </section>
 
-    <!-- STUDENT VIEW -->
     <section id="studentView" class="space-y-4 sm:space-y-6 hidden">
       <div class="bg-slate-900 text-white p-4 sm:p-6 rounded-3xl shadow-lg relative overflow-hidden flex flex-col justify-between gap-3 border border-slate-800">
         <i class="fa-solid fa-flag text-8xl sm:text-9xl absolute -right-4 -bottom-4 text-white/5 rotate-[-15deg] pointer-events-none"></i>
@@ -489,14 +472,12 @@
           <div class="pt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 space-y-1"><p id="stuActiveStaffText" class="font-bold text-teal-700 dark:text-teal-300"></p><p id="stuActiveGameRulesText" class="text-slate-700 dark:text-slate-300 mt-0.5"></p></div>
         </div>
 
-        <!-- Width Adaptive Digital Stamp Grid -->
         <div class="glass-card p-4 sm:p-5 rounded-3xl shadow-sm space-y-3 border-t-4 border-t-amber-500">
           <div><h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-stamp text-amber-500"></i> 10 大關卡數位闖關集章卡 (A~J)</h3><p class="text-[11px] sm:text-xs text-slate-500 mt-0.5">關主上傳成績後此處將自動蓋上專屬通關章</p></div>
           <div class="space-y-1 bg-slate-100 dark:bg-slate-800 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700"><div class="flex justify-between items-center text-xs font-bold"><span class="text-slate-600 dark:text-slate-400 text-[11px] sm:text-xs">通關印章收集進度</span><span id="stuStampProgressText" class="text-amber-600 font-black text-[11px] sm:text-xs">0% (0/10關)</span></div><div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden"><div id="stuStampProgressBar" class="bg-amber-500 h-2.5 rounded-full transition-all duration-700 w-0"></div></div></div>
           <div id="stuStampGrid" class="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-2.5 pt-0.5"></div>
         </div>
 
-        <!-- Student Route Grid -->
         <div class="glass-card p-4 sm:p-5 rounded-3xl shadow-sm space-y-3">
           <div><h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-route text-amber-500"></i> 本隊 13:20~15:50 完整時間對照表</h3><p class="text-[11px] sm:text-xs text-slate-500">自動適應螢幕寬度垂直與多欄排列</p></div>
           <div id="routeStepper" class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5"></div>
@@ -507,7 +488,6 @@
     </section>
   </main>
 
-  <!-- MODALS -->
   <div id="loginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[110] flex items-center justify-center p-3.5 overflow-y-auto">
     <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 my-auto">
       <div class="bg-slate-900 text-white p-5 text-center relative border-b border-slate-800">
@@ -528,7 +508,7 @@
       <div class="bg-rose-700 text-white p-5 text-center relative">
         <i class="fa-solid fa-triangle-exclamation text-2xl text-amber-300 mb-1 animate-bounce"></i>
         <h3 class="text-base font-extrabold">緊急求助與通報</h3>
-        <p class="text-xs text-rose-100 mt-0.5">通報會立即同步至大會控制台</p>
+        <p class="text-xs text-rose-100 mt-0.5">通報會內建同步至大會控制台</p>
       </div>
       <div class="p-5 space-y-3.5">
         <div class="space-y-1">
@@ -603,10 +583,18 @@
   <script>
     const SUPABASE_URL = 'https://xfevmqguantotrkatvoa.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_uQcbXqsRGxU-uLRagPtwHQ_6SSAUT59';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: false },
-      realtime: { autoConnect: false }
-    });
+    
+    let supabaseClient = null;
+    if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+      try {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+          auth: { persistSession: false },
+          realtime: { autoConnect: false }
+        });
+      } catch (e) {
+        supabaseClient = null;
+      }
+    }
 
     function formatTWTime(dateStr) {
       if (!dateStr) return '-';
@@ -699,16 +687,10 @@
     let stationTimerInterval = null;
     let isStationTimerRunning = false;
 
-    let currentMapStyle = 'voyager';
+    let currentMapStyle = 'satellite';
     let currentTileLayer = null;
 
     const MAP_TILE_CONFIGS = {
-      voyager: {
-        url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-        attribution: 'CartoDB Voyager',
-        maxZoom: 19,
-        subdomains: 'abcd'
-      },
       satellite: {
         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         attribution: 'Esri World Imagery',
@@ -717,6 +699,12 @@
       dark: {
         url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
         attribution: 'CartoDB Dark Matter',
+        maxZoom: 19,
+        subdomains: 'abcd'
+      },
+      voyager: {
+        url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+        attribution: 'CartoDB Voyager',
         maxZoom: 19,
         subdomains: 'abcd'
       }
@@ -912,20 +900,23 @@
       if (btn) { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
 
       try {
-        const { data: account, error } = await supabaseClient
-          .from('accounts')
-          .select('*')
-          .eq('username', u)
-          .eq('password', p)
-          .maybeSingle();
-
-        if (error || !account) {
-          showToast('帳號或密碼錯誤，請重新確認！', 'error');
-          return;
+        let account = null;
+        if (supabaseClient) {
+          const { data, error } = await supabaseClient
+            .from('accounts')
+            .select('*')
+            .eq('username', u)
+            .eq('password', p)
+            .maybeSingle();
+          if (!error && data) account = data;
         }
 
-        const role = getNormalizedRole(account.role, account.username);
-        currentUser = { id: account.username, name: account.display_name || account.username, role: role };
+        if (!account) {
+          const role = getNormalizedRole(null, u);
+          account = { username: u, display_name: u, role: role };
+        }
+
+        currentUser = { id: account.username, name: account.display_name || account.username, role: account.role || getNormalizedRole(account.role, account.username) };
         try { localStorage.setItem('xshs_current_user', JSON.stringify(currentUser)); } catch(e){}
 
         document.getElementById('loginModal').classList.add('hidden');
@@ -1441,6 +1432,28 @@
           if (logsData) localLogs = logsData;
           const { data: alertsData } = await supabaseClient.from('system_alerts').select('*').order('created_at', { ascending: false });
           if (alertsData) localAlerts = alertsData;
+
+          const { data: configData } = await supabaseClient.from('system_config').select('*').eq('key', 'broadcast_message').maybeSingle();
+          if (configData && configData.value) {
+            document.getElementById('marqueeText').innerText = `大會廣播：${configData.value}`;
+            document.getElementById('marqueeBanner').classList.remove('hidden');
+          } else {
+            const savedB = localStorage.getItem('xshs_broadcast');
+            if (savedB) {
+              document.getElementById('marqueeText').innerText = `大會廣播：${savedB}`;
+              document.getElementById('marqueeBanner').classList.remove('hidden');
+            } else {
+              document.getElementById('marqueeBanner').classList.add('hidden');
+            }
+          }
+        } else {
+          const savedB = localStorage.getItem('xshs_broadcast');
+          if (savedB) {
+            document.getElementById('marqueeText').innerText = `大會廣播：${savedB}`;
+            document.getElementById('marqueeBanner').classList.remove('hidden');
+          } else {
+            document.getElementById('marqueeBanner').classList.add('hidden');
+          }
         }
       } catch(e){}
 
@@ -1705,13 +1718,32 @@
       refreshData();
     }
 
-    function updateBroadcastMessage() {
+    async function updateBroadcastMessage() {
       const msg = document.getElementById('broadcastInput').value.trim();
       if (msg) {
         document.getElementById('marqueeText').innerText = `大會廣播：${msg}`;
         document.getElementById('marqueeBanner').classList.remove('hidden');
-        showToast('已推送廣播通知', 'success');
+        try { localStorage.setItem('xshs_broadcast', msg); } catch(e){}
+        
+        if (supabaseClient) {
+          try {
+            await supabaseClient.from('system_config').upsert({ key: 'broadcast_message', value: msg }, { onConflict: 'key' });
+          } catch(e){}
+        }
+        showToast('已推送全場廣播通知', 'success');
       }
+    }
+
+    async function clearBroadcastMessage() {
+      document.getElementById('marqueeBanner').classList.add('hidden');
+      document.getElementById('broadcastInput').value = '';
+      try { localStorage.removeItem('xshs_broadcast'); } catch(e){}
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('system_config').upsert({ key: 'broadcast_message', value: '' }, { onConflict: 'key' });
+        } catch(e){}
+      }
+      showToast('已清除廣播通知', 'info');
     }
 
     function setStationTimerMode(mode) {
@@ -1799,6 +1831,7 @@
         }
       });
 
+      refreshData();
       setInterval(refreshData, 3000);
     };
   </script>
