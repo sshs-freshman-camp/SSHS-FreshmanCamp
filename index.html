@@ -76,6 +76,7 @@
     </div>
   </div>
   
+  <!-- STREAMING_CHUNK:Rendering application header bar and status badges... -->
   <header class="bg-white text-slate-900 shadow-sm sticky top-0 z-40 border-b border-slate-200">
     <div class="max-w-7xl mx-auto px-3.5 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-y-2.5 gap-x-3">
       <div class="flex items-center gap-3 min-w-0">
@@ -107,6 +108,7 @@
     </div>
   </header>
 
+  <!-- STREAMING_CHUNK:Building Admin view tabs and dashboards... -->
   <main class="max-w-7xl mx-auto px-3 sm:px-5 py-4 sm:py-6 flex-grow w-full">
     <section id="adminView" class="space-y-4 hidden">
       <div id="adminEmergencyBanner" class="hidden animate-alert text-white p-3.5 rounded-2xl shadow-md border border-rose-600 items-center justify-between gap-3">
@@ -144,7 +146,7 @@
         <div class="grid grid-cols-3 gap-3">
           <div class="glass-card p-3.5 rounded-2xl border border-slate-200"><p class="text-xs text-slate-500 font-semibold">參賽小隊</p><p class="text-xl font-black text-slate-900 mt-1" id="statTeamCount">20 隊</p></div>
           <div class="glass-card p-3.5 rounded-2xl border border-slate-200"><p class="text-xs text-slate-500 font-semibold">關卡數量</p><p class="text-xl font-black text-slate-900 mt-1" id="statStationCount">10 關</p></div>
-          <div class="glass-card p-3.5 rounded-2xl border border-slate-200"><p class="text-xs text-slate-500 font-semibold">未處置求助</p><p class="text-xl font-black text-rose-600 mt-1" id="statPendingAlerts">0 件</p></div>
+          <div class="glass-card p-3.5 rounded-2xl border border-slate-200"><p class="text-xs text-slate-500 font-semibold">完全未處置求助</p><p class="text-xl font-black text-rose-600 mt-1" id="statPendingAlerts">0 件</p></div>
         </div>
         
         <div id="podiumContainer" class="grid grid-cols-3 gap-2 sm:gap-4 max-w-2xl mx-auto pt-2"></div>
@@ -165,6 +167,7 @@
         </div>
       </div>
 
+      <!-- STREAMING_CHUNK:Building GPS live map and auditing log tables... -->
       <div id="adminTab-gps" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
         <div class="flex flex-wrap justify-between items-center pb-2.5 border-b border-slate-200 gap-2">
           <div>
@@ -189,7 +192,22 @@
           <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-emerald-600"></i> 全校得分歷史紀錄與審核</h3>
           <button onclick="exportCSV('logs')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs border border-amber-400 shadow-sm"><i class="fa-solid fa-file-csv"></i> 匯出 CSV</button>
         </div>
-        <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200"><tr><th class="px-3 py-2.5 whitespace-nowrap">時間</th><th class="px-3 py-2.5 whitespace-nowrap">關卡名稱</th><th class="px-3 py-2.5 whitespace-nowrap">小隊</th><th class="px-3 py-2.5 text-right whitespace-nowrap">分數</th><th class="px-3 py-2.5 whitespace-nowrap">IP 位址</th><th class="px-3 py-2.5 whitespace-nowrap">備註說明</th><th class="px-3 py-2.5 text-center whitespace-nowrap">操作</th></tr></thead><tbody id="logsTableBody" class="divide-y divide-slate-200"></tbody></table></div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm">
+            <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+              <tr>
+                <th class="px-3 py-2.5 whitespace-nowrap">時間 (台灣時間)</th>
+                <th class="px-3 py-2.5 whitespace-nowrap">關卡名稱與地點</th>
+                <th class="px-3 py-2.5 whitespace-nowrap">小隊</th>
+                <th class="px-3 py-2.5 text-right whitespace-nowrap">分數</th>
+                <th class="px-3 py-2.5 whitespace-nowrap">IP 位址</th>
+                <th class="px-3 py-2.5 whitespace-nowrap">備註說明</th>
+                <th class="px-3 py-2.5 text-center whitespace-nowrap">操作</th>
+              </tr>
+            </thead>
+            <tbody id="logsTableBody" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
       </div>
 
       <div id="adminTab-routes" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
@@ -201,9 +219,22 @@
 
       <div id="adminTab-alerts" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
         <div class="flex justify-between items-center pb-2 border-b border-slate-200">
-          <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-bullhorn text-rose-600"></i> 各關卡緊急求助事件紀錄</h3>
+          <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-bullhorn text-rose-600"></i> 緊急求助事件紀錄</h3>
         </div>
-        <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200"><tr><th class="px-3 py-2.5 whitespace-nowrap">通報時間</th><th class="px-3 py-2.5 whitespace-nowrap">通報者</th><th class="px-3 py-2.5 whitespace-nowrap">狀況說明</th><th class="px-3 py-2.5 whitespace-nowrap">處置備註</th><th class="px-3 py-2.5 text-center whitespace-nowrap">處理狀態與操作</th></tr></thead><tbody id="alertsTableBody" class="divide-y divide-slate-200"></tbody></table></div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm">
+            <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+              <tr>
+                <th class="px-3 py-2.5 whitespace-nowrap">通報時間 (台灣時間)</th>
+                <th class="px-3 py-2.5 whitespace-nowrap">通報者</th>
+                <th class="px-3 py-2.5 whitespace-nowrap">狀況說明</th>
+                <th class="px-3 py-2.5 whitespace-nowrap">處置備註</th>
+                <th class="px-3 py-2.5 text-center whitespace-nowrap">處理狀態與操作</th>
+              </tr>
+            </thead>
+            <tbody id="alertsTableBody" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
       </div>
 
       <div id="adminTab-auth" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
@@ -247,6 +278,7 @@
       </div>
     </section>
 
+    <!-- STREAMING_CHUNK:Building Station view and Student team views... -->
     <section id="stationView" class="space-y-4 hidden">
       <div class="glass-card p-4 sm:p-5 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
@@ -335,7 +367,7 @@
         <div id="stationMyAlertsList" class="space-y-2"></div>
       </div>
 
-      <div id="stSubTab-history" class="glass-card p-3.5 rounded-2xl shadow-sm space-y-2 border border-slate-200"><h3 class="font-bold text-xs flex items-center gap-2 text-slate-900"><i class="fa-solid fa-clock-rotate-left text-amber-600"></i> 本關卡近期加分明細</h3><div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200"><tr><th class="px-3 py-2 whitespace-nowrap">時間</th><th class="px-3 py-2 whitespace-nowrap">隊伍</th><th class="px-3 py-2 text-right whitespace-nowrap">分數</th><th class="px-3 py-2 whitespace-nowrap">IP</th><th class="px-3 py-2 whitespace-nowrap">備註</th></tr></thead><tbody id="stationLogsBody" class="divide-y divide-slate-200"></tbody></table></div></div>
+      <div id="stSubTab-history" class="glass-card p-3.5 rounded-2xl shadow-sm space-y-2 border border-slate-200"><h3 class="font-bold text-xs flex items-center gap-2 text-slate-900"><i class="fa-solid fa-clock-rotate-left text-amber-600"></i> 本關卡近期加分明細</h3><div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200"><tr><th class="px-3 py-2 whitespace-nowrap">時間 (台灣時間)</th><th class="px-3 py-2 whitespace-nowrap">隊伍</th><th class="px-3 py-2 text-right whitespace-nowrap">分數</th><th class="px-3 py-2 whitespace-nowrap">IP</th><th class="px-3 py-2 whitespace-nowrap">備註</th></tr></thead><tbody id="stationLogsBody" class="divide-y divide-slate-200"></tbody></table></div></div>
     </section>
 
     <section id="studentView" class="space-y-4 hidden">
@@ -389,6 +421,7 @@
     </section>
   </main>
 
+  <!-- STREAMING_CHUNK:Rendering Chat Modal, Modals for auth, emergency, resolution... -->
   <div id="chatWidgetBtn" onclick="toggleChatModal()" class="fixed bottom-5 right-5 z-[90] w-14 h-14 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-full shadow-2xl border-2 border-amber-300 flex items-center justify-center text-xl cursor-pointer transition transform active:scale-95">
     <i class="fa-solid fa-comments"></i>
     <span id="chatBadgeDot" class="hidden absolute top-0 right-0 w-4 h-4 bg-rose-600 rounded-full border-2 border-white animate-pulse"></span>
@@ -522,6 +555,7 @@
 
   <footer class="bg-white text-slate-500 text-xs py-3 text-center border-t border-slate-200"><p>臺中市立新社高級中學 大地遊戲闖關導引系統 &copy; 2026</p></footer>
 
+  <!-- STREAMING_CHUNK:Initializing Supabase, Session restoration logic, and global variables... -->
   <script>
     const SUPABASE_URL = 'https://xfevmqguantotrkatvoa.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_uQcbXqsRGxU-uLRagPtwHQ_6SSAUT59';
@@ -543,6 +577,7 @@
     let isActionPending = false;
     let localMessages = [];
     let activeChatRoom = 'ALL';
+    let lastReadTimeMap = {};
 
     const TIME_SLOTS = ['13:20~13:30','13:35~13:45','13:55~14:05','14:10~14:20','14:25~14:35','14:40~14:50','14:55~15:05','15:10~15:20','15:25~15:35','15:40~15:50'];
     const STATIONS = [
@@ -642,7 +677,7 @@
 
     function getNormalizedRole(role, username) {
       if (!role) {
-        if (username === 'admin') return 'ADMIN';
+        if (username === 'admin' || username === 'ADMIN') return 'ADMIN';
         if (STATIONS.some(s => s.id === username.toUpperCase())) return 'STATION';
         return 'STUDENT';
       }
@@ -692,6 +727,7 @@
       return accId;
     }
 
+    <!-- STREAMING_CHUNK:Implementing Admin controls, rain plan logic, and broadcasts... -->
     function toggleRainPlan() {
       isRainPlanEnabled = !isRainPlanEnabled;
       updateRainPlanUI();
@@ -915,6 +951,7 @@
     }
     function toggleAuth() { currentUser ? handleLogout() : openLoginModal(); }
 
+    <!-- STREAMING_CHUNK:Implementing Login handling with SessionStorage preservation... -->
     async function handleLoginSubmit(event) {
       event.preventDefault();
       if (isActionPending) return;
@@ -937,6 +974,10 @@
           const role = getNormalizedRole(null, u);
           currentUser = { id: u, name: u, role: role };
         }
+
+        // Save session state to SessionStorage so page refreshes don't log out
+        sessionStorage.setItem('xshs_user_session', JSON.stringify(currentUser));
+
         document.getElementById('loginModal').classList.add('hidden');
         document.getElementById('userBadge').classList.remove('hidden');
         document.getElementById('userBadge').classList.add('flex');
@@ -962,6 +1003,10 @@
         gpsWatchId = null;
       }
       currentUser = null;
+      sessionStorage.removeItem('xshs_user_session');
+      sessionStorage.removeItem('xshs_admin_tab');
+      sessionStorage.removeItem('xshs_student_tab');
+
       document.getElementById('userBadge').classList.add('hidden');
       document.getElementById('loginBtnText').innerText = '登入';
       document.getElementById('authBtnIcon').className = 'fa-solid fa-right-to-bracket text-xs';
@@ -970,6 +1015,36 @@
       document.getElementById('studentView').classList.add('hidden');
       openLoginModal();
       showToast('已登出系統', 'info');
+    }
+
+    function restoreSession() {
+      const savedUserStr = sessionStorage.getItem('xshs_user_session');
+      if (savedUserStr) {
+        try {
+          currentUser = JSON.parse(savedUserStr);
+          document.getElementById('loginModal').classList.add('hidden');
+          document.getElementById('userBadge').classList.remove('hidden');
+          document.getElementById('userBadge').classList.add('flex');
+          document.getElementById('currentUserName').innerText = currentUser.name;
+          document.getElementById('currentUserRoleBadge').innerText = currentUser.role;
+          document.getElementById('loginBtnText').innerText = '登出';
+          document.getElementById('authBtnIcon').className = 'fa-solid fa-right-from-bracket text-xs';
+
+          if (currentUser.role === 'STUDENT') {
+            requestGpsPermission();
+            const savedStuTab = sessionStorage.getItem('xshs_student_tab') || 'quest';
+            switchStudentTab(savedStuTab);
+          } else if (currentUser.role === 'ADMIN') {
+            const savedAdminTab = sessionStorage.getItem('xshs_admin_tab') || 'leaderboard';
+            switchAdminTab(savedAdminTab);
+          }
+          renderViewsForRole();
+          return true;
+        } catch(e) {
+          sessionStorage.removeItem('xshs_user_session');
+        }
+      }
+      return false;
     }
 
     function requestGpsPermission() {
@@ -1127,8 +1202,10 @@
       }
     }
 
+    <!-- STREAMING_CHUNK:Implementing tab switching with session persistence... -->
     function switchAdminTab(tabName) {
       currentAdminTab = tabName;
+      sessionStorage.setItem('xshs_admin_tab', tabName);
       ['leaderboard', 'gps', 'logs', 'routes', 'alerts', 'auth', 'config'].forEach(t => {
         const el = document.getElementById('adminTab-' + t);
         const btn = document.getElementById('tabBtn-' + t);
@@ -1252,13 +1329,13 @@
 
         return `
           <tr class="hover:bg-slate-50">
-            <td class="px-3 py-2.5 font-mono text-xs text-slate-500">${formatTWTime(a.created_at)}</td>
+            <td class="px-3 py-2.5 font-mono text-xs text-slate-500">${formatTWDateTime(a.created_at)}</td>
             <td class="px-3 py-2.5 font-bold text-slate-800">${a.operator_account || a.station_name || '通報者'}</td>
             <td class="px-3 py-2.5 text-xs text-slate-700">${cleanNoteText(a.message)}</td>
             <td class="px-3 py-2.5 text-xs text-emerald-600 font-semibold">${cleanNoteText(a.resolution_note)}</td>
             <td class="px-3 py-2.5 text-center flex items-center justify-center gap-2">
               ${statusBadge}
-              <button onclick="openResolveAlertModal('${a.id}')" class="px-2.5 py-1 ${unhandled ? 'bg-rose-600 text-white font-black' : 'bg-slate-100 text-slate-800 border border-slate-300 font-bold'} text-xs rounded-lg transition shadow-sm">
+              <button onclick="openResolveAlertModal('${a.id}')" class="px-2.5 py-1 ${unhandled ? 'bg-rose-600 text-white font-black' : 'bg-slate-100 text-slate-800 border border-slate-300 font-bold'} text-xs rounded-lg transition shadow-sm cursor-pointer">
                 ${unhandled ? '地點/內容處置' : '編輯處置'}
               </button>
             </td>
@@ -1270,7 +1347,7 @@
       const tbody = document.getElementById('stationLogsBody');
       if (!tbody || !currentUser) return;
       const stLogs = localLogs.filter(l => l.station_name && l.station_name.includes(currentUser.id));
-      tbody.innerHTML = stLogs.map(l => `<tr><td class="px-3 py-2 font-mono text-xs text-slate-500">${formatTWTime(l.created_at)}</td><td class="px-3 py-2 font-bold text-slate-800">${formatTeamName(l.team_name)}</td><td class="px-3 py-2 text-right font-black font-mono text-amber-600">+${l.points}</td><td class="px-3 py-2 text-xs font-mono text-slate-500">${getRecordIp(l)}</td><td class="px-3 py-2 text-xs text-slate-700">${cleanNoteText(l.note)}</td></tr>`).join('') || `<tr><td colspan="5" class="text-center py-4 text-slate-500 font-medium">尚無得分紀錄</td></tr>`;
+      tbody.innerHTML = stLogs.map(l => `<tr><td class="px-3 py-2 font-mono text-xs text-slate-500">${formatTWDateTime(l.created_at)}</td><td class="px-3 py-2 font-bold text-slate-800">${formatTeamName(l.team_name)}</td><td class="px-3 py-2 text-right font-black font-mono text-amber-600">+${l.points}</td><td class="px-3 py-2 text-xs font-mono text-slate-500">${getRecordIp(l)}</td><td class="px-3 py-2 text-xs text-slate-700">${cleanNoteText(l.note)}</td></tr>`).join('') || `<tr><td colspan="5" class="text-center py-4 text-slate-500 font-medium">尚無得分紀錄</td></tr>`;
     }
 
     async function submitStationScore() {
@@ -1327,6 +1404,7 @@
     }
 
     function switchStudentTab(tab) {
+      sessionStorage.setItem('xshs_student_tab', tab);
       const qTab = document.getElementById('stuTab-quest');
       const hTab = document.getElementById('stuTab-history');
       const btnQ = document.getElementById('stuTabBtn-quest');
@@ -1390,7 +1468,7 @@
             <div class="p-2.5 rounded-xl border ${a.status === 'RESOLVED' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'} text-xs space-y-1">
               <div class="flex justify-between font-bold">
                 <span>求助事件</span>
-                <span class="text-[10px] font-mono">${formatTWTime(a.created_at)}</span>
+                <span class="text-[10px] font-mono">${formatTWDateTime(a.created_at)}</span>
               </div>
               <p class="text-[11px]">${cleanNoteText(a.message)}</p>
               ${a.resolution_note && cleanNoteText(a.resolution_note) !== '-' ? `<div class="pt-1 border-t ${a.status === 'RESOLVED' ? 'border-emerald-200 text-emerald-700' : 'border-rose-200 text-rose-700'} text-[11px] font-bold">大會處置回覆：${cleanNoteText(a.resolution_note)}</div>` : `<div class="text-[10px] text-rose-600 font-bold animate-pulse">大會處理中...</div>`}
@@ -1412,7 +1490,7 @@
       if (studentLogsBody) {
         studentLogsBody.innerHTML = myLogs.map(l => `
           <tr class="hover:bg-slate-50">
-            <td class="px-4 py-2.5 font-mono text-xs text-slate-500">${formatTWTime(l.created_at)}</td>
+            <td class="px-4 py-2.5 font-mono text-xs text-slate-500">${formatTWDateTime(l.created_at)}</td>
             <td class="px-4 py-2.5 font-bold text-slate-800">${formatStationDisplayName(l.station_name)}</td>
             <td class="px-4 py-2.5 text-right font-black font-mono text-amber-600">+${l.points}</td>
           </tr>`).join('') || `<tr><td colspan="3" class="text-center py-4 text-slate-500 font-medium">尚無過關紀錄履歷</td></tr>`;
@@ -1431,7 +1509,7 @@
           <div class="p-2.5 rounded-xl border ${a.status === 'RESOLVED' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'} text-xs space-y-1">
             <div class="flex justify-between font-bold">
               <span>關卡求助</span>
-              <span class="text-[10px] font-mono">${formatTWTime(a.created_at)}</span>
+              <span class="text-[10px] font-mono">${formatTWDateTime(a.created_at)}</span>
             </div>
             <p class="text-[11px]">${cleanNoteText(a.message)}</p>
             ${a.resolution_note && cleanNoteText(a.resolution_note) !== '-' ? `<div class="pt-1 border-t ${a.status === 'RESOLVED' ? 'border-emerald-200 text-emerald-700' : 'border-rose-200 text-rose-700'} text-[11px] font-bold">大會處置回覆：${cleanNoteText(a.resolution_note)}</div>` : `<div class="text-[10px] text-rose-600 font-bold animate-pulse">大會處理中...</div>`}
@@ -1657,7 +1735,7 @@
       if (!tbody || !supabaseClient) return;
       const { data } = await supabaseClient.from('accounts').select('*').order('id', { ascending: true });
       if (data && data.length > 0) {
-        tbody.innerHTML = data.map(acc => `<tr><td class="px-3 py-2.5 font-mono text-slate-400 font-bold">#${acc.id}</td><td class="px-3 py-2.5 font-mono font-bold text-slate-900">${acc.username}</td><td class="px-3 py-2.5 text-slate-800">${acc.display_name}</td><td class="px-3 py-2.5 text-xs"><span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold border border-slate-200">${acc.role}</span></td><td class="px-3 py-2.5"><input type="text" id="pass_${acc.id}" value="${acc.password}" class="px-2.5 py-1 border border-slate-300 rounded-lg text-xs font-mono w-24 bg-white text-slate-900 outline-none"></td><td class="px-3 py-2.5 text-center"><button onclick="updateAccountPass('${acc.id}')" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-400 rounded-lg text-xs shadow-sm transition">儲存</button></td></tr>`).join('');
+        tbody.innerHTML = data.map(acc => `<tr><td class="px-3 py-2.5 font-mono text-slate-400 font-bold">#${acc.id}</td><td class="px-3 py-2.5 font-mono font-bold text-slate-900">${acc.username}</td><td class="px-3 py-2.5 text-slate-800">${acc.display_name}</td><td class="px-3 py-2.5 text-xs"><span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold border border-slate-200">${acc.role}</span></td><td class="px-3 py-2.5"><input type="text" id="pass_${acc.id}" value="${acc.password}" class="px-2.5 py-1 border border-slate-300 rounded-lg text-xs font-mono w-24 bg-white text-slate-900 outline-none"></td><td class="px-3 py-2.5 text-center"><button onclick="updateAccountPass('${acc.id}')" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-400 rounded-lg text-xs shadow-sm transition cursor-pointer">儲存</button></td></tr>`).join('');
       }
     }
 
@@ -1683,7 +1761,7 @@
         csv += "名次,小隊,總分\n";
         localTeams.forEach((t, i) => csv += `${i+1},${formatTeamName(t.team_name)},${t.total_score}\n`);
       } else {
-        csv += "時間,關卡名稱,隊伍,分數,IP,備註\n";
+        csv += "時間,關卡名稱與地點,小隊,分數,IP,備註\n";
         localLogs.forEach(l => csv += `"${formatTWDateTime(l.created_at)}","${formatStationDisplayName(l.station_name)}",${l.team_name},${l.points},${getRecordIp(l)},"${cleanNoteText(l.note)}"\n`);
       }
       const link = document.createElement("a");
@@ -1749,6 +1827,7 @@
       display.innerHTML = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0') + '<span class="text-lg text-slate-400">.' + deci + '</span>';
     }
 
+    <!-- STREAMING_CHUNK:Implementing Chat Modal toggle, rooms, and unread badges... -->
     function toggleChatModal() {
       const modal = document.getElementById('chatModal');
       const badgeDot = document.getElementById('chatBadgeDot');
@@ -1756,6 +1835,7 @@
       if (modal.classList.contains('hidden')) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
+        lastReadTimeMap[activeChatRoom] = Date.now();
         if (badgeDot) badgeDot.classList.add('hidden');
         loadChatMessages();
       } else {
@@ -1765,6 +1845,7 @@
 
     function switchChatRoom(roomId) {
       activeChatRoom = roomId;
+      lastReadTimeMap[roomId] = Date.now();
       loadChatMessages();
     }
 
@@ -1791,6 +1872,50 @@
       }
     }
 
+    function getMessagesForRoom(roomId) {
+      if (!currentUser) return [];
+      const myId = currentUser.id;
+
+      if (roomId === 'ALL') {
+        return localMessages.filter(m => m.receiver === 'ALL');
+      } else if (roomId === 'ALL_STATIONS') {
+        return localMessages.filter(m => m.receiver === 'ALL_STATIONS');
+      } else if (roomId === 'ALL_STUDENTS') {
+        return localMessages.filter(m => m.receiver === 'ALL_STUDENTS');
+      } else {
+        const targetId = roomId;
+        if (currentUser.role === 'ADMIN') {
+          return localMessages.filter(m => 
+            m.receiver !== 'ALL' && m.receiver !== 'ALL_STATIONS' && m.receiver !== 'ALL_STUDENTS' && (
+              (isAdminAccount(m.sender) && isSameAccount(m.receiver, targetId)) ||
+              (isSameAccount(m.sender, targetId) && isAdminAccount(m.receiver))
+            )
+          );
+        } else {
+          return localMessages.filter(m => 
+            m.receiver !== 'ALL' && m.receiver !== 'ALL_STATIONS' && m.receiver !== 'ALL_STUDENTS' && (
+              (isSameAccount(m.sender, myId) && isSameAccount(m.receiver, targetId)) ||
+              (isSameAccount(m.sender, targetId) && isSameAccount(m.receiver, myId))
+            )
+          );
+        }
+      }
+    }
+
+    function hasUnreadInRoom(roomId) {
+      if (!currentUser) return false;
+      const roomMsgs = getMessagesForRoom(roomId);
+      if (roomMsgs.length === 0) return false;
+      const lastRead = lastReadTimeMap[roomId] || 0;
+
+      return roomMsgs.some(m => {
+        const isFromMe = isSameAccount(m.sender, currentUser.id) || (currentUser.role === 'ADMIN' && isAdminAccount(m.sender));
+        if (isFromMe) return false;
+        const msgTime = new Date(m.created_at).getTime() || 0;
+        return msgTime > lastRead;
+      });
+    }
+
     function getSortedChatRooms() {
       const allowed = getAllowedRoomsForUser();
       const latestMessageTimeMap = {};
@@ -1798,13 +1923,10 @@
 
       localMessages.forEach(m => {
         let roomKey = null;
-        if (m.receiver === 'ALL') {
-          roomKey = 'ALL';
-        } else if (m.receiver === 'ALL_STATIONS') {
-          roomKey = 'ALL_STATIONS';
-        } else if (m.receiver === 'ALL_STUDENTS') {
-          roomKey = 'ALL_STUDENTS';
-        } else {
+        if (m.receiver === 'ALL') roomKey = 'ALL';
+        else if (m.receiver === 'ALL_STATIONS') roomKey = 'ALL_STATIONS';
+        else if (m.receiver === 'ALL_STUDENTS') roomKey = 'ALL_STUDENTS';
+        else {
           if (currentUser.role === 'ADMIN') {
             roomKey = isAdminAccount(m.sender) ? m.receiver : m.sender;
           } else {
@@ -1842,9 +1964,28 @@
         activeChatRoom = 'ALL';
       }
 
+      const modalIsHidden = document.getElementById('chatModal')?.classList.contains('hidden');
+      let globalHasUnread = false;
+
+      sortedRooms.forEach(rId => {
+        if (hasUnreadInRoom(rId)) {
+          globalHasUnread = true;
+        }
+      });
+
+      const badgeDot = document.getElementById('chatBadgeDot');
+      if (badgeDot) {
+        if (globalHasUnread && modalIsHidden) {
+          badgeDot.classList.remove('hidden');
+        } else {
+          badgeDot.classList.add('hidden');
+        }
+      }
+
       container.innerHTML = sortedRooms.map(rId => {
         const isActive = activeChatRoom === rId;
         const displayName = getAccountDisplayName(rId);
+        const unread = hasUnreadInRoom(rId);
 
         let activeStyle = isActive
           ? 'bg-amber-500 text-slate-950 font-black shadow-sm border-amber-400'
@@ -1861,9 +2002,12 @@
         const isPinnedGroup = ['ALL', 'ALL_STATIONS', 'ALL_STUDENTS'].includes(rId);
 
         return `
-          <button onclick="switchChatRoom('${rId}')" class="w-full text-left px-2.5 py-2 rounded-xl text-xs border transition flex items-center justify-between min-w-0 ${activeStyle}">
-            <span class="truncate">${iconTag}${displayName}</span>
-            ${isPinnedGroup ? '<span class="text-[9px] bg-amber-600/20 text-slate-900 px-1.5 py-0.2 rounded font-extrabold shrink-0 ml-1">📌 群組</span>' : ''}
+          <button onclick="switchChatRoom('${rId}')" class="w-full text-left px-2.5 py-2 rounded-xl text-xs border transition flex items-center justify-between min-w-0 ${activeStyle} cursor-pointer">
+            <span class="truncate flex items-center min-w-0">${iconTag}<span class="truncate">${displayName}</span></span>
+            <div class="flex items-center gap-1 shrink-0 ml-1">
+              ${unread ? '<span class="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse inline-block shadow-sm"></span>' : ''}
+              ${isPinnedGroup ? '<span class="text-[9px] bg-amber-600/20 text-slate-900 px-1.5 py-0.2 rounded font-extrabold shrink-0">📌 群組</span>' : ''}
+            </div>
           </button>
         `;
       }).join('');
@@ -1913,36 +2057,15 @@
         } catch(e){}
       }
 
+      const modalIsVisible = !document.getElementById('chatModal')?.classList.contains('hidden');
+      if (modalIsVisible) {
+        lastReadTimeMap[activeChatRoom] = Date.now();
+      }
+
       const sortedRooms = getSortedChatRooms();
       renderChatRoomButtons(sortedRooms);
 
-      let filtered = [];
-      if (activeChatRoom === 'ALL') {
-        filtered = localMessages.filter(m => m.receiver === 'ALL');
-      } else if (activeChatRoom === 'ALL_STATIONS') {
-        filtered = localMessages.filter(m => m.receiver === 'ALL_STATIONS');
-      } else if (activeChatRoom === 'ALL_STUDENTS') {
-        filtered = localMessages.filter(m => m.receiver === 'ALL_STUDENTS');
-      } else {
-        const myId = currentUser.id;
-        const targetId = activeChatRoom;
-
-        if (currentUser.role === 'ADMIN') {
-          filtered = localMessages.filter(m => 
-            m.receiver !== 'ALL' && m.receiver !== 'ALL_STATIONS' && m.receiver !== 'ALL_STUDENTS' && (
-              (isAdminAccount(m.sender) && isSameAccount(m.receiver, targetId)) ||
-              (isSameAccount(m.sender, targetId) && isAdminAccount(m.receiver))
-            )
-          );
-        } else {
-          filtered = localMessages.filter(m => 
-            m.receiver !== 'ALL' && m.receiver !== 'ALL_STATIONS' && m.receiver !== 'ALL_STUDENTS' && (
-              (isSameAccount(m.sender, myId) && isSameAccount(m.receiver, targetId)) ||
-              (isSameAccount(m.sender, targetId) && isSameAccount(m.receiver, myId))
-            )
-          );
-        }
-      }
+      const filtered = getMessagesForRoom(activeChatRoom);
 
       if (filtered.length === 0) {
         container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs flex flex-col items-center gap-2"><i class="fa-solid fa-comments text-slate-300 text-2xl"></i><span>此頻道尚無訊息，輸入訊息即可開始對話！</span></div>`;
@@ -2010,14 +2133,21 @@
         console.warn('Chat network error:', e);
       } finally {
         if (btn) { btn.disabled = false; btn.classList.remove('opacity-50'); }
+        lastReadTimeMap[activeChatRoom] = Date.now();
         await loadChatMessages();
       }
     }
 
+    <!-- STREAMING_CHUNK:Initializing page lifecycle, checking restored session, starting auto-sync timers... -->
     window.onload = function() {
       fetchClientIp();
       populateDropdowns();
-      openLoginModal();
+      
+      const isRestored = restoreSession();
+      if (!isRestored) {
+        openLoginModal();
+      }
+
       refreshData();
       setInterval(refreshData, 3000);
       setInterval(loadChatMessages, 3000);
