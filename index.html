@@ -260,17 +260,6 @@
           </div>
           <div id="activeBroadcastsContainer" class="pt-2 space-y-2"></div>
         </div>
-        <div class="pt-4 border-t border-slate-200 space-y-2.5">
-          <div class="flex items-center justify-between">
-            <h4 class="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-1.5">
-              <i class="fa-solid fa-clock-rotate-left text-amber-600"></i> 廣播發送歷史紀錄
-            </h4>
-            <button onclick="clearBroadcastHistory()" class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer">
-              <i class="fa-solid fa-trash-can text-[10px]"></i> 清除歷史
-            </button>
-          </div>
-          <div id="broadcastHistoryContainer" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
-        </div>
         <div class="pt-4 border-t border-slate-200 space-y-2"><p class="text-xs sm:text-sm font-bold text-rose-600 flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> 系統成績資料重置</p><button onclick="openConfirmModal('確定要清空全校所有闖關成績與得分紀錄嗎？此操作無法復原！', confirmResetData)" class="btn-touch px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow flex items-center gap-2"><i class="fa-solid fa-trash-arrow-up"></i> 清空並重置所有闖關成績紀錄</button></div>
       </div>
     </section>
@@ -572,6 +561,7 @@
     let localMessages = [];
     let activeChatRoom = 'ALL';
     let lastReadTimeMap = {};
+    const appSessionStartTime = Date.now();
 
     const TIME_SLOTS = ['13:20~13:30','13:35~13:45','13:55~14:05','14:10~14:20','14:25~14:35','14:40~14:50','14:55~15:05','15:10~15:20','15:25~15:35','15:40~15:50'];
     const STATIONS = [
@@ -615,7 +605,6 @@
     let localLogs = [];
     let localAlerts = [];
     let localBroadcasts = [];
-    let localBroadcastHistory = [];
     let currentAdminTab = 'leaderboard';
     let pendingResolveAlertId = null;
     let pendingConfirmAction = null;
@@ -757,8 +746,6 @@
       if (!msg) { showToast('請輸入廣播內容！', 'error'); return; }
       const newItem = { id: Date.now(), text: msg, visible: true };
       localBroadcasts.push(newItem);
-      const historyItem = { id: Date.now(), message: msg, operator: currentUser ? currentUser.id : 'Admin', ip: clientIp, created_at: new Date().toISOString() };
-      localBroadcastHistory.unshift(historyItem);
       input.value = '';
       await saveBroadcasts();
       showToast('已新增廣播消息', 'success');
@@ -1515,7 +1502,7 @@
       document.getElementById('stationView').classList.toggle('hidden', currentUser.role !== 'STATION');
       document.getElementById('studentView').classList.toggle('hidden', currentUser.role !== 'STUDENT');
       if (currentUser.role === 'ADMIN') {
-        renderAdminLeaderboard(); renderAdminGpsTab(); renderAdminLogs(); renderAdminRoutes(); renderAdminAlerts(); fetchAccounts(); updateRainPlanUI(); renderBroadcastList(); renderBroadcastHistory();
+        renderAdminLeaderboard(); renderAdminGpsTab(); renderAdminLogs(); renderAdminRoutes(); renderAdminAlerts(); fetchAccounts(); updateRainPlanUI(); renderBroadcastList();
       } else if (currentUser.role === 'STATION') {
         const st = STATIONS.find(s => s.id === currentUser.id) || { id: currentUser.id, name: currentUser.name, normalLocation: currentUser.name, rainLocation: currentUser.name };
         document.getElementById('stationTitle').innerText = st.name;
@@ -1819,16 +1806,20 @@
     }
 
     async function updateRoomReadStatus(roomId) {
-      const nowIso = new Date().toISOString();
-      lastReadTimeMap[roomId] = Date.now();
-      if (currentUser && supabaseClient) {
+      if (!roomId || !currentUser) return;
+      const readTimeIso = new Date(Date.now() + 2000).toISOString();
+      lastReadTimeMap[roomId] = new Date(readTimeIso).getTime();
+
+      if (supabaseClient) {
         try {
           await supabaseClient.from('chat_read_status').upsert({
             account_id: currentUser.id,
             room_id: roomId,
-            last_read_at: nowIso
+            last_read_at: readTimeIso
           }, { onConflict: 'account_id,room_id' });
-        } catch(e) {}
+        } catch(e) {
+          console.warn('Supabase read status update note:', e);
+        }
       }
     }
 
@@ -1838,23 +1829,22 @@
         const { data, error } = await supabaseClient.from('chat_read_status').select('*').eq('account_id', currentUser.id);
         if (data && !error) {
           data.forEach(item => {
-            const cloudTime = new Date(item.last_read_at).getTime() || 0;
-            if (!lastReadTimeMap[item.room_id] || cloudTime > lastReadTimeMap[item.room_id]) {
-              lastReadTimeMap[item.room_id] = cloudTime;
+            if (item.room_id && item.last_read_at) {
+              lastReadTimeMap[item.room_id] = new Date(item.last_read_at).getTime();
             }
           });
         }
       } catch(e) {}
     }
 
-    function toggleChatModal() {
+    async function toggleChatModal() {
       const modal = document.getElementById('chatModal');
       const badgeDot = document.getElementById('chatBadgeDot');
       if (!modal) return;
       if (modal.classList.contains('hidden')) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        updateRoomReadStatus(activeChatRoom);
+        await updateRoomReadStatus(activeChatRoom);
         if (badgeDot) badgeDot.classList.add('hidden');
         loadChatMessages();
       } else {
@@ -1862,9 +1852,9 @@
       }
     }
 
-    function switchChatRoom(roomId) {
+    async function switchChatRoom(roomId) {
       activeChatRoom = roomId;
-      updateRoomReadStatus(roomId);
+      await updateRoomReadStatus(roomId);
       loadChatMessages();
     }
 
@@ -1925,7 +1915,7 @@
       if (!currentUser) return false;
       const roomMsgs = getMessagesForRoom(roomId);
       if (roomMsgs.length === 0) return false;
-      const lastRead = lastReadTimeMap[roomId] || 0;
+      const lastRead = lastReadTimeMap[roomId] || appSessionStartTime;
 
       return roomMsgs.some(m => {
         const isFromMe = isSameAccount(m.sender, currentUser.id) || (currentUser.role === 'ADMIN' && isAdminAccount(m.sender));
@@ -2080,7 +2070,7 @@
 
       const modalIsVisible = !document.getElementById('chatModal')?.classList.contains('hidden');
       if (modalIsVisible) {
-        updateRoomReadStatus(activeChatRoom);
+        await updateRoomReadStatus(activeChatRoom);
       }
 
       const sortedRooms = getSortedChatRooms();
@@ -2154,7 +2144,7 @@
         console.warn('Chat network error:', e);
       } finally {
         if (btn) { btn.disabled = false; btn.classList.remove('opacity-50'); }
-        updateRoomReadStatus(activeChatRoom);
+        await updateRoomReadStatus(activeChatRoom);
         await loadChatMessages();
       }
     }
