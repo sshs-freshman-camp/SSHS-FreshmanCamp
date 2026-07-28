@@ -76,7 +76,6 @@
     </div>
   </div>
   
-  <!-- STREAMING_CHUNK:Rendering application header bar and status badges... -->
   <header class="bg-white text-slate-900 shadow-sm sticky top-0 z-40 border-b border-slate-200">
     <div class="max-w-7xl mx-auto px-3.5 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-y-2.5 gap-x-3">
       <div class="flex items-center gap-3 min-w-0">
@@ -108,7 +107,6 @@
     </div>
   </header>
 
-  <!-- STREAMING_CHUNK:Building Admin view tabs and dashboards... -->
   <main class="max-w-7xl mx-auto px-3 sm:px-5 py-4 sm:py-6 flex-grow w-full">
     <section id="adminView" class="space-y-4 hidden">
       <div id="adminEmergencyBanner" class="hidden animate-alert text-white p-3.5 rounded-2xl shadow-md border border-rose-600 items-center justify-between gap-3">
@@ -167,7 +165,6 @@
         </div>
       </div>
 
-      <!-- STREAMING_CHUNK:Building GPS live map and auditing log tables... -->
       <div id="adminTab-gps" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
         <div class="flex flex-wrap justify-between items-center pb-2.5 border-b border-slate-200 gap-2">
           <div>
@@ -278,7 +275,6 @@
       </div>
     </section>
 
-    <!-- STREAMING_CHUNK:Building Station view and Student team views... -->
     <section id="stationView" class="space-y-4 hidden">
       <div class="glass-card p-4 sm:p-5 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
@@ -421,7 +417,6 @@
     </section>
   </main>
 
-  <!-- STREAMING_CHUNK:Rendering Chat Modal, Modals for auth, emergency, resolution... -->
   <div id="chatWidgetBtn" onclick="toggleChatModal()" class="fixed bottom-5 right-5 z-[90] w-14 h-14 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-full shadow-2xl border-2 border-amber-300 flex items-center justify-center text-xl cursor-pointer transition transform active:scale-95">
     <i class="fa-solid fa-comments"></i>
     <span id="chatBadgeDot" class="hidden absolute top-0 right-0 w-4 h-4 bg-rose-600 rounded-full border-2 border-white animate-pulse"></span>
@@ -555,7 +550,6 @@
 
   <footer class="bg-white text-slate-500 text-xs py-3 text-center border-t border-slate-200"><p>臺中市立新社高級中學 大地遊戲闖關導引系統 &copy; 2026</p></footer>
 
-  <!-- STREAMING_CHUNK:Initializing Supabase, Session restoration logic, and global variables... -->
   <script>
     const SUPABASE_URL = 'https://xfevmqguantotrkatvoa.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_uQcbXqsRGxU-uLRagPtwHQ_6SSAUT59';
@@ -727,7 +721,6 @@
       return accId;
     }
 
-    <!-- STREAMING_CHUNK:Implementing Admin controls, rain plan logic, and broadcasts... -->
     function toggleRainPlan() {
       isRainPlanEnabled = !isRainPlanEnabled;
       updateRainPlanUI();
@@ -951,7 +944,6 @@
     }
     function toggleAuth() { currentUser ? handleLogout() : openLoginModal(); }
 
-    <!-- STREAMING_CHUNK:Implementing Login handling with SessionStorage preservation... -->
     async function handleLoginSubmit(event) {
       event.preventDefault();
       if (isActionPending) return;
@@ -1202,7 +1194,6 @@
       }
     }
 
-    <!-- STREAMING_CHUNK:Implementing tab switching with session persistence... -->
     function switchAdminTab(tabName) {
       currentAdminTab = tabName;
       sessionStorage.setItem('xshs_admin_tab', tabName);
@@ -1827,7 +1818,35 @@
       display.innerHTML = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0') + '<span class="text-lg text-slate-400">.' + deci + '</span>';
     }
 
-    <!-- STREAMING_CHUNK:Implementing Chat Modal toggle, rooms, and unread badges... -->
+    async function updateRoomReadStatus(roomId) {
+      const nowIso = new Date().toISOString();
+      lastReadTimeMap[roomId] = Date.now();
+      if (currentUser && supabaseClient) {
+        try {
+          await supabaseClient.from('chat_read_status').upsert({
+            account_id: currentUser.id,
+            room_id: roomId,
+            last_read_at: nowIso
+          }, { onConflict: 'account_id,room_id' });
+        } catch(e) {}
+      }
+    }
+
+    async function syncReadStatusesFromCloud() {
+      if (!currentUser || !supabaseClient) return;
+      try {
+        const { data, error } = await supabaseClient.from('chat_read_status').select('*').eq('account_id', currentUser.id);
+        if (data && !error) {
+          data.forEach(item => {
+            const cloudTime = new Date(item.last_read_at).getTime() || 0;
+            if (!lastReadTimeMap[item.room_id] || cloudTime > lastReadTimeMap[item.room_id]) {
+              lastReadTimeMap[item.room_id] = cloudTime;
+            }
+          });
+        }
+      } catch(e) {}
+    }
+
     function toggleChatModal() {
       const modal = document.getElementById('chatModal');
       const badgeDot = document.getElementById('chatBadgeDot');
@@ -1835,7 +1854,7 @@
       if (modal.classList.contains('hidden')) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        lastReadTimeMap[activeChatRoom] = Date.now();
+        updateRoomReadStatus(activeChatRoom);
         if (badgeDot) badgeDot.classList.add('hidden');
         loadChatMessages();
       } else {
@@ -1845,7 +1864,7 @@
 
     function switchChatRoom(roomId) {
       activeChatRoom = roomId;
-      lastReadTimeMap[roomId] = Date.now();
+      updateRoomReadStatus(roomId);
       loadChatMessages();
     }
 
@@ -2057,9 +2076,11 @@
         } catch(e){}
       }
 
+      await syncReadStatusesFromCloud();
+
       const modalIsVisible = !document.getElementById('chatModal')?.classList.contains('hidden');
       if (modalIsVisible) {
-        lastReadTimeMap[activeChatRoom] = Date.now();
+        updateRoomReadStatus(activeChatRoom);
       }
 
       const sortedRooms = getSortedChatRooms();
@@ -2133,12 +2154,11 @@
         console.warn('Chat network error:', e);
       } finally {
         if (btn) { btn.disabled = false; btn.classList.remove('opacity-50'); }
-        lastReadTimeMap[activeChatRoom] = Date.now();
+        updateRoomReadStatus(activeChatRoom);
         await loadChatMessages();
       }
     }
 
-    <!-- STREAMING_CHUNK:Initializing page lifecycle, checking restored session, starting auto-sync timers... -->
     window.onload = function() {
       fetchClientIp();
       populateDropdowns();
