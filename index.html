@@ -10,53 +10,75 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@300;400;500;600;700;900&display=swap');
+    
+    * {
+      box-sizing: border-box;
+      max-width: 100%;
+    }
+
+    html, body {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden !important;
+    }
+
     body {
       font-family: 'Noto Sans TC', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: #f1f5f9;
       color: #0f172a;
-      overflow-x: hidden;
-      max-width: 100vw;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
       letter-spacing: -0.01em;
     }
+    
     .font-mono { font-family: 'Inter', monospace; }
+    
     .glass-card {
       background: #ffffff;
       border: 1px solid #e2e8f0;
       color: #0f172a;
+      width: 100%;
       max-width: 100%;
       box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
     }
+    
     .stamp-badge { position: relative; overflow: hidden; }
     .stamp-badge.completed::after {
       content: "✓ 通過";
       position: absolute;
-      top: 12px;
+      top: 10px;
       right: -24px;
       transform: rotate(25deg);
       background: #10b981;
       color: #ffffff;
-      font-size: 9px;
+      font-size: 8px;
       font-weight: 800;
       padding: 2px 20px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.15);
     }
+    
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
     @keyframes alertPulse { 0%, 100% { background-color: #e11d48; } 50% { background-color: #be123c; } }
     .animate-alert { animation: alertPulse 1.2s infinite; }
+    
     @keyframes marqueeScroll { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
     .animate-marquee { display: inline-block; white-space: nowrap; animation: marqueeScroll 20s linear infinite; will-change: transform; }
     .animate-marquee:hover, .animate-marquee:active { animation-play-state: paused; }
-    #qrReader video { object-fit: cover !important; border-radius: 1rem; width: 100% !important; }
+    
+    #qrReader video { object-fit: cover !important; border-radius: 1rem; width: 100% !important; max-width: 100% !important; }
     #qrReader__dashboard { display: none !important; }
+    
     .leaflet-popup-content-wrapper { border-radius: 1rem; font-family: inherit; font-size: 13px; font-weight: 600; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; }
     .leaflet-popup-tip { background: #ffffff; }
     .leaflet-marker-icon, .custom-pushpin-icon { transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1) !important; }
+    
     .btn-touch { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; }
+    
     .pushpin-container { position: relative; width: 60px; height: 70px; display: flex; flex-direction: column; align-items: center; }
     .pushpin-label { background: #ffffff; color: #0f172a; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.12); white-space: nowrap; margin-bottom: 2px; }
     .pushpin-graphic { position: relative; width: 24px; height: 38px; }
@@ -67,41 +89,41 @@
   </style>
 </head>
 <body class="min-h-full text-slate-900 flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950 pb-10 sm:pb-6">
-  <div id="toastContainer" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none w-[92%] max-w-md"></div>
+  <div id="toastContainer" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none w-[94%] max-w-md"></div>
   
-  <div id="marqueeBanner" class="bg-amber-400 text-slate-950 text-xs font-black py-2 px-4 flex items-center overflow-hidden shadow-sm hidden relative border-b border-amber-300">
+  <div id="marqueeBanner" class="bg-amber-400 text-slate-950 text-xs font-black py-2 px-3 sm:px-4 flex items-center overflow-hidden shadow-sm hidden relative border-b border-amber-300 w-full">
     <i class="fa-solid fa-bullhorn mr-2 shrink-0 animate-bounce z-10 bg-amber-400 pr-1 text-slate-900"></i>
-    <div class="whitespace-nowrap overflow-hidden w-full relative">
+    <div class="whitespace-nowrap overflow-hidden w-full relative min-w-0">
       <div id="marqueeText" class="animate-marquee cursor-pointer">大會廣播：請各隊遵守闖關秩序並隨時補充水分！</div>
     </div>
   </div>
   
-  <header class="bg-white text-slate-900 shadow-sm sticky top-0 z-40 border-b border-slate-200">
-    <div class="max-w-7xl mx-auto px-3.5 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-y-2.5 gap-x-3">
-      <div class="flex items-center gap-3 min-w-0">
-        <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center border border-slate-200 shrink-0 overflow-hidden shadow-sm">
-          <img src="https://sshs.tc.edu.tw/var/file/69/1069/msys_1069_413586_22128.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="新社高中校徽" class="w-full h-full object-contain p-0.5">
+  <header class="bg-white text-slate-900 shadow-sm sticky top-0 z-40 border-b border-slate-200 w-full">
+    <div class="max-w-7xl mx-auto px-2.5 sm:px-5 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-y-2 gap-x-2">
+      <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 sm:flex-initial">
+        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white flex items-center justify-center border border-slate-200 shrink-0 overflow-hidden shadow-sm">
+          <img src="https://sshs.tc.edu.tw/var/file/69/1069/msys_1069_413586_22128.png" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="新社高中校徽" class="w-full h-full object-contain p-0.5">
           <div class="w-full h-full bg-amber-100 hidden items-center justify-center text-amber-600">
-            <i class="fa-solid fa-compass text-lg"></i>
+            <i class="fa-solid fa-compass text-base sm:text-lg"></i>
           </div>
         </div>
-        <div class="min-w-0">
-          <h1 class="font-extrabold text-base sm:text-lg tracking-tight flex items-center gap-2 text-slate-900">
+        <div class="min-w-0 flex-1">
+          <h1 class="font-extrabold text-sm sm:text-lg tracking-tight flex items-center gap-1.5 text-slate-900">
             <span class="truncate">大地遊戲導引系統</span>
           </h1>
-          <p class="text-xs text-slate-500 font-medium truncate">新社高中 智慧導引管理平台</p>
+          <p class="text-[10px] sm:text-xs text-slate-500 font-medium truncate">新社高中 智慧導引管理平台</p>
         </div>
       </div>
-      <div class="flex flex-wrap items-center gap-2 ml-auto">
-        <div id="dbStatusBadge" class="hidden xs:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 border border-emerald-200 text-emerald-700">
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div id="dbStatusBadge" class="hidden xs:flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold bg-emerald-50 border border-emerald-200 text-emerald-700 shrink-0">
           <span id="dbPingDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           <span id="dbStatusText">已連線</span>
         </div>
-        <div id="userBadge" class="hidden items-center gap-1.5 bg-slate-100 border border-slate-300 px-3 py-1.5 rounded-xl text-xs font-semibold">
-          <span id="currentUserName" class="max-w-[80px] sm:max-w-[120px] truncate text-slate-800">未登入</span>
-          <span id="currentUserRoleBadge" class="bg-amber-400 text-slate-950 font-extrabold px-1.5 py-0.5 rounded text-[10px] shrink-0">未授權</span>
+        <div id="userBadge" class="hidden items-center gap-1 bg-slate-100 border border-slate-300 px-2 py-1 sm:px-3 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold shrink-0 max-w-[140px] sm:max-w-none">
+          <span id="currentUserName" class="truncate text-slate-800">未登入</span>
+          <span id="currentUserRoleBadge" class="bg-amber-400 text-slate-950 font-extrabold px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] shrink-0">未授權</span>
         </div>
-        <button onclick="toggleAuth()" class="bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-extrabold px-3.5 py-2 rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm shrink-0 cursor-pointer">
+        <button onclick="toggleAuth()" class="bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-extrabold px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs transition flex items-center gap-1 shadow-sm shrink-0 cursor-pointer">
           <i id="authBtnIcon" class="fa-solid fa-right-to-bracket text-xs"></i>
           <span id="loginBtnText">登入</span>
         </button>
@@ -109,58 +131,59 @@
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-3 sm:px-5 py-4 sm:py-6 flex-grow w-full">
-    <section id="adminView" class="space-y-4 hidden">
-      <div id="adminEmergencyBanner" class="hidden animate-alert text-white p-3.5 rounded-2xl shadow-md border border-rose-600 items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-black/20 flex items-center justify-center text-lg shrink-0">🚨</div>
-          <div>
-            <h3 class="font-bold text-sm tracking-tight flex items-center gap-2 text-white">
+  <main class="max-w-7xl mx-auto px-2.5 sm:px-5 py-3 sm:py-6 flex-grow w-full min-w-0">
+    <!-- ADMIN VIEW -->
+    <section id="adminView" class="space-y-3 sm:space-y-4 hidden w-full min-w-0">
+      <div id="adminEmergencyBanner" class="hidden animate-alert text-white p-3 sm:p-3.5 rounded-2xl shadow-md border border-rose-600 flex-wrap items-center justify-between gap-2.5 w-full">
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-black/20 flex items-center justify-center text-base sm:text-lg shrink-0">🚨</div>
+          <div class="min-w-0 flex-1">
+            <h3 class="font-bold text-xs sm:text-sm tracking-tight flex items-center gap-1.5 flex-wrap text-white">
               <span>完全未處置緊急求助通報</span>
-              <span id="adminEmergencyTime" class="text-xs font-mono font-semibold bg-black/30 px-2 py-0.5 rounded-md"></span>
+              <span id="adminEmergencyTime" class="text-[10px] sm:text-xs font-mono font-semibold bg-black/30 px-1.5 py-0.5 rounded-md"></span>
             </h3>
-            <p id="adminEmergencyText" class="text-xs font-medium mt-0.5 text-rose-100">載入警報內容中...</p>
+            <p id="adminEmergencyText" class="text-xs font-medium mt-0.5 text-rose-100 truncate">載入警報內容中...</p>
           </div>
         </div>
-        <button id="btnBannerResolve" onclick="openResolveAlertModal()" class="px-3 py-1.5 bg-white text-rose-700 hover:bg-rose-50 active:scale-95 text-xs font-bold rounded-xl shadow shrink-0 cursor-pointer">發送處置</button>
+        <button id="btnBannerResolve" onclick="openResolveAlertModal()" class="px-3 py-1.5 bg-white text-rose-700 hover:bg-rose-50 active:scale-95 text-xs font-bold rounded-xl shadow shrink-0 cursor-pointer w-full sm:w-auto text-center">發送處置</button>
       </div>
       
-      <div class="glass-card p-4 rounded-2xl shadow-sm border border-slate-200">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+      <div class="glass-card p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200 w-full">
+        <div class="flex items-center justify-between mb-2.5 sm:mb-3">
+          <h2 class="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
             <i class="fa-solid fa-user-shield text-amber-600"></i> 大會總管理員控制台
           </h2>
         </div>
-        <div class="flex flex-wrap gap-1.5 bg-slate-100 p-1.5 rounded-xl text-xs font-semibold border border-slate-200">
-          <button onclick="switchAdminTab('leaderboard')" id="tabBtn-leaderboard" class="px-3 py-2 rounded-lg transition bg-white text-slate-900 font-bold shadow-sm border border-slate-200"><i class="fa-solid fa-trophy mr-1.5 text-amber-500"></i>排行榜</button>
-          <button onclick="switchAdminTab('gps')" id="tabBtn-gps" class="px-3 py-2 rounded-lg transition text-slate-600 hover:text-slate-900"><i class="fa-solid fa-location-crosshairs mr-1.5 text-sky-600"></i>詳細GPS地圖</button>
-          <button onclick="switchAdminTab('logs')" id="tabBtn-logs" class="px-3 py-2 rounded-lg transition text-slate-600 hover:text-slate-900"><i class="fa-solid fa-list-check mr-1.5 text-emerald-600"></i>得分明細</button>
-          <button onclick="switchAdminTab('routes')" id="tabBtn-routes" class="px-3 py-2 rounded-lg transition text-slate-600 hover:text-slate-900"><i class="fa-solid fa-route mr-1.5 text-indigo-600"></i>對戰動線</button>
-          <button onclick="switchAdminTab('alerts')" id="tabBtn-alerts" class="px-3 py-2 rounded-lg transition text-slate-600 hover:text-slate-900 relative"><i class="fa-solid fa-bullhorn mr-1.5 text-rose-600"></i>求助<span id="alertsBadgeCount" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-600 text-white rounded-full text-[9px] font-extrabold items-center justify-center">0</span></button>
-          <button onclick="switchAdminTab('auth')" id="tabBtn-auth" class="px-3 py-2 rounded-lg transition text-slate-600 hover:text-slate-900"><i class="fa-solid fa-users mr-1.5 text-amber-600"></i>帳號管理</button>
-          <button onclick="switchAdminTab('config')" id="tabBtn-config" class="px-3 py-2 rounded-lg transition text-slate-600 hover:text-slate-900"><i class="fa-solid fa-gear mr-1.5 text-slate-600"></i>廣播與雨備設定</button>
+        <div class="flex flex-wrap gap-1 sm:gap-1.5 bg-slate-100 p-1 sm:p-1.5 rounded-xl text-xs font-semibold border border-slate-200 w-full">
+          <button onclick="switchAdminTab('leaderboard')" id="tabBtn-leaderboard" class="flex-1 min-w-[90px] py-1.5 sm:py-2 px-2.5 rounded-lg transition bg-white text-slate-900 font-bold shadow-sm border border-slate-200 text-center"><i class="fa-solid fa-trophy mr-1 text-amber-500"></i>排行榜</button>
+          <button onclick="switchAdminTab('gps')" id="tabBtn-gps" class="flex-1 min-w-[100px] py-1.5 sm:py-2 px-2.5 rounded-lg transition text-slate-600 hover:text-slate-900 text-center"><i class="fa-solid fa-location-crosshairs mr-1 text-sky-600"></i>GPS地圖</button>
+          <button onclick="switchAdminTab('logs')" id="tabBtn-logs" class="flex-1 min-w-[90px] py-1.5 sm:py-2 px-2.5 rounded-lg transition text-slate-600 hover:text-slate-900 text-center"><i class="fa-solid fa-list-check mr-1 text-emerald-600"></i>得分明細</button>
+          <button onclick="switchAdminTab('routes')" id="tabBtn-routes" class="flex-1 min-w-[90px] py-1.5 sm:py-2 px-2.5 rounded-lg transition text-slate-600 hover:text-slate-900 text-center"><i class="fa-solid fa-route mr-1 text-indigo-600"></i>對戰動線</button>
+          <button onclick="switchAdminTab('alerts')" id="tabBtn-alerts" class="flex-1 min-w-[80px] py-1.5 sm:py-2 px-2.5 rounded-lg transition text-slate-600 hover:text-slate-900 relative text-center"><i class="fa-solid fa-bullhorn mr-1 text-rose-600"></i>求助<span id="alertsBadgeCount" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-600 text-white rounded-full text-[9px] font-extrabold items-center justify-center">0</span></button>
+          <button onclick="switchAdminTab('auth')" id="tabBtn-auth" class="flex-1 min-w-[90px] py-1.5 sm:py-2 px-2.5 rounded-lg transition text-slate-600 hover:text-slate-900 text-center"><i class="fa-solid fa-users mr-1 text-amber-600"></i>帳號管理</button>
+          <button onclick="switchAdminTab('config')" id="tabBtn-config" class="flex-1 min-w-[110px] py-1.5 sm:py-2 px-2.5 rounded-lg transition text-slate-600 hover:text-slate-900 text-center"><i class="fa-solid fa-gear mr-1 text-slate-600"></i>廣播雨備</button>
         </div>
       </div>
 
-      <!-- 頁籤內容：排行榜 -->
-      <div id="adminTab-leaderboard" class="space-y-4">
-        <div class="grid grid-cols-3 gap-3">
-          <div class="glass-card p-3.5 rounded-2xl border border-slate-200"><p class="text-xs text-slate-500 font-semibold">參賽小隊</p><p class="text-xl font-black text-slate-900 mt-1" id="statTeamCount">20 隊</p></div>
-          <div class="glass-card p-3.5 rounded-2xl border border-slate-200"><p class="text-xs text-slate-500 font-semibold">關卡數量</p><p class="text-xl font-black text-slate-900 mt-1" id="statStationCount">10 關</p></div>
-          <div class="glass-card p-3.5 rounded-2xl border border-slate-200"><p class="text-xs text-slate-500 font-semibold">完全未處置求助</p><p class="text-xl font-black text-rose-600 mt-1" id="statPendingAlerts">0 件</p></div>
+      <!-- 頁籤：排行榜 -->
+      <div id="adminTab-leaderboard" class="space-y-3 sm:space-y-4 w-full min-w-0">
+        <div class="grid grid-cols-3 gap-2 sm:gap-3 w-full">
+          <div class="glass-card p-2.5 sm:p-3.5 rounded-2xl border border-slate-200 min-w-0"><p class="text-[10px] sm:text-xs text-slate-500 font-semibold truncate">參賽小隊</p><p class="text-base sm:text-xl font-black text-slate-900 mt-0.5 sm:mt-1 truncate" id="statTeamCount">20 隊</p></div>
+          <div class="glass-card p-2.5 sm:p-3.5 rounded-2xl border border-slate-200 min-w-0"><p class="text-[10px] sm:text-xs text-slate-500 font-semibold truncate">關卡數量</p><p class="text-base sm:text-xl font-black text-slate-900 mt-0.5 sm:mt-1 truncate" id="statStationCount">10 關</p></div>
+          <div class="glass-card p-2.5 sm:p-3.5 rounded-2xl border border-slate-200 min-w-0"><p class="text-[10px] sm:text-xs text-slate-500 font-semibold truncate">未處置求助</p><p class="text-base sm:text-xl font-black text-rose-600 mt-0.5 sm:mt-1 truncate" id="statPendingAlerts">0 件</p></div>
         </div>
         
-        <div id="podiumContainer" class="grid grid-cols-3 gap-2 sm:gap-4 max-w-2xl mx-auto pt-2"></div>
+        <div id="podiumContainer" class="grid grid-cols-3 gap-1.5 sm:gap-4 max-w-2xl mx-auto pt-1 w-full min-w-0"></div>
 
-        <div class="glass-card rounded-2xl overflow-hidden shadow-sm border border-slate-200">
-          <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-            <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-ranking-star text-amber-500"></i> 全校小隊總排行榜</h3>
-            <button onclick="exportCSV('leaderboard')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition flex items-center gap-1.5 border border-amber-400 shadow-sm"><i class="fa-solid fa-file-csv"></i> 匯出 CSV</button>
+        <div class="glass-card rounded-2xl overflow-hidden shadow-sm border border-slate-200 w-full">
+          <div class="p-3 sm:p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center flex-wrap gap-2">
+            <h3 class="font-bold text-slate-900 text-xs sm:text-base flex items-center gap-1.5"><i class="fa-solid fa-ranking-star text-amber-500"></i> 全校小隊總排行榜</h3>
+            <button onclick="exportCSV('leaderboard')" class="px-2.5 py-1 sm:px-3 sm:py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition flex items-center gap-1 border border-amber-400 shadow-sm shrink-0"><i class="fa-solid fa-file-csv"></i> 匯出 CSV</button>
           </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs sm:text-sm">
+          <div class="w-full overflow-x-auto no-scrollbar">
+            <table class="w-full text-left text-xs sm:text-sm min-w-[280px]">
               <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-                <tr><th class="px-4 py-3 text-center w-16">名次</th><th class="px-4 py-3">小隊</th><th class="px-4 py-3 text-right">總得分</th></tr>
+                <tr><th class="px-3 sm:px-4 py-2.5 text-center w-12 sm:w-16">名次</th><th class="px-3 sm:px-4 py-2.5">小隊</th><th class="px-3 sm:px-4 py-2.5 text-right">總得分</th></tr>
               </thead>
               <tbody id="leaderboardTableBody" class="divide-y divide-slate-200 font-medium text-slate-800"></tbody>
             </table>
@@ -168,43 +191,43 @@
         </div>
       </div>
 
-      <!-- 頁籤內容：GPS地圖 -->
-      <div id="adminTab-gps" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
-        <div class="flex flex-wrap justify-between items-center pb-2.5 border-b border-slate-200 gap-2">
-          <div>
-            <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-map-marked-alt text-sky-600"></i> 即時高精度 GPS 地圖監控</h3>
-            <p class="text-xs text-slate-500 mt-0.5">顯示精準座標與最後更新紀錄</p>
+      <!-- 頁籤：GPS地圖 -->
+      <div id="adminTab-gps" class="glass-card rounded-2xl p-3 sm:p-4 shadow-sm hidden space-y-3 sm:space-y-4 border border-slate-200 w-full min-w-0">
+        <div class="flex flex-wrap justify-between items-center pb-2 border-b border-slate-200 gap-2 w-full">
+          <div class="min-w-0 flex-1">
+            <h3 class="font-bold text-slate-900 text-xs sm:text-base flex items-center gap-1.5 truncate"><i class="fa-solid fa-map-marked-alt text-sky-600"></i> 即時高精度 GPS 地圖監控</h3>
+            <p class="text-[10px] sm:text-xs text-slate-500 mt-0.5 truncate">顯示精準座標與最後更新紀錄</p>
           </div>
-          <div class="flex items-center gap-2">
-            <select id="mapStyleSelect" onchange="switchMapStyle(this.value)" class="text-xs font-bold px-3 py-1.5 border border-slate-300 rounded-xl bg-white text-slate-800 outline-none shadow-sm">
-              <option value="street" selected>🗺️ 一般街道 (Voyager)</option>
-              <option value="satellite">🛰️ 衛星實景 (Esri High-Res)</option>
+          <div class="flex items-center gap-1.5 flex-wrap w-full xs:w-auto">
+            <select id="mapStyleSelect" onchange="switchMapStyle(this.value)" class="text-xs font-bold px-2.5 py-1.5 border border-slate-300 rounded-xl bg-white text-slate-800 outline-none shadow-sm flex-1 xs:flex-initial">
+              <option value="street" selected>🗺️ 一般街道</option>
+              <option value="satellite">🛰️ 衛星實景</option>
             </select>
-            <button onclick="hideTeamTrack()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs border border-slate-300 shadow-sm"><i class="fa-solid fa-eye-slash mr-1 text-rose-600"></i> 隱藏軌跡</button>
-            <button onclick="refreshData()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 font-bold rounded-xl text-xs border border-slate-300 shadow-sm"><i class="fa-solid fa-arrows-rotate mr-1 text-amber-600"></i> 重整</button>
+            <button onclick="hideTeamTrack()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs border border-slate-300 shadow-sm shrink-0"><i class="fa-solid fa-eye-slash mr-1 text-rose-600"></i> 隱藏軌跡</button>
+            <button onclick="refreshData()" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-800 font-bold rounded-xl text-xs border border-slate-300 shadow-sm shrink-0"><i class="fa-solid fa-arrows-rotate mr-1 text-amber-600"></i> 重整</button>
           </div>
         </div>
-        <div id="gpsLiveMap" class="w-full h-[380px] sm:h-[500px] rounded-2xl border border-slate-300 shadow-inner z-10 bg-slate-200"></div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="gpsTeamGrid"></div>
+        <div id="gpsLiveMap" class="w-full h-[300px] sm:h-[480px] rounded-2xl border border-slate-300 shadow-inner z-10 bg-slate-200"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3 w-full" id="gpsTeamGrid"></div>
       </div>
 
-      <!-- 頁籤內容：得分歷史 -->
-      <div id="adminTab-logs" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
-        <div class="flex justify-between items-center pb-2.5 border-b border-slate-200">
-          <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-emerald-600"></i> 全校得分歷史紀錄與審核</h3>
-          <button onclick="exportCSV('logs')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs border border-amber-400 shadow-sm"><i class="fa-solid fa-file-csv"></i> 匯出 CSV</button>
+      <!-- 頁籤：得分歷史 -->
+      <div id="adminTab-logs" class="glass-card rounded-2xl p-3 sm:p-4 shadow-sm hidden space-y-3 sm:space-y-4 border border-slate-200 w-full min-w-0">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-200 flex-wrap gap-2">
+          <h3 class="font-bold text-slate-900 text-xs sm:text-base flex items-center gap-1.5"><i class="fa-solid fa-clock-rotate-left text-emerald-600"></i> 全校得分歷史紀錄與審核</h3>
+          <button onclick="exportCSV('logs')" class="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs border border-amber-400 shadow-sm shrink-0"><i class="fa-solid fa-file-csv"></i> 匯出 CSV</button>
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs sm:text-sm">
+        <div class="w-full overflow-x-auto no-scrollbar">
+          <table class="w-full text-left text-xs sm:text-sm min-w-[600px]">
             <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
               <tr>
-                <th class="px-3 py-2.5 whitespace-nowrap">時間 (台灣時間)</th>
-                <th class="px-3 py-2.5 whitespace-nowrap">關卡名稱與地點</th>
-                <th class="px-3 py-2.5 whitespace-nowrap">小隊</th>
-                <th class="px-3 py-2.5 text-right whitespace-nowrap">分數</th>
-                <th class="px-3 py-2.5 whitespace-nowrap">IP 位址</th>
-                <th class="px-3 py-2.5 whitespace-nowrap">備註說明</th>
-                <th class="px-3 py-2.5 text-center whitespace-nowrap">操作</th>
+                <th class="px-2.5 py-2 whitespace-nowrap">時間 (台灣時間)</th>
+                <th class="px-2.5 py-2 whitespace-nowrap">關卡名稱與地點</th>
+                <th class="px-2.5 py-2 whitespace-nowrap">小隊</th>
+                <th class="px-2.5 py-2 text-right whitespace-nowrap">分數</th>
+                <th class="px-2.5 py-2 whitespace-nowrap">IP 位址</th>
+                <th class="px-2.5 py-2 whitespace-nowrap">備註說明</th>
+                <th class="px-2.5 py-2 text-center whitespace-nowrap">操作</th>
               </tr>
             </thead>
             <tbody id="logsTableBody" class="divide-y divide-slate-200"></tbody>
@@ -212,28 +235,28 @@
         </div>
       </div>
 
-      <!-- 頁籤內容：對戰動線 -->
-      <div id="adminTab-routes" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
-        <div class="pb-2 border-b border-slate-200 flex justify-between items-center">
-          <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-map-location-dot text-indigo-600"></i> 對戰動線總覽表 (13:20~15:50)</h3>
+      <!-- 頁籤：對戰動線 -->
+      <div id="adminTab-routes" class="glass-card rounded-2xl p-3 sm:p-4 shadow-sm hidden space-y-3 sm:space-y-4 border border-slate-200 w-full min-w-0">
+        <div class="pb-2 border-b border-slate-200">
+          <h3 class="font-bold text-slate-900 text-xs sm:text-base flex items-center gap-1.5"><i class="fa-solid fa-map-location-dot text-indigo-600"></i> 對戰動線總覽表 (13:30~15:40)</h3>
         </div>
-        <div id="routesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        <div id="routesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 w-full"></div>
       </div>
 
-      <!-- 頁籤內容：求助事件 -->
-      <div id="adminTab-alerts" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
-        <div class="flex justify-between items-center pb-2 border-b border-slate-200">
-          <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-bullhorn text-rose-600"></i> 緊急求助事件紀錄</h3>
+      <!-- 頁籤：求助事件 -->
+      <div id="adminTab-alerts" class="glass-card rounded-2xl p-3 sm:p-4 shadow-sm hidden space-y-3 sm:space-y-4 border border-slate-200 w-full min-w-0">
+        <div class="pb-2 border-b border-slate-200">
+          <h3 class="font-bold text-slate-900 text-xs sm:text-base flex items-center gap-1.5"><i class="fa-solid fa-bullhorn text-rose-600"></i> 緊急求助事件紀錄</h3>
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs sm:text-sm">
+        <div class="w-full overflow-x-auto no-scrollbar">
+          <table class="w-full text-left text-xs sm:text-sm min-w-[500px]">
             <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
               <tr>
-                <th class="px-3 py-2.5 whitespace-nowrap">通報時間 (台灣時間)</th>
-                <th class="px-3 py-2.5 whitespace-nowrap">通報者</th>
-                <th class="px-3 py-2.5 whitespace-nowrap">狀況說明</th>
-                <th class="px-3 py-2.5 whitespace-nowrap">處置備註</th>
-                <th class="px-3 py-2.5 text-center whitespace-nowrap">處理狀態與操作</th>
+                <th class="px-2.5 py-2 whitespace-nowrap">通報時間 (台灣時間)</th>
+                <th class="px-2.5 py-2 whitespace-nowrap">通報者</th>
+                <th class="px-2.5 py-2 whitespace-nowrap">狀況說明</th>
+                <th class="px-2.5 py-2 whitespace-nowrap">處置備註</th>
+                <th class="px-2.5 py-2 text-center whitespace-nowrap">處理狀態與操作</th>
               </tr>
             </thead>
             <tbody id="alertsTableBody" class="divide-y divide-slate-200"></tbody>
@@ -241,312 +264,328 @@
         </div>
       </div>
 
-      <!-- 頁籤內容：帳號管理 -->
-      <div id="adminTab-auth" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
-        <div class="flex justify-between items-center pb-2 border-b border-slate-200"><h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-users text-amber-600"></i> 獨立帳號密碼管理系統 (依 ID 順序)</h3><button onclick="fetchAccounts()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-300 shadow-sm"><i class="fa-solid fa-arrows-rotate text-amber-600"></i> 重新載入</button></div>
-        <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200"><tr><th class="px-3 py-2.5 whitespace-nowrap">ID</th><th class="px-3 py-2.5 whitespace-nowrap">帳號</th><th class="px-3 py-2.5 whitespace-nowrap">顯示名稱</th><th class="px-3 py-2.5 whitespace-nowrap">權限</th><th class="px-3 py-2.5 whitespace-nowrap">密碼</th><th class="px-3 py-2.5 text-center whitespace-nowrap">儲存</th></tr></thead><tbody id="accountsTableBody" class="divide-y divide-slate-200"></tbody></table></div>
+      <!-- 頁籤：帳號管理 -->
+      <div id="adminTab-auth" class="glass-card rounded-2xl p-3 sm:p-4 shadow-sm hidden space-y-3 sm:space-y-4 border border-slate-200 w-full min-w-0">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-200 flex-wrap gap-2">
+          <h3 class="font-bold text-slate-900 text-xs sm:text-base flex items-center gap-1.5"><i class="fa-solid fa-users text-amber-600"></i> 獨立帳號密碼管理系統</h3>
+          <button onclick="fetchAccounts()" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-slate-300 shadow-sm shrink-0"><i class="fa-solid fa-arrows-rotate text-amber-600"></i> 重新載入</button>
+        </div>
+        <div class="w-full overflow-x-auto no-scrollbar">
+          <table class="w-full text-left text-xs sm:text-sm min-w-[480px]">
+            <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+              <tr><th class="px-2 py-2 whitespace-nowrap">ID</th><th class="px-2.5 py-2 whitespace-nowrap">帳號</th><th class="px-2.5 py-2 whitespace-nowrap">顯示名稱</th><th class="px-2 py-2 whitespace-nowrap">權限</th><th class="px-2.5 py-2 whitespace-nowrap">密碼</th><th class="px-2 py-2 text-center whitespace-nowrap">儲存</th></tr>
+            </thead>
+            <tbody id="accountsTableBody" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
       </div>
 
-      <!-- 頁籤內容：廣播與雨備設定 -->
-      <div id="adminTab-config" class="glass-card rounded-2xl p-5 shadow-sm hidden space-y-5 border border-slate-200">
-        <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2 pb-2.5 border-b border-slate-200"><i class="fa-solid fa-sliders text-amber-600"></i> 廣播與雨備方案管理</h3>
-        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h4 class="font-bold text-sm text-slate-900 flex items-center gap-1.5"><i class="fa-solid fa-cloud-showers-heavy text-sky-600"></i> 全校雨備方案切換</h4>
-              <p class="text-xs text-slate-500 mt-0.5">預設隱藏雨備。啟動後關卡地點同步更新為雨備場地。</p>
+      <!-- 頁籤：廣播與雨備設定 -->
+      <div id="adminTab-config" class="glass-card rounded-2xl p-3.5 sm:p-5 shadow-sm hidden space-y-4 sm:space-y-5 border border-slate-200 w-full min-w-0">
+        <h3 class="font-bold text-slate-900 text-xs sm:text-base flex items-center gap-2 pb-2 border-b border-slate-200"><i class="fa-solid fa-sliders text-amber-600"></i> 廣播與雨備方案管理</h3>
+        <div class="p-3 sm:p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5 sm:space-y-3 w-full">
+          <div class="flex flex-wrap items-center justify-between gap-2.5">
+            <div class="min-w-0 flex-1">
+              <h4 class="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-1.5"><i class="fa-solid fa-cloud-showers-heavy text-sky-600"></i> 全校雨備方案切換</h4>
+              <p class="text-[11px] text-slate-500 mt-0.5">預設隱藏雨備。啟動後關卡地點同步更新為雨備場地。</p>
             </div>
-            <button id="rainPlanToggleBtn" onclick="toggleRainPlan()" class="btn-touch px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition shadow flex items-center gap-1.5"><i class="fa-solid fa-toggle-off text-base text-amber-400"></i> 啟動雨備地點</button>
+            <button id="rainPlanToggleBtn" onclick="toggleRainPlan()" class="btn-touch px-3.5 py-1.5 sm:px-4 sm:py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition shadow flex items-center gap-1.5 shrink-0 w-full sm:w-auto"><i class="fa-solid fa-toggle-off text-base text-amber-400"></i> 啟動雨備地點</button>
           </div>
           <div id="rainPlanStatusBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-white text-slate-800 border border-slate-200"><i class="fa-solid fa-sun text-amber-500"></i> <span>目前狀態：晴天標準場地動線</span></div>
         </div>
-        <div class="space-y-2">
+        <div class="space-y-2 w-full">
           <label class="block text-xs sm:text-sm font-bold text-slate-700">廣播跑馬燈管理：</label>
-          <div class="flex flex-wrap gap-2">
-            <input type="text" id="broadcastInput" placeholder="例如：請各小隊注意闖關時間..." class="flex-1 min-w-[200px] px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm outline-none bg-white text-slate-900 focus:border-amber-500">
-            <button onclick="addBroadcastMessage()" class="btn-touch px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-xs sm:text-sm shadow"><i class="fa-solid fa-plus mr-1.5"></i> 新增廣播</button>
-            <button onclick="clearAllBroadcastMessages()" class="btn-touch px-3 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs sm:text-sm transition"><i class="fa-solid fa-trash-can mr-1"></i> 清空廣播</button>
+          <div class="flex flex-wrap gap-2 w-full">
+            <input type="text" id="broadcastInput" placeholder="例如：請各小隊注意闖關時間..." class="flex-1 min-w-[180px] w-full sm:w-auto px-3 py-2 sm:px-3.5 sm:py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm outline-none bg-white text-slate-900 focus:border-amber-500">
+            <button onclick="addBroadcastMessage()" class="btn-touch px-3.5 py-2 sm:px-4 sm:py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-xs sm:text-sm shadow flex-1 sm:flex-none"><i class="fa-solid fa-plus mr-1"></i> 新增廣播</button>
+            <button onclick="clearAllBroadcastMessages()" class="btn-touch px-3 py-2 sm:py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs sm:text-sm transition shrink-0"><i class="fa-solid fa-trash-can mr-1"></i> 清空</button>
           </div>
-          <div id="activeBroadcastsContainer" class="pt-2 space-y-2"></div>
+          <div id="activeBroadcastsContainer" class="pt-1.5 space-y-2 w-full"></div>
         </div>
-        <div class="pt-4 border-t border-slate-200 space-y-2"><p class="text-xs sm:text-sm font-bold text-rose-600 flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> 系統成績資料重置</p><button onclick="openConfirmModal('確定要清空全校所有闖關成績與得分紀錄嗎？此操作無法復原！', confirmResetData)" class="btn-touch px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow flex items-center gap-2"><i class="fa-solid fa-trash-arrow-up"></i> 清空並重置所有闖關成績紀錄</button></div>
+        <div class="pt-3 border-t border-slate-200 space-y-2 w-full"><p class="text-xs sm:text-sm font-bold text-rose-600 flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> 系統成績資料重置</p><button onclick="openConfirmModal('確定要清空全校所有闖關成績與得分紀錄嗎？此操作無法復原！', confirmResetData)" class="btn-touch px-3.5 py-2 sm:px-4 sm:py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow flex items-center gap-1.5 w-full sm:w-auto"><i class="fa-solid fa-trash-arrow-up"></i> 清空並重置所有闖關成績紀錄</button></div>
       </div>
     </section>
 
-    <section id="stationView" class="space-y-4 hidden">
-      <div class="glass-card p-4 sm:p-5 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+    <!-- STATION LEADER VIEW -->
+    <section id="stationView" class="space-y-3 sm:space-y-4 hidden w-full min-w-0">
+      <div class="glass-card p-3.5 sm:p-5 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden w-full">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 w-full">
           <div>
-            <div class="flex items-center gap-2"><span class="px-2.5 py-1 bg-slate-100 text-amber-600 text-xs font-bold rounded-lg border border-slate-200 flex items-center gap-1.5"><i class="fa-solid fa-headset"></i> 關主指揮台</span></div>
-            <h2 id="stationTitle" class="text-xl sm:text-2xl font-black text-slate-900 mt-1.5">關卡名稱</h2>
-            <p id="stationLocation" class="text-xs text-slate-600 flex items-center gap-1.5 mt-1"><i class="fa-solid fa-location-dot text-rose-500"></i> 地點載入中...</p>
+            <div class="flex items-center gap-2"><span class="px-2.5 py-0.5 bg-slate-100 text-amber-600 text-[11px] sm:text-xs font-bold rounded-lg border border-slate-200 flex items-center gap-1.5"><i class="fa-solid fa-headset"></i> 關主指揮台</span></div>
+            <h2 id="stationTitle" class="text-lg sm:text-2xl font-black text-slate-900 mt-1">關卡名稱</h2>
+            <p id="stationLocation" class="text-xs text-slate-600 flex items-center gap-1.5 mt-0.5"><i class="fa-solid fa-location-dot text-rose-500"></i> 地點載入中...</p>
           </div>
-          <div class="flex gap-2">
-            <button onclick="openQrScannerModal()" class="btn-touch flex-1 sm:flex-none px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shadow"><i class="fa-solid fa-camera text-amber-400"></i> 相機掃 QR</button>
-            <button onclick="openEmergencyModal()" class="btn-touch px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow"><i class="fa-solid fa-triangle-exclamation"></i> SOS 求助</button>
+          <div class="flex gap-2 w-full sm:w-auto">
+            <button onclick="openQrScannerModal()" class="btn-touch flex-1 sm:flex-none px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow"><i class="fa-solid fa-camera text-amber-400"></i> 相機掃 QR</button>
+            <button onclick="openEmergencyModal()" class="btn-touch px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow shrink-0"><i class="fa-solid fa-triangle-exclamation"></i> SOS 求助</button>
           </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div class="lg:col-span-2 glass-card p-4 sm:p-5 rounded-3xl shadow-sm space-y-4 border border-slate-200">
-          <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-200">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 w-full">
+        <div class="lg:col-span-2 glass-card p-3.5 sm:p-5 rounded-3xl shadow-sm space-y-3.5 sm:space-y-4 border border-slate-200 w-full">
+          <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-200">
             <h3 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2"><i class="fa-solid fa-circle-plus text-amber-600"></i> 關卡成績登記 (原則不扣分)</h3>
           </div>
-          <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-clock-rotate-left text-amber-600"></i> 當前時段預計對戰隊伍：</span>
+          <div class="p-2.5 sm:p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 w-full">
+            <div class="flex items-center justify-between flex-wrap gap-1.5">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-clock-rotate-left text-amber-600"></i> 時段預計對戰隊伍：</span>
               <select id="stationTimeSlotSelect" onchange="renderStationActiveTeams()" class="text-xs font-bold px-2 py-1 border border-slate-300 rounded-lg bg-white text-slate-800 outline-none">
               </select>
             </div>
-            <div id="activeTeamsQuickPick" class="flex flex-wrap gap-2 pt-0.5">
+            <div id="activeTeamsQuickPick" class="flex flex-wrap gap-2 pt-0.5 w-full">
             </div>
           </div>
-          <div class="space-y-1.5">
+          <div class="space-y-1.5 w-full">
             <label class="block text-xs font-bold text-slate-700">目前選擇加分的小隊：</label>
-            <select id="stationTeamSelect" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl font-bold text-slate-900 text-xs bg-white outline-none shadow-sm"></select>
+            <select id="stationTeamSelect" class="w-full px-3 py-2 sm:py-2.5 border border-slate-300 rounded-xl font-bold text-slate-900 text-xs bg-white outline-none shadow-sm"></select>
           </div>
-          <div id="scoringPresetBox" class="space-y-2.5">
+          <div id="scoringPresetBox" class="space-y-2 w-full">
             <label class="block text-xs font-bold text-slate-700">獲得分數 (點擊快速填入)：</label>
-            <div class="grid grid-cols-2 gap-2">
-              <button type="button" onclick="document.getElementById('stationPointsInput').value=100" class="btn-touch py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-black text-sm active:scale-95 transition shadow"><i class="fa-solid fa-trophy mr-1.5"></i> 勝利 (+100 分)</button>
-              <button type="button" onclick="document.getElementById('stationPointsInput').value=50" class="btn-touch py-3 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 rounded-xl font-bold text-sm active:scale-95 transition shadow-sm"><i class="fa-solid fa-medal mr-1.5 text-amber-600"></i> 未勝利 (+50 分)</button>
+            <div class="grid grid-cols-2 gap-2 w-full">
+              <button type="button" onclick="document.getElementById('stationPointsInput').value=100" class="btn-touch py-2.5 sm:py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-black text-xs sm:text-sm active:scale-95 transition shadow"><i class="fa-solid fa-trophy mr-1"></i> 勝利 (+100)</button>
+              <button type="button" onclick="document.getElementById('stationPointsInput').value=50" class="btn-touch py-2.5 sm:py-3 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 rounded-xl font-bold text-xs sm:text-sm active:scale-95 transition shadow-sm"><i class="fa-solid fa-medal mr-1 text-amber-600"></i> 未勝 (+50)</button>
             </div>
-            <div class="pt-1">
+            <div class="pt-0.5 w-full">
               <label class="block text-[11px] font-bold text-slate-500 mb-1">自訂分數輸入：</label>
-              <input type="number" id="stationPointsInput" value="100" placeholder="自訂指定分數" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-mono font-bold bg-white text-slate-900 outline-none">
+              <input type="number" id="stationPointsInput" value="100" placeholder="自訂指定分數" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono font-bold bg-white text-slate-900 outline-none">
             </div>
           </div>
           
-          <div class="space-y-1"><label class="block text-xs font-bold text-slate-700">備註說明 (選填)</label><input type="text" id="stationNoteInput" placeholder="選填，可留空" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs bg-white text-slate-900 outline-none"></div>
+          <div class="space-y-1 w-full"><label class="block text-xs font-bold text-slate-700">備註說明 (選填)</label><input type="text" id="stationNoteInput" placeholder="選填，可留空" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs bg-white text-slate-900 outline-none"></div>
 
-          <div class="flex gap-2 pt-1">
-            <button id="btnSubmitScore" onclick="submitStationScore()" class="btn-touch flex-grow py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow transition flex items-center justify-center gap-2 text-xs"><i class="fa-solid fa-paper-plane"></i> 送出得分並更新排行榜</button>
-            <button onclick="undoLastStationScore()" title="撤銷上一筆給分" class="btn-touch px-3 py-3 bg-white hover:bg-slate-100 text-amber-600 border border-slate-300 font-bold rounded-xl shadow-sm transition text-xs"><i class="fa-solid fa-rotate-left"></i> 撤銷</button>
+          <div class="flex gap-2 pt-1 w-full">
+            <button id="btnSubmitScore" onclick="submitStationScore()" class="btn-touch flex-grow py-2.5 sm:py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs"><i class="fa-solid fa-paper-plane"></i> 送出得分與更新</button>
+            <button onclick="undoLastStationScore()" title="撤銷上一筆給分" class="btn-touch px-3 py-2.5 sm:py-3 bg-white hover:bg-slate-100 text-amber-600 border border-slate-300 font-bold rounded-xl shadow-sm transition text-xs shrink-0"><i class="fa-solid fa-rotate-left mr-1"></i>撤銷</button>
           </div>
         </div>
 
-        <div class="glass-card p-4 rounded-3xl shadow-sm flex flex-col justify-between border border-slate-200 relative overflow-hidden">
-          <div class="flex items-center justify-between pb-2 border-b border-slate-200"><h3 class="font-bold text-xs flex items-center gap-2 text-slate-900"><i class="fa-solid fa-stopwatch text-amber-600"></i> 賽事關卡計時器</h3></div>
+        <div class="glass-card p-3.5 sm:p-4 rounded-3xl shadow-sm flex flex-col justify-between border border-slate-200 relative overflow-hidden w-full">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200"><h3 class="font-bold text-xs flex items-center gap-1.5 text-slate-900"><i class="fa-solid fa-stopwatch text-amber-600"></i> 賽事關卡計時器</h3></div>
           
-          <div class="py-3 text-center flex flex-col items-center justify-center space-y-3">
-            <div class="text-4xl font-black font-mono tracking-tight text-slate-900" id="timerDisplay">05:00<span class="text-lg text-slate-400">.0</span></div>
+          <div class="py-2 sm:py-3 text-center flex flex-col items-center justify-center space-y-2.5 w-full">
+            <div class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-slate-900" id="timerDisplay">05:00<span class="text-base sm:text-lg text-slate-400">.0</span></div>
             
-            <div class="flex items-center justify-center gap-2 w-full max-w-xs">
+            <div class="flex items-center justify-center gap-1.5 w-full max-w-xs flex-wrap">
               <div class="flex items-center gap-1">
-                <input type="number" id="customMinInput" min="0" max="99" value="5" class="w-14 py-1.5 px-2 border border-slate-300 rounded-xl text-center font-mono font-bold text-sm bg-white text-slate-900">
+                <input type="number" id="customMinInput" min="0" max="99" value="5" class="w-12 sm:w-14 py-1 px-1.5 border border-slate-300 rounded-xl text-center font-mono font-bold text-xs sm:text-sm bg-white text-slate-900">
                 <span class="text-xs font-bold text-slate-600">分</span>
               </div>
               <div class="flex items-center gap-1">
-                <input type="number" id="customSecInput" min="0" max="59" value="0" class="w-14 py-1.5 px-2 border border-slate-300 rounded-xl text-center font-mono font-bold text-sm bg-white text-slate-900">
+                <input type="number" id="customSecInput" min="0" max="59" value="0" class="w-12 sm:w-14 py-1 px-1.5 border border-slate-300 rounded-xl text-center font-mono font-bold text-xs sm:text-sm bg-white text-slate-900">
                 <span class="text-xs font-bold text-slate-600">秒</span>
               </div>
-              <button onclick="applyCustomTimerInput()" class="px-3 py-1.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700">設定</button>
+              <button onclick="applyCustomTimerInput()" class="px-2.5 py-1 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700">設定</button>
             </div>
 
-            <div class="flex items-center gap-1 flex-wrap justify-center pt-1">
-              <button onclick="adjustTimerSeconds(-60)" class="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold hover:bg-rose-100">-1分</button>
-              <button onclick="adjustTimerSeconds(-10)" class="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold hover:bg-rose-100">-10s</button>
-              <button onclick="adjustTimerSeconds(10)" class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold hover:bg-emerald-100">+10s</button>
-              <button onclick="adjustTimerSeconds(60)" class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold hover:bg-emerald-100">+1分</button>
+            <div class="flex items-center gap-1 flex-wrap justify-center pt-0.5 w-full">
+              <button onclick="adjustTimerSeconds(-60)" class="px-1.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold hover:bg-rose-100">-1分</button>
+              <button onclick="adjustTimerSeconds(-10)" class="px-1.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold hover:bg-rose-100">-10s</button>
+              <button onclick="adjustTimerSeconds(10)" class="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold hover:bg-emerald-100">+10s</button>
+              <button onclick="adjustTimerSeconds(60)" class="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold hover:bg-emerald-100">+1分</button>
             </div>
           </div>
           
-          <div class="flex gap-2"><button onclick="toggleTimer()" id="timerStartBtn" class="btn-touch flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-xl shadow transition text-xs"><i class="fa-solid fa-play"></i> 開始計時</button><button onclick="resetTimer()" class="btn-touch w-10 py-2 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl transition flex items-center justify-center shadow-sm"><i class="fa-solid fa-rotate-right"></i></button></div>
+          <div class="flex gap-2 w-full pt-1"><button onclick="toggleTimer()" id="timerStartBtn" class="btn-touch flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-xl shadow transition text-xs"><i class="fa-solid fa-play"></i> 開始計時</button><button onclick="resetTimer()" class="btn-touch w-10 py-2 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl transition flex items-center justify-center shadow-sm shrink-0"><i class="fa-solid fa-rotate-right"></i></button></div>
         </div>
       </div>
 
-      <div id="stationMyAlertsBox" class="glass-card p-4 rounded-3xl shadow-sm space-y-2 border border-slate-200 hidden">
-        <h3 class="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200"><i class="fa-solid fa-bullhorn text-rose-600"></i> 本關卡求助事件處置回覆狀況</h3>
-        <div id="stationMyAlertsList" class="space-y-2"></div>
+      <div id="stationMyAlertsBox" class="glass-card p-3.5 sm:p-4 rounded-3xl shadow-sm space-y-2 border border-slate-200 hidden w-full">
+        <h3 class="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-1.5 pb-2 border-b border-slate-200"><i class="fa-solid fa-bullhorn text-rose-600"></i> 本關卡求助事件處置回覆狀況</h3>
+        <div id="stationMyAlertsList" class="space-y-2 w-full"></div>
       </div>
 
-      <div id="stSubTab-history" class="glass-card p-3.5 rounded-2xl shadow-sm space-y-2 border border-slate-200"><h3 class="font-bold text-xs flex items-center gap-2 text-slate-900"><i class="fa-solid fa-clock-rotate-left text-amber-600"></i> 本關卡近期加分明細</h3><div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200"><tr><th class="px-3 py-2 whitespace-nowrap">時間 (台灣時間)</th><th class="px-3 py-2 whitespace-nowrap">隊伍</th><th class="px-3 py-2 text-right whitespace-nowrap">分數</th><th class="px-3 py-2 whitespace-nowrap">IP</th><th class="px-3 py-2 whitespace-nowrap">備註</th></tr></thead><tbody id="stationLogsBody" class="divide-y divide-slate-200"></tbody></table></div></div>
+      <div id="stSubTab-history" class="glass-card p-3 sm:p-3.5 rounded-2xl shadow-sm space-y-2 border border-slate-200 w-full min-w-0"><h3 class="font-bold text-xs flex items-center gap-1.5 text-slate-900"><i class="fa-solid fa-clock-rotate-left text-amber-600"></i> 本關卡近期加分明細</h3><div class="w-full overflow-x-auto no-scrollbar"><table class="w-full text-left text-xs min-w-[360px]"><thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200"><tr><th class="px-2.5 py-1.5 whitespace-nowrap">時間 (台灣時間)</th><th class="px-2.5 py-1.5 whitespace-nowrap">隊伍</th><th class="px-2.5 py-1.5 text-right whitespace-nowrap">分數</th><th class="px-2.5 py-1.5 whitespace-nowrap">IP</th><th class="px-2.5 py-1.5 whitespace-nowrap">備註</th></tr></thead><tbody id="stationLogsBody" class="divide-y divide-slate-200"></tbody></table></div></div>
     </section>
 
-    <section id="studentView" class="space-y-4 hidden">
-      <div id="completionNoticeBanner" class="hidden p-4 rounded-3xl bg-amber-400 text-slate-950 font-extrabold text-sm border-2 border-amber-500 shadow-lg flex items-center gap-3 animate-bounce">
-        <i class="fa-solid fa-flag-checkered text-2xl"></i>
-        <div>
-          <p class="text-base">🎉 全隊已完成所有關卡挑戰或活動時間已結束！</p>
-          <p class="text-xs font-bold mt-0.5 text-slate-900">請全體隊員即刻前往【活動中心】進行大會集合與頒獎！</p>
+    <!-- STUDENT VIEW -->
+    <section id="studentView" class="space-y-3 sm:space-y-4 hidden w-full min-w-0">
+      <div id="completionNoticeBanner" class="hidden p-3.5 sm:p-4 rounded-3xl bg-amber-400 text-slate-950 font-extrabold text-xs sm:text-sm border-2 border-amber-500 shadow-lg flex items-center gap-2.5 sm:gap-3 animate-bounce w-full">
+        <i class="fa-solid fa-flag-checkered text-xl sm:text-2xl shrink-0"></i>
+        <div class="min-w-0 flex-1">
+          <p class="text-xs sm:text-base font-black">🎉 全隊已完成所有關卡挑戰或活動時間已結束！</p>
+          <p class="text-[10px] sm:text-xs font-bold mt-0.5 text-slate-900">請全體隊員即刻前往【活動中心】進行大會集合與頒獎！</p>
         </div>
       </div>
 
-      <div class="bg-white text-slate-900 p-4 sm:p-5 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden flex flex-col justify-between gap-3">
-        <i class="fa-solid fa-flag text-8xl absolute -right-4 -bottom-4 text-slate-100 rotate-[-15deg] pointer-events-none"></i>
-        <div class="relative z-10">
-          <div class="flex items-center gap-2 flex-wrap"><span class="px-2.5 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-extrabold rounded-md uppercase flex items-center gap-1"><i class="fa-solid fa-users"></i> 小隊儀表板</span><span id="studentProgressBadge" class="px-2.5 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-md border border-slate-200">已過 0 / 10 關</span><span id="stuGpsStatusBadge" class="px-2.5 py-0.5 bg-slate-100 border border-slate-200 text-amber-600 text-[10px] font-bold rounded-md flex items-center gap-1"><i class="fa-solid fa-location-crosshairs animate-pulse"></i> <span>GPS定位中...</span></span></div>
-          <h2 id="studentTeamTitle" class="text-2xl font-black mt-2 tracking-tight text-slate-900">載入中...</h2>
-          <p class="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5"><i class="fa-solid fa-circle-info"></i> 請依照專屬路線與時段表前往地點挑戰關卡</p>
+      <div class="bg-white text-slate-900 p-3.5 sm:p-5 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden flex flex-col justify-between gap-3 w-full">
+        <i class="fa-solid fa-flag text-7xl sm:text-8xl absolute -right-3 -bottom-3 text-slate-100 rotate-[-15deg] pointer-events-none"></i>
+        <div class="relative z-10 w-full">
+          <div class="flex items-center gap-1.5 flex-wrap"><span class="px-2 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-extrabold rounded-md uppercase flex items-center gap-1"><i class="fa-solid fa-users"></i> 小隊儀表板</span><span id="studentProgressBadge" class="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-md border border-slate-200">已過 0 / 10 關</span><span id="stuGpsStatusBadge" class="px-2 py-0.5 bg-slate-100 border border-slate-200 text-amber-600 text-[10px] font-bold rounded-md flex items-center gap-1"><i class="fa-solid fa-location-crosshairs animate-pulse"></i> <span>GPS定位中...</span></span></div>
+          <h2 id="studentTeamTitle" class="text-xl sm:text-2xl font-black mt-1.5 tracking-tight text-slate-900 truncate">載入中...</h2>
+          <p class="text-xs text-slate-500 mt-0.5 flex items-center gap-1 truncate"><i class="fa-solid fa-circle-info"></i> 請依照專屬路線與時段表前往地點挑戰關卡</p>
         </div>
         <div class="flex gap-2 relative z-10 w-full">
-          <button onclick="openTeamQrModal()" class="btn-touch flex-1 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow"><i class="fa-solid fa-qrcode text-amber-400"></i> 出示 QR 碼</button>
-          <button onclick="openEmergencyModal()" class="btn-touch flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow"><i class="fa-solid fa-triangle-exclamation"></i> 求助 SOS</button>
+          <button onclick="openTeamQrModal()" class="btn-touch flex-1 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow"><i class="fa-solid fa-qrcode text-amber-400"></i> 出示 QR 碼</button>
+          <button onclick="openEmergencyModal()" class="btn-touch flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow"><i class="fa-solid fa-triangle-exclamation"></i> 求助 SOS</button>
         </div>
-        <div class="flex gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 w-full justify-around relative z-10"><div class="text-center"><p class="text-xs text-slate-500 font-semibold">累積得分</p><p id="studentTotalScore" class="text-2xl font-black mt-0.5 font-mono text-amber-600">0</p></div><div class="w-px bg-slate-200"></div><div class="text-center"><p class="text-xs text-slate-500 font-semibold">通關進度</p><p id="studentCompletedCountText" class="text-2xl font-black mt-0.5 font-mono text-emerald-600">0/10 關</p></div></div>
+        <div class="flex gap-2 bg-slate-50 p-2.5 sm:p-3 rounded-2xl border border-slate-200 w-full justify-around relative z-10"><div class="text-center"><p class="text-xs text-slate-500 font-semibold">累積得分</p><p id="studentTotalScore" class="text-xl sm:text-2xl font-black mt-0.5 font-mono text-amber-600">0</p></div><div class="w-px bg-slate-200"></div><div class="text-center"><p class="text-xs text-slate-500 font-semibold">通關進度</p><p id="studentCompletedCountText" class="text-xl sm:text-2xl font-black mt-0.5 font-mono text-emerald-600">0/10 關</p></div></div>
       </div>
 
-      <div class="flex flex-wrap border-b border-slate-200 gap-1 pb-1 text-xs font-bold"><button onclick="switchStudentTab('quest')" id="stuTabBtn-quest" class="px-3.5 py-2 rounded-xl transition bg-white text-slate-900 border border-slate-300 shadow-sm"><i class="fa-solid fa-compass mr-1.5 text-amber-600"></i> 當前任務與數位集章</button><button onclick="openMapModal()" class="px-3.5 py-2 rounded-xl transition bg-white text-slate-800 border border-slate-300 shadow-sm hover:bg-slate-50"><i class="fa-solid fa-map mr-1.5 text-amber-600"></i> 校園總地圖</button><button onclick="switchStudentTab('history')" id="stuTabBtn-history" class="px-3.5 py-2 rounded-xl transition bg-slate-100 text-slate-600 hover:bg-slate-200"><i class="fa-solid fa-list-ol mr-1.5 text-amber-600"></i> 得分履歷</button></div>
+      <div class="flex flex-wrap border-b border-slate-200 gap-1 pb-1 text-xs font-bold w-full"><button onclick="switchStudentTab('quest')" id="stuTabBtn-quest" class="flex-1 py-2 px-2.5 rounded-xl transition bg-white text-slate-900 border border-slate-300 shadow-sm text-center min-w-[130px]"><i class="fa-solid fa-compass mr-1 text-amber-600"></i> 當前任務集章</button><button onclick="openMapModal()" class="flex-1 py-2 px-2.5 rounded-xl transition bg-white text-slate-800 border border-slate-300 shadow-sm hover:bg-slate-50 text-center min-w-[100px]"><i class="fa-solid fa-map mr-1 text-amber-600"></i> 校園總地圖</button><button onclick="switchStudentTab('history')" id="stuTabBtn-history" class="flex-1 py-2 px-2.5 rounded-xl transition bg-slate-100 text-slate-600 hover:bg-slate-200 text-center min-w-[100px]"><i class="fa-solid fa-list-ol mr-1 text-amber-600"></i> 得分履歷</button></div>
       
-      <div id="stuTab-quest" class="space-y-4">
-        <div class="glass-card p-4 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden">
-          <div class="flex flex-col justify-between gap-2 pb-3 border-b border-slate-200">
-            <div><div class="flex items-center gap-2"><span class="px-2.5 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-extrabold rounded-md shadow-sm">當前指定挑戰關卡</span><span id="stuActiveTimeSlotText" class="px-2.5 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-mono font-bold rounded-md border border-slate-200">時段 1 (13:30~13:40)</span></div><h3 id="stuActiveStationTitle" class="text-xl font-black text-slate-900 mt-2">載入動線中...</h3></div>
-            <div id="stuActiveLocationBadge" class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-50 text-rose-600 border border-slate-200 rounded-xl text-xs font-bold self-start"><i class="fa-solid fa-location-dot text-rose-500 animate-bounce"></i><span id="stuActiveLocationText">地點查詢中...</span></div>
+      <div id="stuTab-quest" class="space-y-3 sm:space-y-4 w-full">
+        <div class="glass-card p-3.5 sm:p-4 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden w-full">
+          <div class="flex flex-col justify-between gap-2 pb-2.5 border-b border-slate-200 w-full">
+            <div><div class="flex items-center gap-1.5 flex-wrap"><span class="px-2 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-extrabold rounded-md shadow-sm">當前指定挑戰關卡</span><span id="stuActiveTimeSlotText" class="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-mono font-bold rounded-md border border-slate-200">時段 1 (13:30~13:40)</span></div><h3 id="stuActiveStationTitle" class="text-base sm:text-xl font-black text-slate-900 mt-1.5 truncate">載入動線中...</h3></div>
+            <div id="stuActiveLocationBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 text-rose-600 border border-slate-200 rounded-xl text-xs font-bold self-start"><i class="fa-solid fa-location-dot text-rose-500 animate-bounce"></i><span id="stuActiveLocationText">地點查詢中...</span></div>
           </div>
         </div>
 
-        <div class="glass-card p-4 rounded-3xl shadow-sm space-y-3 border border-slate-200">
-          <div><h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-stamp text-amber-500"></i> 10 大關卡數位闖關集章卡 (A~J)</h3><p class="text-[11px] text-slate-500 mt-0.5">關主上傳成績後此處將自動蓋上專屬通關章</p></div>
-          <div class="space-y-1 bg-slate-50 p-2.5 rounded-2xl border border-slate-200"><div class="flex justify-between items-center text-xs font-bold"><span class="text-slate-500 text-[11px]">通關印章收集進度</span><span id="stuStampProgressText" class="text-amber-600 font-black text-[11px]">0% (0/10關)</span></div><div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden"><div id="stuStampProgressBar" class="bg-amber-400 h-2.5 rounded-full transition-all duration-700 w-0"></div></div></div>
-          <div id="stuStampGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-0.5"></div>
+        <div class="glass-card p-3.5 sm:p-4 rounded-3xl shadow-sm space-y-2.5 sm:space-y-3 border border-slate-200 w-full">
+          <div><h3 class="font-bold text-slate-900 text-xs sm:text-base flex items-center gap-1.5"><i class="fa-solid fa-stamp text-amber-500"></i> 10 大關卡數位闖關集章卡 (A~J)</h3><p class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5">關主上傳成績後此處將自動蓋上專屬通關章</p></div>
+          <div class="space-y-1 bg-slate-50 p-2 sm:p-2.5 rounded-2xl border border-slate-200 w-full"><div class="flex justify-between items-center text-xs font-bold"><span class="text-slate-500 text-[10px] sm:text-[11px]">通關印章進度</span><span id="stuStampProgressText" class="text-amber-600 font-black text-[10px] sm:text-[11px]">0% (0/10關)</span></div><div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden"><div id="stuStampProgressBar" class="bg-amber-400 h-2 rounded-full transition-all duration-700 w-0"></div></div></div>
+          <div id="stuStampGrid" class="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-2 pt-0.5 w-full"></div>
         </div>
 
-        <div id="studentMyAlertsBox" class="glass-card p-4 rounded-3xl shadow-sm space-y-2 border border-slate-200 hidden">
-          <h3 class="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200"><i class="fa-solid fa-bullhorn text-rose-600"></i> 本隊求助事件處置回覆狀況</h3>
-          <div id="studentMyAlertsList" class="space-y-2"></div>
+        <div id="studentMyAlertsBox" class="glass-card p-3.5 sm:p-4 rounded-3xl shadow-sm space-y-2 border border-slate-200 hidden w-full">
+          <h3 class="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-1.5 pb-2 border-b border-slate-200"><i class="fa-solid fa-bullhorn text-rose-600"></i> 本隊求助事件處置回覆狀況</h3>
+          <div id="studentMyAlertsList" class="space-y-2 w-full"></div>
         </div>
 
-        <div class="glass-card p-4 rounded-3xl shadow-sm space-y-3 border border-slate-200"><div><h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-route text-amber-500"></i> 本隊 13:30~15:40 完整時間對照表</h3><p class="text-[11px] text-slate-500">請嚴格依照時間前往指定關卡進行挑戰</p></div><div id="routeStepper" class="space-y-2"></div></div>
+        <div class="glass-card p-3.5 sm:p-4 rounded-3xl shadow-sm space-y-2.5 sm:space-y-3 border border-slate-200 w-full"><div><h3 class="font-bold text-slate-900 text-xs sm:text-base flex items-center gap-1.5"><i class="fa-solid fa-route text-amber-500"></i> 本隊 13:30~15:40 完整時間對照表</h3><p class="text-[10px] sm:text-[11px] text-slate-500">請嚴格依照時間前往指定關卡進行挑戰</p></div><div id="routeStepper" class="space-y-2 w-full"></div></div>
       </div>
 
-      <div id="stuTab-history" class="glass-card p-4 rounded-3xl shadow-sm hidden space-y-3 border border-slate-200"><h3 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2 pb-2 border-b border-slate-200"><i class="fa-solid fa-list-check text-amber-600"></i> 本隊伍過關與得分紀錄履歷</h3><div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200"><tr><th class="px-4 py-2.5 whitespace-nowrap">通關時間</th><th class="px-4 py-2.5 whitespace-nowrap">關卡名稱</th><th class="px-4 py-2.5 text-right whitespace-nowrap">得分</th></tr></thead><tbody id="studentLogsTableBody" class="divide-y divide-slate-200"></tbody></table></div></div>
+      <div id="stuTab-history" class="glass-card p-3.5 sm:p-4 rounded-3xl shadow-sm hidden space-y-3 border border-slate-200 w-full min-w-0"><h3 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5 pb-2 border-b border-slate-200"><i class="fa-solid fa-list-check text-amber-600"></i> 本隊伍過關與得分紀錄履歷</h3><div class="w-full overflow-x-auto no-scrollbar"><table class="w-full text-left text-xs min-w-[280px]"><thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200"><tr><th class="px-3 py-2.5 whitespace-nowrap">通關時間</th><th class="px-3 py-2.5 whitespace-nowrap">關卡名稱</th><th class="px-3 py-2.5 text-right whitespace-nowrap">得分</th></tr></thead><tbody id="studentLogsTableBody" class="divide-y divide-slate-200"></tbody></table></div></div>
     </section>
   </main>
 
-  <div id="chatWidgetBtn" onclick="toggleChatModal()" class="fixed bottom-5 right-5 z-[90] w-14 h-14 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-full shadow-2xl border-2 border-amber-300 flex items-center justify-center text-xl cursor-pointer transition transform active:scale-95">
+  <div id="chatWidgetBtn" onclick="toggleChatModal()" class="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-[90] w-12 h-12 sm:w-14 sm:h-14 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-full shadow-2xl border-2 border-amber-300 flex items-center justify-center text-lg sm:text-xl cursor-pointer transition transform active:scale-95">
     <i class="fa-solid fa-comments"></i>
-    <span id="chatBadgeDot" class="hidden absolute top-0 right-0 w-4 h-4 bg-rose-600 rounded-full border-2 border-white animate-pulse"></span>
+    <span id="chatBadgeDot" class="hidden absolute top-0 right-0 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-rose-600 rounded-full border-2 border-white animate-pulse"></span>
   </div>
 
   <div id="chatModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[150] hidden items-center justify-center p-2 sm:p-4">
-    <div class="bg-white rounded-3xl max-w-3xl w-full shadow-2xl overflow-hidden border border-slate-200 flex flex-col h-[580px]">
-      <div class="bg-slate-100 text-slate-900 p-3.5 flex justify-between items-center border-b border-slate-200 shrink-0">
-        <div class="flex items-center gap-2">
-          <i class="fa-solid fa-comments text-amber-600 text-lg"></i>
-          <h3 class="font-extrabold text-sm sm:text-base text-slate-900">大會即時對話中心</h3>
+    <div class="bg-white rounded-3xl max-w-3xl w-[96%] sm:w-full shadow-2xl overflow-hidden border border-slate-200 flex flex-col h-[520px] sm:h-[580px] max-h-[90vh]">
+      <div class="bg-slate-100 text-slate-900 p-3 sm:p-3.5 flex justify-between items-center border-b border-slate-200 shrink-0 w-full">
+        <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <i class="fa-solid fa-comments text-amber-600 text-base sm:text-lg shrink-0"></i>
+          <h3 class="font-extrabold text-xs sm:text-base text-slate-900 truncate">大會即時對話中心</h3>
         </div>
-        <button onclick="toggleChatModal()" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center cursor-pointer transition"><i class="fa-solid fa-xmark"></i></button>
+        <button onclick="toggleChatModal()" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center cursor-pointer transition shrink-0"><i class="fa-solid fa-xmark text-xs sm:text-sm"></i></button>
       </div>
 
-      <div class="flex-1 flex overflow-hidden min-h-0 bg-slate-50">
-        <div class="w-48 sm:w-60 border-r border-slate-200 bg-white flex flex-col shrink-0">
-          <div class="p-2.5 bg-slate-100 border-b border-slate-200 text-xs font-extrabold text-slate-700 flex items-center justify-between">
-            <span>💬 頻道與聊天室</span>
-            <span class="text-[10px] text-slate-500 font-normal">時間排序</span>
+      <div class="flex-1 flex overflow-hidden min-h-0 bg-slate-50 w-full">
+        <div class="w-28 xs:w-36 sm:w-56 border-r border-slate-200 bg-white flex flex-col shrink-0 min-w-0">
+          <div class="p-2 sm:p-2.5 bg-slate-100 border-b border-slate-200 text-[10px] sm:text-xs font-extrabold text-slate-700 flex items-center justify-between truncate">
+            <span>💬 頻道</span>
           </div>
-          <div id="chatRoomButtonContainer" class="flex-1 overflow-y-auto p-1.5 space-y-1">
+          <div id="chatRoomButtonContainer" class="flex-1 overflow-y-auto p-1 sm:p-1.5 space-y-1 w-full no-scrollbar">
           </div>
         </div>
 
         <div class="flex-1 flex flex-col bg-white min-w-0">
-          <div class="p-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
-            <div class="flex items-center gap-2 min-w-0">
-              <span id="activeRoomBadge" class="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 font-black text-xs truncate shrink-0">📌 全體廣播</span>
+          <div class="p-2 sm:p-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0 w-full">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span id="activeRoomBadge" class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-amber-400 text-slate-950 font-black text-[10px] sm:text-xs truncate shrink-0">📌 全體廣播</span>
             </div>
           </div>
 
-          <div id="chatMessagesContainer" class="p-3 flex-1 overflow-y-auto space-y-2.5 bg-slate-50/50">
+          <div id="chatMessagesContainer" class="p-2.5 sm:p-3 flex-1 overflow-y-auto space-y-2 sm:space-y-2.5 bg-slate-50/50 w-full no-scrollbar">
           </div>
 
-          <div class="p-2.5 bg-white border-t border-slate-200 flex gap-2 shrink-0">
-            <input type="text" id="chatInputText" onkeydown="if(event.key==='Enter') sendChatMessage()" placeholder="輸入訊息..." class="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs bg-white text-slate-900 outline-none focus:border-amber-500">
-            <button id="btnSendChat" onclick="sendChatMessage()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black rounded-xl text-xs shadow shrink-0 flex items-center justify-center min-w-[65px]">發送</button>
+          <div class="p-2 sm:p-2.5 bg-white border-t border-slate-200 flex gap-1.5 sm:gap-2 shrink-0 w-full">
+            <input type="text" id="chatInputText" onkeydown="if(event.key==='Enter') sendChatMessage()" placeholder="輸入訊息..." class="flex-1 px-2.5 py-1.5 sm:px-3 sm:py-2 border border-slate-300 rounded-xl text-xs bg-white text-slate-900 outline-none focus:border-amber-500 min-w-0">
+            <button id="btnSendChat" onclick="sendChatMessage()" class="px-3 py-1.5 sm:px-4 sm:py-2 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black rounded-xl text-xs shadow shrink-0 flex items-center justify-center min-w-[55px] sm:min-w-[65px]">發送</button>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div id="loginModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-center justify-center p-3.5 overflow-y-auto">
-    <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl overflow-hidden border border-slate-200 my-auto">
-      <div class="bg-slate-100 text-slate-900 p-5 text-center relative border-b border-slate-200">
-        <div class="w-12 h-12 rounded-2xl bg-amber-100 mx-auto mb-2 flex items-center justify-center border border-amber-200 shadow-sm"><i class="fa-solid fa-shield-halved text-amber-600 text-xl"></i></div>
-        <h3 class="text-base font-extrabold text-slate-900">系統帳號登入</h3>
-        <p class="text-xs text-slate-500 mt-0.5">請輸入您的帳號與密碼進行驗證</p>
+  <div id="loginModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-center justify-center p-3 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-sm w-[94%] shadow-2xl overflow-hidden border border-slate-200 my-auto">
+      <div class="bg-slate-100 text-slate-900 p-4 sm:p-5 text-center relative border-b border-slate-200">
+        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white mx-auto mb-2 flex items-center justify-center border border-slate-200 shadow-sm overflow-hidden p-0.5">
+          <img src="https://sshs.tc.edu.tw/var/file/69/1069/msys_1069_413586_22128.png" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="新社高中校徽" class="w-full h-full object-contain">
+          <div class="w-full h-full bg-amber-100 hidden items-center justify-center text-amber-600 rounded-xl">
+            <i class="fa-solid fa-shield-halved text-lg sm:text-xl"></i>
+          </div>
+        </div>
+        <h3 class="text-sm sm:text-base font-extrabold text-slate-900">系統帳號登入</h3>
+        <p class="text-[10px] sm:text-xs text-slate-500 mt-0.5">請輸入您的帳號與密碼進行驗證 (需完全符合大小寫)</p>
       </div>
-      <form onsubmit="handleLoginSubmit(event)" class="p-5 space-y-3.5">
-        <div class="space-y-1"><label class="block text-xs font-bold text-slate-700">帳號 (Username)：</label><input type="text" id="loginUsernameInput" placeholder="例如：admin, A, 401A" required autocomplete="off" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 bg-white outline-none focus:border-amber-500"></div>
-        <div class="space-y-1"><label class="block text-xs font-bold text-slate-700">密碼 (Password)：</label><input type="password" id="loginPasswordInput" placeholder="請輸入密碼" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-mono outline-none bg-white text-slate-900 focus:border-amber-500"></div>
-        <button id="btnLoginSubmit" type="submit" class="btn-touch w-full py-3 mt-1 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black rounded-xl shadow transition text-xs sm:text-sm">登入系統</button>
+      <form onsubmit="handleLoginSubmit(event)" class="p-4 sm:p-5 space-y-3 sm:space-y-3.5 w-full">
+        <div class="space-y-1 w-full"><label class="block text-xs font-bold text-slate-700">帳號 (Username)：</label><input type="text" id="loginUsernameInput" placeholder="例如：admin, A, 401A" required autocomplete="off" class="w-full px-3 py-2 sm:px-3.5 sm:py-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 bg-white outline-none focus:border-amber-500"></div>
+        <div class="space-y-1 w-full"><label class="block text-xs font-bold text-slate-700">密碼 (Password)：</label><input type="password" id="loginPasswordInput" placeholder="請輸入密碼" required class="w-full px-3 py-2 sm:px-3.5 sm:py-2.5 border border-slate-300 rounded-xl text-xs font-mono outline-none bg-white text-slate-900 focus:border-amber-500"></div>
+        <button id="btnLoginSubmit" type="submit" class="btn-touch w-full py-2.5 sm:py-3 mt-1 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black rounded-xl shadow transition text-xs sm:text-sm">登入系統</button>
       </form>
     </div>
   </div>
 
-  <div id="emergencyModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[130] hidden items-center justify-center p-3.5 overflow-y-auto">
-    <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl overflow-hidden border-2 border-rose-600 my-auto">
-      <div class="bg-rose-600 text-white p-5 text-center relative">
-        <i class="fa-solid fa-triangle-exclamation text-2xl text-amber-300 mb-1 animate-bounce"></i>
-        <h3 class="text-base font-extrabold text-white">緊急求助與通報</h3>
-        <p class="text-xs text-rose-100 mt-0.5">通報會庫存並同步至大會控制台</p>
+  <div id="emergencyModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[130] hidden items-center justify-center p-3 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-sm w-[94%] shadow-2xl overflow-hidden border-2 border-rose-600 my-auto">
+      <div class="bg-rose-600 text-white p-4 sm:p-5 text-center relative">
+        <i class="fa-solid fa-triangle-exclamation text-xl sm:text-2xl text-amber-300 mb-1 animate-bounce"></i>
+        <h3 class="text-sm sm:text-base font-extrabold text-white">緊急求助與通報</h3>
+        <p class="text-[10px] sm:text-xs text-rose-100 mt-0.5">通報會庫存並同步至大會控制台</p>
       </div>
-      <div class="p-5 space-y-3.5">
-        <div class="space-y-1"><label class="block text-xs font-bold text-slate-700">詳細狀況說明：</label><textarea id="emergencyMessageInput" rows="3" placeholder="例如：有學生不慎擦傷，需要醫藥箱支援..." class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs outline-none bg-white text-slate-900"></textarea></div>
-        <div class="flex gap-2 pt-1"><button onclick="closeEmergencyModal()" class="btn-touch flex-1 py-2.5 bg-slate-100 border border-slate-300 text-slate-700 font-bold rounded-xl text-xs">取消</button><button id="btnSubmitSos" onclick="submitEmergencyAlert()" class="btn-touch flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow transition text-xs flex items-center justify-center gap-1.5"><i class="fa-solid fa-paper-plane"></i> 發送求助</button></div>
+      <div class="p-4 sm:p-5 space-y-3 sm:space-y-3.5 w-full">
+        <div class="space-y-1 w-full"><label class="block text-xs font-bold text-slate-700">詳細狀況說明：</label><textarea id="emergencyMessageInput" rows="3" placeholder="例如：有學生不慎擦傷，需要醫藥箱支援..." class="w-full px-3 py-2 sm:px-3.5 sm:py-2.5 border border-slate-300 rounded-xl text-xs outline-none bg-white text-slate-900"></textarea></div>
+        <div class="flex gap-2 pt-1 w-full"><button onclick="closeEmergencyModal()" class="btn-touch flex-1 py-2 sm:py-2.5 bg-slate-100 border border-slate-300 text-slate-700 font-bold rounded-xl text-xs">取消</button><button id="btnSubmitSos" onclick="submitEmergencyAlert()" class="btn-touch flex-1 py-2 sm:py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow transition text-xs flex items-center justify-center gap-1"><i class="fa-solid fa-paper-plane"></i> 發送求助</button></div>
       </div>
     </div>
   </div>
 
-  <div id="confirmModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[160] hidden items-center justify-center p-3.5">
-    <div class="bg-white rounded-3xl max-w-xs w-full p-5 text-center space-y-3.5 shadow-2xl border border-slate-200 my-auto">
-      <div class="w-11 h-11 rounded-2xl bg-amber-500/10 text-amber-600 border border-amber-500/20 flex items-center justify-center mx-auto text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
-      <h3 class="font-extrabold text-base text-slate-900">系統確認提示</h3>
+  <div id="confirmModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[160] hidden items-center justify-center p-3">
+    <div class="bg-white rounded-3xl max-w-xs w-[90%] p-4 sm:p-5 text-center space-y-3 sm:space-y-3.5 shadow-2xl border border-slate-200 my-auto">
+      <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-amber-500/10 text-amber-600 border border-amber-500/20 flex items-center justify-center mx-auto text-lg sm:text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <h3 class="font-extrabold text-sm sm:text-base text-slate-900">系統確認提示</h3>
       <p id="confirmModalMsg" class="text-xs text-slate-600 font-medium"></p>
-      <div class="flex gap-2 pt-1"><button onclick="closeConfirmModal(false)" class="btn-touch flex-1 py-2 bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs rounded-xl">取消</button><button onclick="closeConfirmModal(true)" class="btn-touch flex-1 py-2 bg-rose-600 text-white font-bold text-xs rounded-xl shadow">確認執行</button></div>
+      <div class="flex gap-2 pt-1 w-full"><button onclick="closeConfirmModal(false)" class="btn-touch flex-1 py-2 bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs rounded-xl">取消</button><button onclick="closeConfirmModal(true)" class="btn-touch flex-1 py-2 bg-rose-600 text-white font-bold text-xs rounded-xl shadow">確認執行</button></div>
     </div>
   </div>
 
-  <div id="resolveAlertModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[135] hidden items-center justify-center p-3.5 overflow-y-auto">
-    <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl overflow-hidden border border-slate-200 my-auto">
-      <div class="bg-slate-100 text-slate-900 p-4 text-center relative border-b border-slate-200"><i class="fa-solid fa-clipboard-check text-2xl text-amber-600 mb-1"></i><h3 class="text-base font-extrabold text-slate-900">處置說明與進度更新</h3></div>
-      <div class="p-4 space-y-3">
-        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs space-y-1"><p><span class="font-bold text-amber-600">通報者：</span><span id="resModalStation" class="font-bold text-slate-900"></span></p><p><span class="font-bold text-amber-600">狀況說明：</span><span id="resModalMsg" class="text-slate-700"></span></p></div>
-        <div class="space-y-1">
+  <div id="resolveAlertModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[135] hidden items-center justify-center p-3 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-sm w-[94%] shadow-2xl overflow-hidden border border-slate-200 my-auto">
+      <div class="bg-slate-100 text-slate-900 p-3.5 sm:p-4 text-center relative border-b border-slate-200"><i class="fa-solid fa-clipboard-check text-xl sm:text-2xl text-amber-600 mb-1"></i><h3 class="text-sm sm:text-base font-extrabold text-slate-900">處置說明與進度更新</h3></div>
+      <div class="p-3.5 sm:p-4 space-y-3 w-full">
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-2.5 sm:p-3 text-xs space-y-1 w-full"><p><span class="font-bold text-amber-600">通報者：</span><span id="resModalStation" class="font-bold text-slate-900"></span></p><p><span class="font-bold text-amber-600">狀況說明：</span><span id="resModalMsg" class="text-slate-700 break-all"></span></p></div>
+        <div class="space-y-1 w-full">
           <label class="block text-xs font-bold text-slate-700">處理狀態切換：</label>
-          <select id="resModalStatusSelect" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 bg-white outline-none">
+          <select id="resModalStatusSelect" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 bg-white outline-none">
             <option value="PENDING">⚠️ 處理中 / 現場跟進中</option>
             <option value="RESOLVED">✅ 已處置完結 (核銷)</option>
           </select>
         </div>
-        <div class="space-y-1"><label class="block text-xs font-bold text-slate-700">處置狀況與進度說明：</label><textarea id="resolutionNoteInput" rows="3" placeholder="例如：已派教官帶醫藥箱前往現場包紮..." class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none bg-white text-slate-900"></textarea></div>
-        <div class="flex gap-2 pt-1"><button onclick="closeResolveAlertModal()" class="btn-touch flex-1 py-2.5 bg-slate-100 border border-slate-300 text-slate-700 font-bold rounded-xl text-xs">取消</button><button id="btnConfirmResolve" onclick="confirmResolveAlert()" class="btn-touch flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl shadow text-xs"><i class="fa-solid fa-check mr-1"></i> 儲存進度</button></div>
+        <div class="space-y-1 w-full"><label class="block text-xs font-bold text-slate-700">處置狀況說明：</label><textarea id="resolutionNoteInput" rows="3" placeholder="例如：已派教官帶醫藥箱前往現場包紮..." class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs outline-none bg-white text-slate-900"></textarea></div>
+        <div class="flex gap-2 pt-1 w-full"><button onclick="closeResolveAlertModal()" class="btn-touch flex-1 py-2 sm:py-2.5 bg-slate-100 border border-slate-300 text-slate-700 font-bold rounded-xl text-xs">取消</button><button id="btnConfirmResolve" onclick="confirmResolveAlert()" class="btn-touch flex-1 py-2 sm:py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl shadow text-xs"><i class="fa-solid fa-check mr-1"></i> 儲存進度</button></div>
       </div>
     </div>
   </div>
 
-  <div id="qrScannerModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[140] hidden items-center justify-center p-3.5">
-    <div class="bg-white rounded-3xl max-w-xs w-full p-4 text-center space-y-3 shadow-2xl border border-slate-200">
-      <h3 class="font-extrabold text-sm text-slate-900 flex items-center justify-center gap-1.5"><i class="fa-solid fa-camera text-amber-600"></i> 相機 QR Code 簽到</h3>
-      <div id="qrReader" class="w-full max-w-[240px] mx-auto overflow-hidden rounded-2xl border border-slate-300 min-h-[200px] bg-slate-100"></div>
-      <p id="qrScanStatus" class="text-xs text-slate-500 font-bold">請將鏡頭對準隊伍出示之 QR Code</p>
+  <div id="qrScannerModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[140] hidden items-center justify-center p-3">
+    <div class="bg-white rounded-3xl max-w-xs w-[92%] p-3.5 sm:p-4 text-center space-y-2.5 sm:space-y-3 shadow-2xl border border-slate-200">
+      <h3 class="font-extrabold text-xs sm:text-sm text-slate-900 flex items-center justify-center gap-1.5"><i class="fa-solid fa-camera text-amber-600"></i> 相機 QR Code 簽到</h3>
+      <div id="qrReader" class="w-full max-w-[220px] mx-auto overflow-hidden rounded-2xl border border-slate-300 min-h-[180px] bg-slate-100"></div>
+      <p id="qrScanStatus" class="text-[11px] sm:text-xs text-slate-500 font-bold">請將鏡頭對準隊伍出示之 QR Code</p>
       <button onclick="closeQrScannerModal()" class="btn-touch w-full py-2 bg-slate-100 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl">關閉相機</button>
     </div>
   </div>
 
-  <div id="teamQrModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[140] hidden items-center justify-center p-3.5">
-    <div class="bg-white rounded-3xl max-w-xs w-full p-5 text-center space-y-3.5 shadow-2xl border border-slate-200">
-      <h3 class="font-extrabold text-base text-slate-900 flex items-center justify-center gap-1.5"><i class="fa-solid fa-qrcode text-amber-600"></i> 隊伍專屬 QR 碼</h3>
-      <div id="qrContainer" class="p-3 bg-white rounded-2xl border border-slate-300 inline-block shadow-inner"><img id="qrImage" src="" alt="Team QR" class="w-40 h-40 mx-auto"></div>
-      <p id="teamQrName" class="font-black text-slate-900 text-sm"></p>
+  <div id="teamQrModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[140] hidden items-center justify-center p-3">
+    <div class="bg-white rounded-3xl max-w-xs w-[92%] p-4 sm:p-5 text-center space-y-3 shadow-2xl border border-slate-200">
+      <h3 class="font-extrabold text-sm sm:text-base text-slate-900 flex items-center justify-center gap-1.5"><i class="fa-solid fa-qrcode text-amber-600"></i> 隊伍專屬 QR 碼</h3>
+      <div id="qrContainer" class="p-2.5 sm:p-3 bg-white rounded-2xl border border-slate-300 inline-block shadow-inner"><img id="qrImage" src="" alt="Team QR" class="w-36 h-36 sm:w-40 sm:h-40 mx-auto"></div>
+      <p id="teamQrName" class="font-black text-slate-900 text-xs sm:text-sm"></p>
       <button onclick="closeTeamQrModal()" class="btn-touch w-full py-2 bg-slate-100 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl">關閉</button>
     </div>
   </div>
 
-  <div id="mapModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[140] hidden items-center justify-center p-2.5 overflow-y-auto">
-    <div class="bg-white rounded-3xl max-w-4xl w-full shadow-2xl overflow-hidden my-auto flex flex-col max-h-[90vh] border border-slate-200">
-      <div class="bg-slate-100 text-slate-900 p-3.5 flex justify-between items-center shrink-0 border-b border-slate-200">
-        <h3 class="font-bold text-sm flex items-center gap-2 text-slate-900"><i class="fa-solid fa-map-location-dot text-amber-600"></i> 校園闖關平面地圖</h3>
+  <div id="mapModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[140] hidden items-center justify-center p-2 sm:p-2.5 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-4xl w-[96%] sm:w-full shadow-2xl overflow-hidden my-auto flex flex-col max-h-[90vh] border border-slate-200">
+      <div class="bg-slate-100 text-slate-900 p-3 sm:p-3.5 flex justify-between items-center shrink-0 border-b border-slate-200 w-full">
+        <h3 class="font-bold text-xs sm:text-sm flex items-center gap-2 text-slate-900"><i class="fa-solid fa-map-location-dot text-amber-600"></i> 校園闖關平面地圖</h3>
         <button onclick="closeMapModal()" class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div class="p-2 overflow-auto flex-grow relative flex items-center justify-center bg-slate-100 min-h-[280px]">
+      <div class="p-2 overflow-auto flex-grow relative flex items-center justify-center bg-slate-100 min-h-[260px] w-full">
         <img id="campusMapImg" src="map.png" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'400\' viewBox=\'0 0 600 400\'><rect width=\'600\' height=\'400\' fill=\'%23f1f5f9\'/><text x=\'50%\' y=\'45%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23d97706\' font-size=\'22\' font-weight=\'bold\'>🗺️ 新社高中 校園闖關平面圖</text><text x=\'50%\' y=\'58%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%2364748b\' font-size=\'14\'>（請將地圖圖檔命名為 map.png 置於專案同目錄）</text></svg>';" alt="Campus Map" class="max-w-full h-auto rounded-xl shadow-md border border-slate-200 object-contain">
       </div>
-      <div class="p-3 bg-slate-50 border-t border-slate-200 text-xs flex items-center justify-between shrink-0"><span class="font-bold text-slate-600 text-[11px]">🗺️ 校園平面導覽圖</span><button onclick="closeMapModal()" class="px-3.5 py-1.5 bg-slate-200 text-slate-800 border border-slate-300 rounded-lg font-bold cursor-pointer">關閉</button></div>
+      <div class="p-2.5 sm:p-3 bg-slate-50 border-t border-slate-200 text-xs flex items-center justify-between shrink-0 w-full"><span class="font-bold text-slate-600 text-[10px] sm:text-[11px]">🗺️ 校園平面導覽圖</span><button onclick="closeMapModal()" class="px-3 py-1.5 bg-slate-200 text-slate-800 border border-slate-300 rounded-lg font-bold cursor-pointer text-xs">關閉</button></div>
     </div>
   </div>
 
-  <footer class="bg-white text-slate-500 text-xs py-3 text-center border-t border-slate-200"><p>臺中市立新社高級中學 大地遊戲闖關導引系統 &copy; 2026</p></footer>
+  <footer class="bg-white text-slate-500 text-[11px] sm:text-xs py-2.5 sm:py-3 text-center border-t border-slate-200 w-full"><p class="px-2 truncate">臺中市立新社高級中學 大地遊戲闖關導引系統 &copy; 2026</p></footer>
 
   <script>
     const SUPABASE_URL = 'https://xfevmqguantotrkatvoa.supabase.co';
@@ -561,7 +600,7 @@
         });
       }
     } catch(err) {
-      console.warn('Supabase init warning:', err);
+      console.error('Supabase 初始化失敗:', err);
     }
 
     let currentUser = null;
@@ -585,7 +624,6 @@
       { id: 'J', name: 'J - 筆劃接力賽', normalLocation: '總務處', rainLocation: '總務處前方' }
     ];
 
-    // A隊純順時針，B隊從最後逆時針
     const TEAM_ROUTES = {
       '401A': ['A','B','C','D','E','F','G','H','I'],
       '401B': ['J','I','H','G','F','E','D','C','B'],
@@ -710,7 +748,7 @@
         icon = '<i class="fa-solid fa-circle-xmark text-rose-600"></i>';
       }
       toast.className = `px-4 py-2.5 rounded-2xl border text-xs font-semibold pointer-events-auto flex items-center justify-between gap-3 transition-all duration-300 transform translate-y-2 opacity-0 w-full ${bgClass}`;
-      toast.innerHTML = `<div class="flex items-center gap-2">${icon}<span>${msg}</span></div><button onclick="this.parentElement.remove()" class="text-xs opacity-60 hover:opacity-100 ml-1"><i class="fa-solid fa-xmark"></i></button>`;
+      toast.innerHTML = `<div class="flex items-center gap-2 min-w-0">${icon}<span class="truncate">${msg}</span></div><button onclick="this.parentElement.remove()" class="text-xs opacity-60 hover:opacity-100 ml-1 shrink-0"><i class="fa-solid fa-xmark"></i></button>`;
       container.appendChild(toast);
       requestAnimationFrame(() => { toast.classList.remove('translate-y-2', 'opacity-0'); });
       setTimeout(() => {
@@ -737,20 +775,22 @@
     }
 
     async function toggleRainPlan() {
-      isRainPlanEnabled = !isRainPlanEnabled;
-      if (supabaseClient) {
-        try {
-          await supabaseClient.from('system_config').upsert(
-            { key: 'rain_plan', value: String(isRainPlanEnabled), updated_at: new Date().toISOString() },
-            { onConflict: 'key' }
-          );
-        } catch(e) {
-          console.warn('Failed to update rain_plan config:', e);
-        }
+      if (!supabaseClient) {
+        showToast('無網路或資料庫連線，無法變更設定！', 'error');
+        return;
       }
-      updateRainPlanUI();
-      showToast(isRainPlanEnabled ? '已切換為【雨備地點方案】' : '已恢復為【標準場地動線】', 'info');
-      refreshData();
+      isRainPlanEnabled = !isRainPlanEnabled;
+      try {
+        await supabaseClient.from('system_config').upsert(
+          { key: 'rain_plan', value: String(isRainPlanEnabled), updated_at: new Date().toISOString() },
+          { onConflict: 'key' }
+        );
+        updateRainPlanUI();
+        showToast(isRainPlanEnabled ? '已切換為【雨備地點方案】' : '已恢復為【標準場地動線】', 'info');
+        refreshData();
+      } catch(e) {
+        showToast('雨備設定更新失敗，請檢查網路連線', 'error');
+      }
     }
 
     function updateRainPlanUI() {
@@ -810,13 +850,17 @@
     }
 
     async function saveBroadcasts() {
-      if (supabaseClient) {
-        try {
-          await supabaseClient.from('system_config').upsert({ key: 'broadcast_list', value: JSON.stringify(localBroadcasts), updated_at: new Date().toISOString() }, { onConflict: 'key' });
-        } catch(e) {}
+      if (!supabaseClient) {
+        showToast('無網路或連線，無法儲存廣播！', 'error');
+        return;
       }
-      renderBroadcastList();
-      updateMarqueeBanner();
+      try {
+        await supabaseClient.from('system_config').upsert({ key: 'broadcast_list', value: JSON.stringify(localBroadcasts), updated_at: new Date().toISOString() }, { onConflict: 'key' });
+        renderBroadcastList();
+        updateMarqueeBanner();
+      } catch(e) {
+        showToast('廣播儲存失敗，請檢查網路連線', 'error');
+      }
     }
 
     function renderBroadcastList() {
@@ -830,20 +874,20 @@
         const textStr = typeof b === 'object' ? b.text : b;
         const isVisible = typeof b === 'object' ? b.visible : true;
         return `
-          <div class="flex items-center justify-between p-2.5 ${isVisible ? 'bg-amber-50 border-amber-300' : 'bg-slate-100 border-slate-200 opacity-75'} rounded-xl border text-xs shadow-sm gap-2">
-            <div class="flex items-center gap-2 min-w-0">
-              <span class="px-2 py-0.5 ${isVisible ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-200 text-slate-600 border-slate-300'} border font-bold rounded-md text-[10px] shrink-0">
+          <div class="flex items-center justify-between p-2 sm:p-2.5 ${isVisible ? 'bg-amber-50 border-amber-300' : 'bg-slate-100 border-slate-200 opacity-75'} rounded-xl border text-xs shadow-sm gap-1.5 w-full">
+            <div class="flex items-center gap-1.5 min-w-0 flex-1">
+              <span class="px-1.5 py-0.5 ${isVisible ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-200 text-slate-600 border-slate-300'} border font-bold rounded-md text-[9px] sm:text-[10px] shrink-0">
                 ${isVisible ? '● 播放中' : '○ 已隱藏'}
               </span>
               <span class="font-bold truncate ${isVisible ? 'text-slate-900' : 'text-slate-500 line-through'}">${textStr}</span>
             </div>
-            <div class="flex items-center gap-1.5 shrink-0">
-              <button onclick="toggleBroadcastVisibility(${idx})" class="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold rounded-lg text-[11px] transition cursor-pointer flex items-center gap-1">
+            <div class="flex items-center gap-1 shrink-0">
+              <button onclick="toggleBroadcastVisibility(${idx})" class="px-2 py-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold rounded-lg text-[10px] sm:text-[11px] transition cursor-pointer flex items-center gap-1">
                 <i class="fa-solid ${isVisible ? 'fa-eye-slash text-slate-500' : 'fa-eye text-amber-600'}"></i>
                 ${isVisible ? '隱藏' : '顯示'}
               </button>
-              <button onclick="removeBroadcastMessage(${idx})" class="px-2.5 py-1 bg-white hover:bg-rose-50 text-rose-600 border border-slate-300 font-bold rounded-lg text-[11px] transition cursor-pointer flex items-center gap-1">
-                <i class="fa-solid fa-trash-can"></i> 移除
+              <button onclick="removeBroadcastMessage(${idx})" class="px-2 py-1 bg-white hover:bg-rose-50 text-rose-600 border border-slate-300 font-bold rounded-lg text-[10px] sm:text-[11px] transition cursor-pointer flex items-center gap-1">
+                <i class="fa-solid fa-trash-can"></i> 刪除
               </button>
             </div>
           </div>
@@ -915,8 +959,8 @@
       const matchedTeams = TEAM_NAMES.filter(t => TEAM_ROUTES[t] && TEAM_ROUTES[t][slotIdx] === stId);
       if (matchedTeams.length > 0) {
         container.innerHTML = matchedTeams.map(t => `
-          <button type="button" onclick="selectStationTeam('${t}')" class="btn-touch flex-1 py-1.5 px-3 bg-white hover:bg-amber-50 text-slate-800 border border-slate-300 rounded-xl font-bold text-xs shadow-sm active:scale-95 transition">
-            <i class="fa-solid fa-users mr-1.5 text-amber-600"></i> ${formatTeamName(t)}
+          <button type="button" onclick="selectStationTeam('${t}')" class="btn-touch flex-1 py-1.5 px-3 bg-white hover:bg-amber-50 text-slate-800 border border-slate-300 rounded-xl font-bold text-xs shadow-sm active:scale-95 transition min-w-[100px]">
+            <i class="fa-solid fa-users mr-1 text-amber-600"></i> ${formatTeamName(t)}
           </button>
         `).join('<span class="text-xs font-black text-slate-400 self-center">VS</span>');
         const teamSelect = document.getElementById('stationTeamSelect');
@@ -943,39 +987,43 @@
     async function handleLoginSubmit(event) {
       event.preventDefault();
       if (isActionPending) return;
+      
+      if (!supabaseClient) {
+        showToast('無法連線至雲端伺服器，請檢查網路狀態！', 'error');
+        return;
+      }
+
       const u = document.getElementById('loginUsernameInput').value.trim();
       const p = document.getElementById('loginPasswordInput').value.trim();
       const btn = document.getElementById('btnLoginSubmit');
+      
       if (!u || !p) { showToast('請輸入帳號與密碼！', 'error'); return; }
+      
       isActionPending = true;
       if (btn) { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
+      
       try {
-        if (supabaseClient) {
-          // 使用 ilike 忽略大小寫進行比對（例如輸入 401a 也可順利登入 401A）
-          const { data: accounts, error } = await supabaseClient
-            .from('accounts')
-            .select('*')
-            .ilike('username', u)
-            .eq('password', p);
+        const { data: accounts, error } = await supabaseClient
+          .from('accounts')
+          .select('*')
+          .eq('username', u)
+          .eq('password', p);
 
-          if (error) {
-            console.error('Supabase 驗證發生錯誤:', error);
-            showToast('資料庫驗證失敗：' + (error.message || '連線錯誤'), 'error');
-            return;
-          }
-
-          if (!accounts || accounts.length === 0) {
-            showToast('帳號或密碼錯誤，請重新確認！', 'error');
-            return;
-          }
-
-          const account = accounts[0];
-          const role = getNormalizedRole(account.role, account.username);
-          currentUser = { id: account.username, name: account.display_name || account.username, role: role };
-        } else {
-          const role = getNormalizedRole(null, u);
-          currentUser = { id: u, name: u, role: role };
+        if (error) {
+          console.error('Supabase 驗證錯誤:', error);
+          showToast('資料庫驗證失敗，請檢查網路連線：' + (error.message || '連線錯誤'), 'error');
+          return;
         }
+
+        const matchedAccount = accounts ? accounts.find(a => a.username === u && a.password === p) : null;
+
+        if (!matchedAccount) {
+          showToast('帳號或密碼錯誤，請重新確認大小寫！', 'error');
+          return;
+        }
+
+        const role = getNormalizedRole(matchedAccount.role, matchedAccount.username);
+        currentUser = { id: matchedAccount.username, name: matchedAccount.display_name || matchedAccount.username, role: role };
 
         sessionStorage.setItem('xshs_user_session', JSON.stringify(currentUser));
 
@@ -1063,7 +1111,7 @@
             }
           }
           const b = document.getElementById('stuGpsStatusBadge');
-          if (b) b.innerHTML = `<i class="fa-solid fa-location-dot text-amber-400"></i> GPS已定位 (${lat.toFixed(6)}, ${lng.toFixed(6)})`;
+          if (b) b.innerHTML = `<i class="fa-solid fa-location-dot text-amber-400"></i> GPS已定位 (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
         },
         (err) => {
           const b = document.getElementById('stuGpsStatusBadge');
@@ -1150,19 +1198,21 @@
 
     async function showTeamTrackOnMap(teamName) {
       if (!gpsLeafletMap) return;
+      if (!supabaseClient) {
+        showToast('需要網路連線以獲取軌跡資料', 'error');
+        return;
+      }
       showToast(`載入 ${formatTeamName(teamName)} 移動軌跡...`, 'info');
       try {
-        if (supabaseClient) {
-          const { data: history } = await supabaseClient.from('location_history').select('*').eq('team_name', teamName).order('created_at', { ascending: true });
-          if (history && history.length > 0) {
-            const latLngs = history.map(h => [h.lat, h.lng]);
-            if (gpsTrackPolyline) gpsLeafletMap.removeLayer(gpsTrackPolyline);
-            gpsTrackPolyline = L.polyline(latLngs, { color: '#d97706', weight: 4, opacity: 0.85 }).addTo(gpsLeafletMap);
-            gpsLeafletMap.fitBounds(gpsTrackPolyline.getBounds(), { padding: [20, 20] });
-            currentActiveTrackTeam = teamName;
-            showToast(`已繪製 ${formatTeamName(teamName)} 軌跡 (${history.length}點)`, 'success');
-            return;
-          }
+        const { data: history } = await supabaseClient.from('location_history').select('*').eq('team_name', teamName).order('created_at', { ascending: true });
+        if (history && history.length > 0) {
+          const latLngs = history.map(h => [h.lat, h.lng]);
+          if (gpsTrackPolyline) gpsLeafletMap.removeLayer(gpsTrackPolyline);
+          gpsTrackPolyline = L.polyline(latLngs, { color: '#d97706', weight: 4, opacity: 0.85 }).addTo(gpsLeafletMap);
+          gpsLeafletMap.fitBounds(gpsTrackPolyline.getBounds(), { padding: [20, 20] });
+          currentActiveTrackTeam = teamName;
+          showToast(`已繪製 ${formatTeamName(teamName)} 軌跡 (${history.length}點)`, 'success');
+          return;
         }
         showToast(`${formatTeamName(teamName)} 尚無歷史軌跡點`, 'info');
       } catch(e) { showToast('無法讀取軌跡資料', 'error'); }
@@ -1174,20 +1224,20 @@
       const sortedTeams = [...localTeams].sort((a, b) => a.team_name.localeCompare(b.team_name, undefined, { numeric: true }));
       grid.innerHTML = sortedTeams.map(t => {
         const hasGps = !!(t.lat && t.lng);
-        const latVal = hasGps ? Number(t.lat).toFixed(7) : '未連線';
-        const lngVal = hasGps ? Number(t.lng).toFixed(7) : '未連線';
+        const latVal = hasGps ? Number(t.lat).toFixed(6) : '未連線';
+        const lngVal = hasGps ? Number(t.lng).toFixed(6) : '未連線';
         const updateTimeStr = t.gps_updated_at ? formatTWDateTime(t.gps_updated_at) : '無紀錄';
         return `
-          <div class="p-3 bg-white rounded-2xl border ${hasGps ? 'border-amber-400' : 'border-slate-200'} space-y-1.5 shadow-sm">
-            <div class="flex justify-between items-center"><span class="font-bold text-xs text-slate-900">${formatTeamName(t.team_name)}</span><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${hasGps ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-400 border border-slate-200'}">${hasGps ? '已連線' : '未連線'}</span></div>
-            <div class="space-y-0.5 font-mono text-[11px] text-slate-700">
-              <p>緯度 (Lat): <span class="font-bold ${hasGps ? 'text-amber-600' : 'text-slate-400'}">${latVal}</span></p>
-              <p>經度 (Lng): <span class="font-bold ${hasGps ? 'text-amber-600' : 'text-slate-400'}">${lngVal}</span></p>
-              <p class="text-[10px] text-slate-500 pt-0.5">最後更新時間: <span class="font-bold text-slate-700">${updateTimeStr}</span></p>
+          <div class="p-2.5 sm:p-3 bg-white rounded-2xl border ${hasGps ? 'border-amber-400' : 'border-slate-200'} space-y-1.5 shadow-sm w-full min-w-0">
+            <div class="flex justify-between items-center"><span class="font-bold text-xs text-slate-900 truncate">${formatTeamName(t.team_name)}</span><span class="text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full ${hasGps ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-400 border border-slate-200'} shrink-0">${hasGps ? '已連線' : '未連線'}</span></div>
+            <div class="space-y-0.5 font-mono text-[10px] sm:text-[11px] text-slate-700">
+              <p class="truncate">緯度: <span class="font-bold ${hasGps ? 'text-amber-600' : 'text-slate-400'}">${latVal}</span></p>
+              <p class="truncate">經度: <span class="font-bold ${hasGps ? 'text-amber-600' : 'text-slate-400'}">${lngVal}</span></p>
+              <p class="text-[9px] sm:text-[10px] text-slate-500 pt-0.5 truncate">最後更新: <span class="font-bold text-slate-700">${updateTimeStr}</span></p>
             </div>
-            <div class="pt-1 flex gap-1.5">
-              <button onclick="focusMapOnTeam('${t.team_name}')" ${!hasGps ? 'disabled' : ''} class="btn-touch flex-1 py-1 bg-white hover:bg-slate-50 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 text-amber-600 border border-slate-300 rounded-lg text-xs font-bold shadow-sm"><i class="fa-solid fa-crosshairs mr-1"></i> 聚焦定位</button>
-              <button onclick="toggleTeamTrack('${t.team_name}')" class="btn-touch flex-1 py-1 bg-white hover:bg-slate-50 text-sky-600 border border-slate-300 rounded-lg text-xs font-bold shadow-sm"><i class="fa-solid fa-route mr-1"></i> 軌跡切換</button>
+            <div class="pt-1 flex gap-1.5 w-full">
+              <button onclick="focusMapOnTeam('${t.team_name}')" ${!hasGps ? 'disabled' : ''} class="btn-touch flex-1 py-1 bg-white hover:bg-slate-50 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 text-amber-600 border border-slate-300 rounded-lg text-[11px] font-bold shadow-sm truncate"><i class="fa-solid fa-crosshairs mr-1"></i>聚焦</button>
+              <button onclick="toggleTeamTrack('${t.team_name}')" class="btn-touch flex-1 py-1 bg-white hover:bg-slate-50 text-sky-600 border border-slate-300 rounded-lg text-[11px] font-bold shadow-sm truncate"><i class="fa-solid fa-route mr-1"></i>軌跡</button>
             </div>
           </div>`;
       }).join('');
@@ -1211,7 +1261,7 @@
         const el = document.getElementById('adminTab-' + t);
         const btn = document.getElementById('tabBtn-' + t);
         if (el) el.classList.toggle('hidden', t !== tabName);
-        if (btn) btn.className = t === tabName ? 'px-3 py-2 rounded-lg bg-white text-slate-900 font-bold border border-slate-200 shadow-sm' : 'px-3 py-2 rounded-lg text-slate-600 hover:text-slate-900';
+        if (btn) btn.className = t === tabName ? 'flex-1 min-w-[80px] py-1.5 sm:py-2 px-2.5 rounded-lg transition bg-white text-slate-900 font-bold border border-slate-200 shadow-sm text-center' : 'flex-1 min-w-[80px] py-1.5 sm:py-2 px-2.5 rounded-lg transition text-slate-600 hover:text-slate-900 text-center';
       });
       if (tabName === 'gps') setTimeout(initGpsLiveMap, 100);
     }
@@ -1225,24 +1275,24 @@
       if (podium && sorted.length >= 3) {
         podium.innerHTML = `
           <div class="flex flex-col items-center justify-end">
-            <div class="w-full bg-slate-200 rounded-t-2xl p-3 text-center border border-slate-300 shadow-inner">
-              <span class="text-xs font-black text-slate-600 block">🥈 第二名</span>
-              <span class="font-extrabold text-sm text-slate-900 truncate block mt-1">${formatTeamName(sorted[1].team_name)}</span>
-              <span class="font-black font-mono text-amber-600 text-sm">${sorted[1].total_score}分</span>
+            <div class="w-full bg-slate-200 rounded-t-2xl p-2 sm:p-3 text-center border border-slate-300 shadow-inner">
+              <span class="text-[10px] sm:text-xs font-black text-slate-600 block">🥈 第二名</span>
+              <span class="font-extrabold text-xs sm:text-sm text-slate-900 truncate block mt-0.5 sm:mt-1">${formatTeamName(sorted[1].team_name)}</span>
+              <span class="font-black font-mono text-amber-600 text-xs sm:text-sm">${sorted[1].total_score}分</span>
             </div>
           </div>
           <div class="flex flex-col items-center justify-end">
-            <div class="w-full bg-amber-100 rounded-t-2xl p-4 text-center border-2 border-amber-400 shadow-md transform -translate-y-2">
-              <span class="text-xs font-black text-amber-800 block">🏆 第一名</span>
-              <span class="font-black text-base text-slate-900 truncate block mt-1">${formatTeamName(sorted[0].team_name)}</span>
-              <span class="font-black font-mono text-amber-700 text-base">${sorted[0].total_score}分</span>
+            <div class="w-full bg-amber-100 rounded-t-2xl p-2.5 sm:p-4 text-center border-2 border-amber-400 shadow-md transform -translate-y-1 sm:-translate-y-2">
+              <span class="text-[10px] sm:text-xs font-black text-amber-800 block">🏆 第一名</span>
+              <span class="font-black text-xs sm:text-base text-slate-900 truncate block mt-0.5 sm:mt-1">${formatTeamName(sorted[0].team_name)}</span>
+              <span class="font-black font-mono text-amber-700 text-xs sm:text-base">${sorted[0].total_score}分</span>
             </div>
           </div>
           <div class="flex flex-col items-center justify-end">
-            <div class="w-full bg-amber-50 rounded-t-2xl p-2.5 text-center border border-amber-200 shadow-inner">
-              <span class="text-xs font-black text-amber-700 block">🥉 第三名</span>
-              <span class="font-extrabold text-xs text-slate-900 truncate block mt-1">${formatTeamName(sorted[2].team_name)}</span>
-              <span class="font-black font-mono text-amber-600 text-xs">${sorted[2].total_score}分</span>
+            <div class="w-full bg-amber-50 rounded-t-2xl p-2 sm:p-2.5 text-center border border-amber-200 shadow-inner">
+              <span class="text-[10px] sm:text-xs font-black text-amber-700 block">🥉 第三名</span>
+              <span class="font-extrabold text-[11px] sm:text-xs text-slate-900 truncate block mt-0.5 sm:mt-1">${formatTeamName(sorted[2].team_name)}</span>
+              <span class="font-black font-mono text-amber-600 text-[11px] sm:text-xs">${sorted[2].total_score}分</span>
             </div>
           </div>
         `;
@@ -1253,7 +1303,7 @@
         if (idx === 0) badge = '🥇 1';
         if (idx === 1) badge = '🥈 2';
         if (idx === 2) badge = '🥉 3';
-        return `<tr class="hover:bg-slate-50"><td class="px-4 py-3 text-center font-black text-slate-700">${badge}</td><td class="px-4 py-3 font-bold text-slate-900">${formatTeamName(t.team_name)}</td><td class="px-4 py-3 text-right font-black font-mono text-amber-600">${t.total_score || 0} 分</td></tr>`;
+        return `<tr class="hover:bg-slate-50"><td class="px-3 sm:px-4 py-2.5 text-center font-black text-slate-700">${badge}</td><td class="px-3 sm:px-4 py-2.5 font-bold text-slate-900 truncate">${formatTeamName(t.team_name)}</td><td class="px-3 sm:px-4 py-2.5 text-right font-black font-mono text-amber-600">${t.total_score || 0} 分</td></tr>`;
       }).join('');
     }
 
@@ -1269,13 +1319,13 @@
       if (!tbody) return;
       tbody.innerHTML = localLogs.map(l => `
         <tr class="hover:bg-slate-50">
-          <td class="px-3 py-2.5 font-mono text-xs text-slate-500">${formatTWDateTime(l.created_at)}</td>
-          <td class="px-3 py-2.5 font-bold text-slate-800">${formatStationDisplayName(l.station_name)}</td>
-          <td class="px-3 py-2.5 font-bold text-amber-600">${formatTeamName(l.team_name)}</td>
-          <td class="px-3 py-2.5 text-right font-black font-mono text-emerald-600">+${l.points}</td>
-          <td class="px-3 py-2.5 text-xs font-mono text-slate-500">${getRecordIp(l)}</td>
-          <td class="px-3 py-2.5 text-xs text-slate-700">${cleanNoteText(l.note)}</td>
-          <td class="px-3 py-2.5 text-center"><button onclick="deleteScoreLog(${l.id})" class="px-2 py-1 bg-white hover:bg-rose-50 text-rose-600 border border-slate-300 rounded-lg text-xs font-bold transition shadow-sm">刪除</button></td>
+          <td class="px-2.5 py-2 font-mono text-xs text-slate-500 whitespace-nowrap">${formatTWDateTime(l.created_at)}</td>
+          <td class="px-2.5 py-2 font-bold text-slate-800 break-words max-w-[180px]">${formatStationDisplayName(l.station_name)}</td>
+          <td class="px-2.5 py-2 font-bold text-amber-600 whitespace-nowrap">${formatTeamName(l.team_name)}</td>
+          <td class="px-2.5 py-2 text-right font-black font-mono text-emerald-600 whitespace-nowrap">+${l.points}</td>
+          <td class="px-2.5 py-2 text-xs font-mono text-slate-500 whitespace-nowrap">${getRecordIp(l)}</td>
+          <td class="px-2.5 py-2 text-xs text-slate-700 break-all max-w-[200px]">${cleanNoteText(l.note)}</td>
+          <td class="px-2.5 py-2 text-center whitespace-nowrap"><button onclick="deleteScoreLog(${l.id})" class="px-2 py-1 bg-white hover:bg-rose-50 text-rose-600 border border-slate-300 rounded-lg text-xs font-bold transition shadow-sm">刪除</button></td>
         </tr>
       `).join('') || `<tr><td colspan="7" class="text-center py-6 text-slate-500 font-medium">尚無加分紀錄</td></tr>`;
     }
@@ -1286,19 +1336,19 @@
       container.innerHTML = TEAM_NAMES.map((teamId) => {
         const routeArray = TEAM_ROUTES[teamId] || [];
         return `
-          <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-3">
+          <div class="p-3 sm:p-4 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-2.5 sm:space-y-3 w-full">
             <div class="flex justify-between items-center pb-2 border-b border-slate-200">
-              <span class="font-extrabold text-sm text-amber-600 flex items-center gap-1.5"><i class="fa-solid fa-flag"></i> ${formatTeamName(teamId)}</span>
-              <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-mono font-bold">9時段關卡動線</span>
+              <span class="font-extrabold text-xs sm:text-sm text-amber-600 flex items-center gap-1.5"><i class="fa-solid fa-flag"></i> ${formatTeamName(teamId)}</span>
+              <span class="text-[9px] sm:text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-mono font-bold">9時段動線</span>
             </div>
-            <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="grid grid-cols-2 gap-1.5 sm:gap-2 text-xs w-full">
               ${TIME_SLOTS.map((slot, sIdx) => {
                 const stId = routeArray[sIdx] || 'A';
                 const st = STATIONS.find(s => s.id === stId) || STATIONS[0];
                 return `
-                  <div class="p-2 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-between">
-                    <span class="font-mono text-[10px] text-slate-400 font-bold">${slot}</span>
-                    <span class="font-extrabold text-slate-800 text-xs mt-0.5">${st.name} (${getStationLocation(st)})</span>
+                  <div class="p-1.5 sm:p-2 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-between min-w-0">
+                    <span class="font-mono text-[9px] sm:text-[10px] text-slate-400 font-bold truncate">${slot}</span>
+                    <span class="font-extrabold text-slate-800 text-[11px] sm:text-xs mt-0.5 truncate">${st.name} (${getStationLocation(st)})</span>
                   </div>`;
               }).join('')}
             </div>
@@ -1323,21 +1373,21 @@
         if (unhandled) {
           statusBadge = `<span class="px-2 py-0.5 bg-rose-100 text-rose-800 border border-rose-300 font-bold rounded-md text-[10px]">🚨 完全未處置</span>`;
         } else if (a.status === 'PENDING') {
-          statusBadge = `<span class="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 font-bold rounded-md text-[10px]">⚠️ 處理中 (已留說明)</span>`;
+          statusBadge = `<span class="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 font-bold rounded-md text-[10px]">⚠️ 處理中</span>`;
         } else {
           statusBadge = `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold rounded-md text-[10px]">✅ 已完結</span>`;
         }
 
         return `
           <tr class="hover:bg-slate-50">
-            <td class="px-3 py-2.5 font-mono text-xs text-slate-500">${formatTWDateTime(a.created_at)}</td>
-            <td class="px-3 py-2.5 font-bold text-slate-800">${a.operator_account || a.station_name || '通報者'}</td>
-            <td class="px-3 py-2.5 text-xs text-slate-700">${cleanNoteText(a.message)}</td>
-            <td class="px-3 py-2.5 text-xs text-emerald-600 font-semibold">${cleanNoteText(a.resolution_note)}</td>
-            <td class="px-3 py-2.5 text-center flex items-center justify-center gap-2">
+            <td class="px-2.5 py-2 font-mono text-xs text-slate-500 whitespace-nowrap">${formatTWDateTime(a.created_at)}</td>
+            <td class="px-2.5 py-2 font-bold text-slate-800 whitespace-nowrap">${a.operator_account || a.station_name || '通報者'}</td>
+            <td class="px-2.5 py-2 text-xs text-slate-700 break-all max-w-[200px]">${cleanNoteText(a.message)}</td>
+            <td class="px-2.5 py-2 text-xs text-emerald-600 font-semibold break-all max-w-[180px]">${cleanNoteText(a.resolution_note)}</td>
+            <td class="px-2.5 py-2 text-center flex items-center justify-center gap-1.5 whitespace-nowrap">
               ${statusBadge}
-              <button onclick="openResolveAlertModal('${a.id}')" class="px-2.5 py-1 ${unhandled ? 'bg-rose-600 text-white font-black' : 'bg-slate-100 text-slate-800 border border-slate-300 font-bold'} text-xs rounded-lg transition shadow-sm cursor-pointer">
-                ${unhandled ? '地點/內容處置' : '編輯處置'}
+              <button onclick="openResolveAlertModal('${a.id}')" class="px-2 py-1 ${unhandled ? 'bg-rose-600 text-white font-black' : 'bg-slate-100 text-slate-800 border border-slate-300 font-bold'} text-xs rounded-lg transition shadow-sm cursor-pointer">
+                ${unhandled ? '處置' : '編輯'}
               </button>
             </td>
           </tr>`;
@@ -1348,11 +1398,15 @@
       const tbody = document.getElementById('stationLogsBody');
       if (!tbody || !currentUser) return;
       const stLogs = localLogs.filter(l => l.station_name && l.station_name.includes(currentUser.id));
-      tbody.innerHTML = stLogs.map(l => `<tr><td class="px-3 py-2 font-mono text-xs text-slate-500">${formatTWDateTime(l.created_at)}</td><td class="px-3 py-2 font-bold text-slate-800">${formatTeamName(l.team_name)}</td><td class="px-3 py-2 text-right font-black font-mono text-amber-600">+${l.points}</td><td class="px-3 py-2 text-xs font-mono text-slate-500">${getRecordIp(l)}</td><td class="px-3 py-2 text-xs text-slate-700">${cleanNoteText(l.note)}</td></tr>`).join('') || `<tr><td colspan="5" class="text-center py-4 text-slate-500 font-medium">尚無得分紀錄</td></tr>`;
+      tbody.innerHTML = stLogs.map(l => `<tr><td class="px-2.5 py-1.5 font-mono text-xs text-slate-500 whitespace-nowrap">${formatTWDateTime(l.created_at)}</td><td class="px-2.5 py-1.5 font-bold text-slate-800 whitespace-nowrap">${formatTeamName(l.team_name)}</td><td class="px-2.5 py-1.5 text-right font-black font-mono text-amber-600 whitespace-nowrap">+${l.points}</td><td class="px-2.5 py-1.5 text-xs font-mono text-slate-500 whitespace-nowrap">${getRecordIp(l)}</td><td class="px-2.5 py-1.5 text-xs text-slate-700 break-all max-w-[140px]">${cleanNoteText(l.note)}</td></tr>`).join('') || `<tr><td colspan="5" class="text-center py-4 text-slate-500 font-medium">尚無得分紀錄</td></tr>`;
     }
 
     async function submitStationScore() {
       if (isActionPending) return;
+      if (!supabaseClient) {
+        showToast('無法連線至雲端資料庫，請檢查網路連線！', 'error');
+        return;
+      }
       const teamName = document.getElementById('stationTeamSelect').value;
       const ptsVal = document.getElementById('stationPointsInput').value;
       const noteVal = document.getElementById('stationNoteInput').value.trim();
@@ -1363,16 +1417,15 @@
       const stName = STATIONS.find(s => s.id === currentUser.id)?.name || currentUser.name;
       const operator = currentUser.id;
       const noteWithAudit = noteVal ? `${noteVal} [帳號: ${operator}] [IP: ${clientIp}]` : `[帳號: ${operator}] [IP: ${clientIp}]`;
-      const newLog = { id: Date.now(), station_name: stName, team_name: teamName, points: parseInt(ptsVal), note: noteWithAudit, operator_account: operator, ip_address: clientIp, created_at: new Date().toISOString() };
+      const created_at = new Date().toISOString();
       
       try {
-        if (supabaseClient) {
-          await supabaseClient.from('score_logs').insert([{ station_name: stName, team_name: teamName, points: parseInt(ptsVal), note: noteWithAudit, ip_address: clientIp, created_at: newLog.created_at }]);
-        }
+        const { error } = await supabaseClient.from('score_logs').insert([{ station_name: stName, team_name: teamName, points: parseInt(ptsVal), note: noteWithAudit, ip_address: clientIp, created_at }]);
+        if (error) throw error;
         showToast(`登記成功：${formatTeamName(teamName)} +${ptsVal}分`, 'success');
         document.getElementById('stationNoteInput').value = '';
         refreshData();
-      } catch(e) { showToast('上傳得分失敗，請重試！', 'error'); }
+      } catch(e) { showToast('上傳得分失敗，請確認網路連線！', 'error'); }
       finally {
         isActionPending = false;
         if (btn) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
@@ -1389,11 +1442,18 @@
     }
 
     async function deleteScoreLog(id) {
-      if (supabaseClient) {
-        try { await supabaseClient.from('score_logs').delete().eq('id', id); } catch(e){}
+      if (!supabaseClient) {
+        showToast('無法連線至雲端資料庫！', 'error');
+        return;
       }
-      showToast('已刪除分數紀錄', 'success');
-      refreshData();
+      try {
+        const { error } = await supabaseClient.from('score_logs').delete().eq('id', id);
+        if (error) throw error;
+        showToast('已刪除分數紀錄', 'success');
+        refreshData();
+      } catch(e) {
+        showToast('刪除紀錄失敗，請檢查網路連線', 'error');
+      }
     }
 
     function isEventFinished() {
@@ -1413,13 +1473,13 @@
       if (tab === 'quest') {
         if (qTab) qTab.classList.remove('hidden');
         if (hTab) hTab.classList.add('hidden');
-        if (btnQ) btnQ.className = 'px-3.5 py-2 rounded-xl transition bg-white text-slate-900 border border-slate-300 shadow-sm';
-        if (btnH) btnH.className = 'px-3.5 py-2 rounded-xl transition bg-slate-100 text-slate-600 hover:bg-slate-200';
+        if (btnQ) btnQ.className = 'flex-1 py-2 px-2.5 rounded-xl transition bg-white text-slate-900 border border-slate-300 shadow-sm text-center min-w-[130px]';
+        if (btnH) btnH.className = 'flex-1 py-2 px-2.5 rounded-xl transition bg-slate-100 text-slate-600 hover:bg-slate-200 text-center min-w-[100px]';
       } else {
         if (qTab) qTab.classList.add('hidden');
         if (hTab) hTab.classList.remove('hidden');
-        if (btnQ) btnQ.className = 'px-3.5 py-2 rounded-xl transition bg-slate-100 text-slate-600 hover:bg-slate-200';
-        if (btnH) btnH.className = 'px-3.5 py-2 rounded-xl transition bg-white text-slate-900 border border-slate-300 shadow-sm';
+        if (btnQ) btnQ.className = 'flex-1 py-2 px-2.5 rounded-xl transition bg-slate-100 text-slate-600 hover:bg-slate-200 text-center min-w-[130px]';
+        if (btnH) btnH.className = 'flex-1 py-2 px-2.5 rounded-xl transition bg-white text-slate-900 border border-slate-300 shadow-sm text-center min-w-[100px]';
       }
     }
 
@@ -1455,7 +1515,7 @@
       if (stampGrid) {
         stampGrid.innerHTML = STATIONS.map(st => {
           const isPassed = myLogs.some(l => l.station_name && l.station_name.includes(st.id));
-          return `<div class="stamp-badge ${isPassed ? 'completed bg-emerald-50 border border-emerald-300' : 'bg-white border border-slate-200'} p-3 rounded-2xl flex flex-col justify-between h-20 text-center shadow-sm"><div class="font-extrabold text-xs text-slate-900">${st.name}</div><div class="text-[10px] ${isPassed ? 'text-emerald-600 font-bold' : 'text-slate-400'}">${isPassed ? '✓已過關' : '未挑戰'}</div></div>`;
+          return `<div class="stamp-badge ${isPassed ? 'completed bg-emerald-50 border border-emerald-300' : 'bg-white border border-slate-200'} p-2 sm:p-3 rounded-2xl flex flex-col justify-between h-16 sm:h-20 text-center shadow-sm w-full min-w-0"><div class="font-extrabold text-[11px] sm:text-xs text-slate-900 truncate">${st.name}</div><div class="text-[9px] sm:text-[10px] ${isPassed ? 'text-emerald-600 font-bold' : 'text-slate-400'}">${isPassed ? '✓已過關' : '未挑戰'}</div></div>`;
         }).join('');
       }
 
@@ -1466,13 +1526,13 @@
         if (myAlerts.length > 0) {
           myAlertsBox.classList.remove('hidden');
           myAlertsList.innerHTML = myAlerts.map(a => `
-            <div class="p-2.5 rounded-xl border ${a.status === 'RESOLVED' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'} text-xs space-y-1">
+            <div class="p-2 sm:p-2.5 rounded-xl border ${a.status === 'RESOLVED' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'} text-xs space-y-1 w-full">
               <div class="flex justify-between font-bold">
                 <span>求助事件</span>
                 <span class="text-[10px] font-mono">${formatTWDateTime(a.created_at)}</span>
               </div>
-              <p class="text-[11px]">${cleanNoteText(a.message)}</p>
-              ${a.resolution_note && cleanNoteText(a.resolution_note) !== '-' ? `<div class="pt-1 border-t ${a.status === 'RESOLVED' ? 'border-emerald-200 text-emerald-700' : 'border-rose-200 text-rose-700'} text-[11px] font-bold">大會處置回覆：${cleanNoteText(a.resolution_note)}</div>` : `<div class="text-[10px] text-rose-600 font-bold animate-pulse">大會處理中...</div>`}
+              <p class="text-[11px] break-all">${cleanNoteText(a.message)}</p>
+              ${a.resolution_note && cleanNoteText(a.resolution_note) !== '-' ? `<div class="pt-1 border-t ${a.status === 'RESOLVED' ? 'border-emerald-200 text-emerald-700' : 'border-rose-200 text-rose-700'} text-[11px] font-bold break-all">大會處置回覆：${cleanNoteText(a.resolution_note)}</div>` : `<div class="text-[10px] text-rose-600 font-bold animate-pulse">大會處理中...</div>`}
             </div>
           `).join('');
         } else { myAlertsBox.classList.add('hidden'); }
@@ -1483,7 +1543,7 @@
         stepper.innerHTML = routeArray.map((stId, stepIdx) => {
           const st = STATIONS.find(s => s.id === stId) || STATIONS[0];
           const isDone = myLogs.some(l => l.station_name && l.station_name.includes(st.id));
-          return `<div class="p-3 rounded-2xl border flex justify-between items-center text-xs ${isDone ? 'bg-amber-50 border-amber-300' : 'bg-white border-slate-200'}"><div><span class="font-bold font-mono text-slate-500 mr-2">${TIME_SLOTS[stepIdx]}</span><span class="font-bold text-slate-800">${st.name} (${getStationLocation(st)})</span></div><span class="font-bold ${isDone ? 'text-amber-700' : 'text-slate-400'}">${isDone ? '✓已過關' : '未到'}</span></div>`;
+          return `<div class="p-2.5 sm:p-3 rounded-2xl border flex justify-between items-center text-xs ${isDone ? 'bg-amber-50 border-amber-300' : 'bg-white border-slate-200'} w-full min-w-0"><div class="min-w-0 flex-1 pr-2"><span class="font-bold font-mono text-slate-500 mr-1.5 sm:mr-2">${TIME_SLOTS[stepIdx]}</span><span class="font-bold text-slate-800 truncate">${st.name} (${getStationLocation(st)})</span></div><span class="font-bold shrink-0 ${isDone ? 'text-amber-700' : 'text-slate-400'}">${isDone ? '✓已過關' : '未到'}</span></div>`;
         }).join('');
       }
 
@@ -1491,9 +1551,9 @@
       if (studentLogsBody) {
         studentLogsBody.innerHTML = myLogs.map(l => `
           <tr class="hover:bg-slate-50">
-            <td class="px-4 py-2.5 font-mono text-xs text-slate-500">${formatTWDateTime(l.created_at)}</td>
-            <td class="px-4 py-2.5 font-bold text-slate-800">${formatStationDisplayName(l.station_name)}</td>
-            <td class="px-4 py-2.5 text-right font-black font-mono text-amber-600">+${l.points}</td>
+            <td class="px-3 py-2 font-mono text-xs text-slate-500 whitespace-nowrap">${formatTWDateTime(l.created_at)}</td>
+            <td class="px-3 py-2 font-bold text-slate-800 break-words max-w-[160px]">${formatStationDisplayName(l.station_name)}</td>
+            <td class="px-3 py-2 text-right font-black font-mono text-amber-600 whitespace-nowrap">+${l.points}</td>
           </tr>`).join('') || `<tr><td colspan="3" class="text-center py-4 text-slate-500 font-medium">尚無過關紀錄履歷</td></tr>`;
       }
     }
@@ -1507,13 +1567,13 @@
       if (stAlerts.length > 0) {
         box.classList.remove('hidden');
         list.innerHTML = stAlerts.map(a => `
-          <div class="p-2.5 rounded-xl border ${a.status === 'RESOLVED' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'} text-xs space-y-1">
+          <div class="p-2.5 rounded-xl border ${a.status === 'RESOLVED' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'} text-xs space-y-1 w-full">
             <div class="flex justify-between font-bold">
               <span>關卡求助</span>
               <span class="text-[10px] font-mono">${formatTWDateTime(a.created_at)}</span>
             </div>
-            <p class="text-[11px]">${cleanNoteText(a.message)}</p>
-            ${a.resolution_note && cleanNoteText(a.resolution_note) !== '-' ? `<div class="pt-1 border-t ${a.status === 'RESOLVED' ? 'border-emerald-200 text-emerald-700' : 'border-rose-200 text-rose-700'} text-[11px] font-bold">大會處置回覆：${cleanNoteText(a.resolution_note)}</div>` : `<div class="text-[10px] text-rose-600 font-bold animate-pulse">大會處理中...</div>`}
+            <p class="text-[11px] break-all">${cleanNoteText(a.message)}</p>
+            ${a.resolution_note && cleanNoteText(a.resolution_note) !== '-' ? `<div class="pt-1 border-t ${a.status === 'RESOLVED' ? 'border-emerald-200 text-emerald-700' : 'border-rose-200 text-rose-700'} text-[11px] font-bold break-all">大會處置回覆：${cleanNoteText(a.resolution_note)}</div>` : `<div class="text-[10px] text-rose-600 font-bold animate-pulse">大會處理中...</div>`}
           </div>
         `).join('');
       } else { box.classList.add('hidden'); }
@@ -1540,42 +1600,46 @@
     }
 
     async function refreshData() {
+      if (!supabaseClient) {
+        document.getElementById('dbStatusBadge')?.classList.add('hidden');
+        return;
+      }
+
       try {
-        if (supabaseClient) {
-          const { data: logsData } = await supabaseClient.from('score_logs').select('*').order('created_at', { ascending: false });
-          if (logsData) localLogs = logsData;
-          const teamScores = {};
-          TEAM_NAMES.forEach(name => teamScores[name] = 0);
-          localLogs.forEach(l => {
-            if (teamScores[l.team_name] !== undefined) teamScores[l.team_name] += (l.points || 0);
-          });
-          const { data: teamsData } = await supabaseClient.from('teams').select('*');
-          localTeams = TEAM_NAMES.map(name => {
-            const found = teamsData ? teamsData.find(t => t.team_name === name) : null;
-            return {
-              team_name: name,
-              total_score: teamScores[name] || 0,
-              lat: found ? found.lat : null,
-              lng: found ? found.lng : null,
-              gps_updated_at: found ? found.gps_updated_at : null
-            };
-          }).sort((a,b) => b.total_score - a.total_score);
-          const { data: alertsData } = await supabaseClient.from('system_alerts').select('*').order('created_at', { ascending: false });
-          if (alertsData) localAlerts = alertsData;
-          const { data: configData } = await supabaseClient.from('system_config').select('*');
-          if (configData) {
-            const bcItem = configData.find(c => c.key === 'broadcast_list');
-            if (bcItem) { try { localBroadcasts = normalizeBroadcasts(JSON.parse(bcItem.value)); } catch(e){} }
-            const rainItem = configData.find(c => c.key === 'rain_plan');
-            if (rainItem) isRainPlanEnabled = (rainItem.value === 'true');
-          }
-        } else {
-          const teamScores = {};
-          TEAM_NAMES.forEach(name => teamScores[name] = 0);
-          localLogs.forEach(l => { if (teamScores[l.team_name] !== undefined) teamScores[l.team_name] += (l.points || 0); });
-          localTeams.forEach(t => t.total_score = teamScores[t.team_name] || 0);
+        const { data: logsData } = await supabaseClient.from('score_logs').select('*').order('created_at', { ascending: false });
+        if (logsData) localLogs = logsData;
+        
+        const teamScores = {};
+        TEAM_NAMES.forEach(name => teamScores[name] = 0);
+        localLogs.forEach(l => {
+          if (teamScores[l.team_name] !== undefined) teamScores[l.team_name] += (l.points || 0);
+        });
+
+        const { data: teamsData } = await supabaseClient.from('teams').select('*');
+        localTeams = TEAM_NAMES.map(name => {
+          const found = teamsData ? teamsData.find(t => t.team_name === name) : null;
+          return {
+            team_name: name,
+            total_score: teamScores[name] || 0,
+            lat: found ? found.lat : null,
+            lng: found ? found.lng : null,
+            gps_updated_at: found ? found.gps_updated_at : null
+          };
+        }).sort((a,b) => b.total_score - a.total_score);
+
+        const { data: alertsData } = await supabaseClient.from('system_alerts').select('*').order('created_at', { ascending: false });
+        if (alertsData) localAlerts = alertsData;
+
+        const { data: configData } = await supabaseClient.from('system_config').select('*');
+        if (configData) {
+          const bcItem = configData.find(c => c.key === 'broadcast_list');
+          if (bcItem) { try { localBroadcasts = normalizeBroadcasts(JSON.parse(bcItem.value)); } catch(e){} }
+          const rainItem = configData.find(c => c.key === 'rain_plan');
+          if (rainItem) isRainPlanEnabled = (rainItem.value === 'true');
         }
-      } catch(e){}
+      } catch(e) {
+        console.warn('網路同步連線異常:', e);
+      }
 
       updateMarqueeBanner();
       updateRainPlanUI();
@@ -1630,6 +1694,10 @@
 
     async function submitEmergencyAlert() {
       if (isActionPending) return;
+      if (!supabaseClient) {
+        showToast('無法連線至伺服器，發送求助失敗！', 'error');
+        return;
+      }
       const msg = document.getElementById('emergencyMessageInput').value.trim();
       const btn = document.getElementById('btnSubmitSos');
       if (!msg) { showToast('請填寫詳細狀況說明！', 'error'); return; }
@@ -1638,17 +1706,17 @@
       const operator = currentUser ? currentUser.id : '未知';
       const stName = currentUser ? currentUser.name : '未知來源';
       const stId = currentUser ? currentUser.id : 'STUDENT';
-      const newAlert = { id: Date.now(), station_id: stId, station_name: stName, alert_type: 'SOS求助', message: `${msg} [帳號: ${operator}] [IP: ${clientIp}]`, status: 'PENDING', created_at: new Date().toISOString() };
+      const created_at = new Date().toISOString();
+      const alertMsg = `${msg} [帳號: ${operator}] [IP: ${clientIp}]`;
       
       try {
-        if (supabaseClient) {
-          await supabaseClient.from('system_alerts').insert([{ station_id: stId, station_name: stName, alert_type: 'SOS求助', message: newAlert.message, status: 'PENDING', created_at: newAlert.created_at }]);
-        }
+        const { error } = await supabaseClient.from('system_alerts').insert([{ station_id: stId, station_name: stName, alert_type: 'SOS求助', message: alertMsg, status: 'PENDING', created_at }]);
+        if (error) throw error;
         showToast('🚨 已發送 SOS 緊急求助！', 'success');
         closeEmergencyModal();
         document.getElementById('emergencyMessageInput').value = '';
         refreshData();
-      } catch(e) { showToast('發送緊急求助失敗，請重試！', 'error'); }
+      } catch(e) { showToast('發送緊急求助失敗，請檢查網路連線！', 'error'); }
       finally {
         isActionPending = false;
         if (btn) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
@@ -1671,6 +1739,10 @@
 
     async function confirmResolveAlert() {
       if (isActionPending) return;
+      if (!supabaseClient) {
+        showToast('無法連線至雲端伺服器！', 'error');
+        return;
+      }
       const note = document.getElementById('resolutionNoteInput').value.trim();
       const statusSelect = document.getElementById('resModalStatusSelect');
       const targetStatus = statusSelect ? statusSelect.value : 'RESOLVED';
@@ -1679,19 +1751,15 @@
       isActionPending = true;
       if (btn) { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
       const operator = currentUser ? currentUser.id : 'Admin';
-      const item = localAlerts.find(a => String(a.id) === String(pendingResolveAlertId));
+      
       try {
-        if (item) {
-          item.status = targetStatus;
-          item.resolution_note = `${note} [帳號: ${operator}] [IP: ${clientIp}]`;
-          if (supabaseClient) {
-            await supabaseClient.from('system_alerts').update({ status: targetStatus, resolution_note: item.resolution_note, resolved_at: new Date().toISOString() }).eq('id', pendingResolveAlertId);
-          }
-        }
+        const resolution_note = `${note} [帳號: ${operator}] [IP: ${clientIp}]`;
+        const { error } = await supabaseClient.from('system_alerts').update({ status: targetStatus, resolution_note, resolved_at: new Date().toISOString() }).eq('id', pendingResolveAlertId);
+        if (error) throw error;
         showToast(targetStatus === 'RESOLVED' ? '已完成處置與核銷' : '已更新處置進度', 'success');
         closeResolveAlertModal();
         refreshData();
-      } catch(e) { showToast('處置作業儲存失敗，請重試！', 'error'); }
+      } catch(e) { showToast('處置作業儲存失敗，請檢查網路連線！', 'error'); }
       finally {
         isActionPending = false;
         if (btn) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
@@ -1706,7 +1774,7 @@
       document.getElementById('qrScannerModal').classList.add('flex');
       try {
         if (!html5QrCode) html5QrCode = new Html5Qrcode("qrReader");
-        await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 200, height: 220 } }, (decodedText) => {
+        await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 180, height: 200 } }, (decodedText) => {
           const match = TEAM_NAMES.find(t => decodedText.toUpperCase().includes(t));
           if (match) {
             selectStationTeam(match);
@@ -1734,25 +1802,27 @@
     async function fetchAccounts() {
       const tbody = document.getElementById('accountsTableBody');
       if (!tbody || !supabaseClient) return;
-      const { data } = await supabaseClient.from('accounts').select('*').order('id', { ascending: true });
-      if (data && data.length > 0) {
-        tbody.innerHTML = data.map(acc => `<tr><td class="px-3 py-2.5 font-mono text-slate-400 font-bold">#${acc.id}</td><td class="px-3 py-2.5 font-mono font-bold text-slate-900">${acc.username}</td><td class="px-3 py-2.5 text-slate-800">${acc.display_name}</td><td class="px-3 py-2.5 text-xs"><span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold border border-slate-200">${acc.role}</span></td><td class="px-3 py-2.5"><input type="text" id="pass_${acc.id}" value="${acc.password}" class="px-2.5 py-1 border border-slate-300 rounded-lg text-xs font-mono w-24 bg-white text-slate-900 outline-none"></td><td class="px-3 py-2.5 text-center"><button onclick="updateAccountPass('${acc.id}')" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-400 rounded-lg text-xs shadow-sm transition cursor-pointer">儲存</button></td></tr>`).join('');
-      }
+      try {
+        const { data, error } = await supabaseClient.from('accounts').select('*').order('id', { ascending: true });
+        if (!error && data && data.length > 0) {
+          tbody.innerHTML = data.map(acc => `<tr><td class="px-2 py-2 font-mono text-slate-400 font-bold whitespace-nowrap">#${acc.id}</td><td class="px-2.5 py-2 font-mono font-bold text-slate-900 whitespace-nowrap">${acc.username}</td><td class="px-2.5 py-2 text-slate-800 whitespace-nowrap">${acc.display_name}</td><td class="px-2 py-2 text-xs whitespace-nowrap"><span class="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold border border-slate-200 text-[10px]">${acc.role}</span></td><td class="px-2.5 py-2 whitespace-nowrap"><input type="text" id="pass_${acc.id}" value="${acc.password}" class="px-2 py-1 border border-slate-300 rounded-lg text-xs font-mono w-20 sm:w-24 bg-white text-slate-900 outline-none"></td><td class="px-2 py-2 text-center whitespace-nowrap"><button onclick="updateAccountPass('${acc.id}')" class="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-400 rounded-lg text-xs shadow-sm transition cursor-pointer">儲存</button></td></tr>`).join('');
+        }
+      } catch(e){}
     }
 
     async function updateAccountPass(id) {
       if (isActionPending) return;
+      if (!supabaseClient) { showToast('無網路連線！', 'error'); return; }
       const passInput = document.getElementById('pass_' + id);
       if (!passInput) return;
       const pass = passInput.value.trim();
       if (!pass) { showToast('請填寫新密碼！', 'error'); return; }
       isActionPending = true;
       try {
-        if (supabaseClient) {
-          await supabaseClient.from('accounts').update({ password: pass }).eq('id', id);
-          showToast('密碼已成功儲存', 'success');
-        }
-      } catch(e) { showToast('密碼儲存失敗，請重試！', 'error'); }
+        const { error } = await supabaseClient.from('accounts').update({ password: pass }).eq('id', id);
+        if (error) throw error;
+        showToast('密碼已成功儲存', 'success');
+      } catch(e) { showToast('密碼儲存失敗，請檢查網路連線！', 'error'); }
       finally { isActionPending = false; }
     }
 
@@ -1772,15 +1842,15 @@
     }
 
     async function confirmResetData() {
-      localLogs = []; localTeams.forEach(t => t.total_score = 0);
-      if (supabaseClient) {
-        try {
-          await supabaseClient.from('score_logs').delete().neq('id', 0);
-          await supabaseClient.from('teams').update({ total_score: 0 }).neq('team_name', '');
-        } catch(e){}
+      if (!supabaseClient) { showToast('無網路連線，無法重置！', 'error'); return; }
+      try {
+        await supabaseClient.from('score_logs').delete().neq('id', 0);
+        await supabaseClient.from('teams').update({ total_score: 0 }).neq('team_name', '');
+        showToast('已重置所有成績資料', 'success');
+        refreshData();
+      } catch(e) {
+        showToast('重置失敗，請重試！', 'error');
       }
-      showToast('已重置所有成績資料', 'success');
-      refreshData();
     }
 
     function applyCustomTimerInput() {
@@ -1825,25 +1895,21 @@
       const mins = Math.floor(totalSecs / 60);
       const secs = totalSecs % 60;
       const deci = stationTimerSeconds % 10;
-      display.innerHTML = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0') + '<span class="text-lg text-slate-400">.' + deci + '</span>';
+      display.innerHTML = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0') + '<span class="text-base sm:text-lg text-slate-400">.' + deci + '</span>';
     }
 
     async function updateRoomReadStatus(roomId) {
-      if (!roomId || !currentUser) return;
+      if (!roomId || !currentUser || !supabaseClient) return;
       const readTimeIso = new Date(Date.now() + 2000).toISOString();
       lastReadTimeMap[roomId] = new Date(readTimeIso).getTime();
 
-      if (supabaseClient) {
-        try {
-          await supabaseClient.from('chat_read_status').upsert({
-            account_id: currentUser.id,
-            room_id: roomId,
-            last_read_at: readTimeIso
-          }, { onConflict: 'account_id,room_id' });
-        } catch(e) {
-          console.warn('Supabase read status update note:', e);
-        }
-      }
+      try {
+        await supabaseClient.from('chat_read_status').upsert({
+          account_id: currentUser.id,
+          room_id: roomId,
+          last_read_at: readTimeIso
+        }, { onConflict: 'account_id,room_id' });
+      } catch(e) {}
     }
 
     async function syncReadStatusesFromCloud() {
@@ -2024,22 +2090,17 @@
           : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 font-bold';
 
         let iconTag = '';
-        if (rId === 'ALL') iconTag = '<i class="fa-solid fa-bullhorn text-amber-900 mr-1.5"></i>';
-        else if (rId === 'ALL_STATIONS') iconTag = '<i class="fa-solid fa-headset text-indigo-700 mr-1.5"></i>';
-        else if (rId === 'ALL_STUDENTS') iconTag = '<i class="fa-solid fa-graduation-cap text-emerald-700 mr-1.5"></i>';
-        else if (rId === 'ADMIN') iconTag = '<i class="fa-solid fa-user-shield text-amber-600 mr-1 text-[10px]"></i>';
-        else if (STATIONS.some(s => s.id === rId)) iconTag = '<i class="fa-solid fa-headset text-slate-400 mr-1 text-[10px]"></i>';
-        else iconTag = '<i class="fa-solid fa-users text-slate-400 mr-1 text-[10px]"></i>';
-
-        const isPinnedGroup = ['ALL', 'ALL_STATIONS', 'ALL_STUDENTS'].includes(rId);
+        if (rId === 'ALL') iconTag = '<i class="fa-solid fa-bullhorn text-amber-900 mr-1"></i>';
+        else if (rId === 'ALL_STATIONS') iconTag = '<i class="fa-solid fa-headset text-indigo-700 mr-1"></i>';
+        else if (rId === 'ALL_STUDENTS') iconTag = '<i class="fa-solid fa-graduation-cap text-emerald-700 mr-1"></i>';
+        else if (rId === 'ADMIN') iconTag = '<i class="fa-solid fa-user-shield text-amber-600 mr-1 text-[9px]"></i>';
+        else if (STATIONS.some(s => s.id === rId)) iconTag = '<i class="fa-solid fa-headset text-slate-400 mr-1 text-[9px]"></i>';
+        else iconTag = '<i class="fa-solid fa-users text-slate-400 mr-1 text-[9px]"></i>';
 
         return `
-          <button onclick="switchChatRoom('${rId}')" class="w-full text-left px-2.5 py-2 rounded-xl text-xs border transition flex items-center justify-between min-w-0 ${activeStyle} cursor-pointer">
+          <button onclick="switchChatRoom('${rId}')" class="w-full text-left px-1.5 py-1.5 sm:px-2.5 sm:py-2 rounded-xl text-[11px] sm:text-xs border transition flex items-center justify-between min-w-0 ${activeStyle} cursor-pointer">
             <span class="truncate flex items-center min-w-0">${iconTag}<span class="truncate">${displayName}</span></span>
-            <div class="flex items-center gap-1 shrink-0 ml-1">
-              ${unread ? '<span class="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse inline-block shadow-sm"></span>' : ''}
-              ${isPinnedGroup ? '<span class="text-[9px] bg-amber-600/20 text-slate-900 px-1.5 py-0.2 rounded font-extrabold shrink-0">📌 群組</span>' : ''}
-            </div>
+            ${unread ? '<span class="w-2 h-2 rounded-full bg-rose-600 animate-pulse inline-block shrink-0 ml-0.5"></span>' : ''}
           </button>
         `;
       }).join('');
@@ -2080,14 +2141,17 @@
         return;
       }
 
-      if (supabaseClient) {
-        try {
-          const { data, error } = await supabaseClient.from('messages').select('*').order('created_at', { ascending: true });
-          if (data && !error) {
-            localMessages = data;
-          }
-        } catch(e){}
+      if (!supabaseClient) {
+        container.innerHTML = `<div class="text-center py-8 text-rose-500 text-xs font-bold">無法連線至對話伺服器，請確認網路！</div>`;
+        return;
       }
+
+      try {
+        const { data, error } = await supabaseClient.from('messages').select('*').order('created_at', { ascending: true });
+        if (data && !error) {
+          localMessages = data;
+        }
+      } catch(e){}
 
       await syncReadStatusesFromCloud();
 
@@ -2114,9 +2178,9 @@
         else senderLabel = getAccountDisplayName(m.sender);
 
         return `
-          <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-            <span class="text-[10px] text-slate-400 px-1 font-mono flex items-center gap-1">${senderLabel} • ${formatTWTime(m.created_at)}</span>
-            <div class="p-2.5 rounded-2xl text-xs max-w-[85%] mt-0.5 shadow-sm break-words ${isMe ? 'bg-amber-500 text-slate-950 font-bold rounded-tr-none' : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none'}">
+          <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} w-full">
+            <span class="text-[9px] sm:text-[10px] text-slate-400 px-1 font-mono flex items-center gap-1 truncate">${senderLabel} • ${formatTWTime(m.created_at)}</span>
+            <div class="p-2 sm:p-2.5 rounded-2xl text-xs max-w-[88%] mt-0.5 shadow-sm break-words ${isMe ? 'bg-amber-500 text-slate-950 font-bold rounded-tr-none' : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none'}">
               ${m.message}
             </div>
           </div>
@@ -2132,7 +2196,8 @@
       const input = document.getElementById('chatInputText');
       const btn = document.getElementById('btnSendChat');
       if (!currentUser) { showToast('請先登入系統後再發送訊息！', 'error'); return; }
-      
+      if (!supabaseClient) { showToast('無法連線至伺服器，發送失敗！', 'error'); return; }
+
       const text = input.value.trim();
       if (!text) return;
 
@@ -2154,17 +2219,14 @@
       if (btn) { btn.disabled = true; btn.classList.add('opacity-50'); }
 
       try {
-        if (supabaseClient) {
-          const { error } = await supabaseClient.from('messages').insert([newMsg]);
-          if (error) {
-            console.warn('Supabase chat sync note:', error.message);
-            showToast('訊息發送連線問題：' + error.message, 'error');
-          } else {
-            showToast('訊息已發送', 'success');
-          }
+        const { error } = await supabaseClient.from('messages').insert([newMsg]);
+        if (error) {
+          showToast('訊息發送連線問題：' + error.message, 'error');
+        } else {
+          showToast('訊息已發送', 'success');
         }
       } catch(e) {
-        console.warn('Chat network error:', e);
+        showToast('發送網路失敗！', 'error');
       } finally {
         if (btn) { btn.disabled = false; btn.classList.remove('opacity-50'); }
         await updateRoomReadStatus(activeChatRoom);
