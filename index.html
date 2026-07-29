@@ -1097,7 +1097,7 @@
         document.getElementById('authBtnIcon').className = 'fa-solid fa-right-from-bracket text-xs';
         showToast(`登入成功！歡迎 ${currentUser.name}`, 'success');
         if (currentUser.role === 'STUDENT') requestGpsPermission();
-        refreshData();
+        await refreshData();
         renderViewsForRole();
       } catch (e) {
         showToast('連線驗證失敗，請檢查網路連線！', 'error');
@@ -1148,7 +1148,6 @@
             const savedAdminTab = sessionStorage.getItem('xshs_admin_tab') || 'leaderboard';
             switchAdminTab(savedAdminTab);
           }
-          renderViewsForRole();
           return true;
         } catch(e) {
           sessionStorage.removeItem('xshs_user_session');
@@ -2301,7 +2300,7 @@
       }
     }
 
-    window.onload = function() {
+    window.onload = async function() {
       fetchClientIp();
       populateDropdowns();
       
@@ -2310,7 +2309,8 @@
         openLoginModal();
       }
 
-      refreshData();
+      await refreshData();
+      if (currentUser) renderViewsForRole();
       setInterval(refreshData, 3000);
       setInterval(loadChatMessages, 3000);
     };
