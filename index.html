@@ -79,13 +79,15 @@
   <header class="bg-white text-slate-900 shadow-sm sticky top-0 z-40 border-b border-slate-200">
     <div class="max-w-7xl mx-auto px-3.5 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-y-2.5 gap-x-3">
       <div class="flex items-center gap-3 min-w-0">
-        <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center border border-amber-200 text-amber-600 shrink-0">
-          <i class="fa-solid fa-compass text-lg"></i>
+        <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center border border-slate-200 shrink-0 overflow-hidden shadow-sm">
+          <img src="https://sshs.tc.edu.tw/var/file/69/1069/msys_1069_413586_22128.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="新社高中校徽" class="w-full h-full object-contain p-0.5">
+          <div class="w-full h-full bg-amber-100 hidden items-center justify-center text-amber-600">
+            <i class="fa-solid fa-compass text-lg"></i>
+          </div>
         </div>
         <div class="min-w-0">
           <h1 class="font-extrabold text-base sm:text-lg tracking-tight flex items-center gap-2 text-slate-900">
             <span class="truncate">大地遊戲導引系統</span>
-            <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 font-mono font-extrabold shrink-0">XSHS</span>
           </h1>
           <p class="text-xs text-slate-500 font-medium truncate">新社高中 智慧導引管理平台</p>
         </div>
@@ -140,6 +142,7 @@
         </div>
       </div>
 
+      <!-- 頁籤內容：排行榜 -->
       <div id="adminTab-leaderboard" class="space-y-4">
         <div class="grid grid-cols-3 gap-3">
           <div class="glass-card p-3.5 rounded-2xl border border-slate-200"><p class="text-xs text-slate-500 font-semibold">參賽小隊</p><p class="text-xl font-black text-slate-900 mt-1" id="statTeamCount">20 隊</p></div>
@@ -165,6 +168,7 @@
         </div>
       </div>
 
+      <!-- 頁籤內容：GPS地圖 -->
       <div id="adminTab-gps" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
         <div class="flex flex-wrap justify-between items-center pb-2.5 border-b border-slate-200 gap-2">
           <div>
@@ -184,6 +188,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="gpsTeamGrid"></div>
       </div>
 
+      <!-- 頁籤內容：得分歷史 -->
       <div id="adminTab-logs" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
         <div class="flex justify-between items-center pb-2.5 border-b border-slate-200">
           <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-emerald-600"></i> 全校得分歷史紀錄與審核</h3>
@@ -207,6 +212,7 @@
         </div>
       </div>
 
+      <!-- 頁籤內容：對戰動線 -->
       <div id="adminTab-routes" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
         <div class="pb-2 border-b border-slate-200 flex justify-between items-center">
           <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-map-location-dot text-indigo-600"></i> 對戰動線總覽表 (13:20~15:50)</h3>
@@ -214,6 +220,7 @@
         <div id="routesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </div>
 
+      <!-- 頁籤內容：求助事件 -->
       <div id="adminTab-alerts" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
         <div class="flex justify-between items-center pb-2 border-b border-slate-200">
           <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-bullhorn text-rose-600"></i> 緊急求助事件紀錄</h3>
@@ -234,11 +241,13 @@
         </div>
       </div>
 
+      <!-- 頁籤內容：帳號管理 -->
       <div id="adminTab-auth" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
         <div class="flex justify-between items-center pb-2 border-b border-slate-200"><h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-users text-amber-600"></i> 獨立帳號密碼管理系統 (依 ID 順序)</h3><button onclick="fetchAccounts()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-300 shadow-sm"><i class="fa-solid fa-arrows-rotate text-amber-600"></i> 重新載入</button></div>
         <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200"><tr><th class="px-3 py-2.5 whitespace-nowrap">ID</th><th class="px-3 py-2.5 whitespace-nowrap">帳號</th><th class="px-3 py-2.5 whitespace-nowrap">顯示名稱</th><th class="px-3 py-2.5 whitespace-nowrap">權限</th><th class="px-3 py-2.5 whitespace-nowrap">密碼</th><th class="px-3 py-2.5 text-center whitespace-nowrap">儲存</th></tr></thead><tbody id="accountsTableBody" class="divide-y divide-slate-200"></tbody></table></div>
       </div>
 
+      <!-- 頁籤內容：廣播與雨備設定 -->
       <div id="adminTab-config" class="glass-card rounded-2xl p-5 shadow-sm hidden space-y-5 border border-slate-200">
         <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2 pb-2.5 border-b border-slate-200"><i class="fa-solid fa-sliders text-amber-600"></i> 廣播與雨備方案管理</h3>
         <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
@@ -383,7 +392,7 @@
       <div id="stuTab-quest" class="space-y-4">
         <div class="glass-card p-4 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden">
           <div class="flex flex-col justify-between gap-2 pb-3 border-b border-slate-200">
-            <div><div class="flex items-center gap-2"><span class="px-2.5 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-extrabold rounded-md shadow-sm">當前指定挑戰關卡</span><span id="stuActiveTimeSlotText" class="px-2.5 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-mono font-bold rounded-md border border-slate-200">時段 1 (13:20~13:30)</span></div><h3 id="stuActiveStationTitle" class="text-xl font-black text-slate-900 mt-2">載入動線中...</h3></div>
+            <div><div class="flex items-center gap-2"><span class="px-2.5 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-extrabold rounded-md shadow-sm">當前指定挑戰關卡</span><span id="stuActiveTimeSlotText" class="px-2.5 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-mono font-bold rounded-md border border-slate-200">時段 1 (13:30~13:40)</span></div><h3 id="stuActiveStationTitle" class="text-xl font-black text-slate-900 mt-2">載入動線中...</h3></div>
             <div id="stuActiveLocationBadge" class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-50 text-rose-600 border border-slate-200 rounded-xl text-xs font-bold self-start"><i class="fa-solid fa-location-dot text-rose-500 animate-bounce"></i><span id="stuActiveLocationText">地點查詢中...</span></div>
           </div>
         </div>
@@ -399,7 +408,7 @@
           <div id="studentMyAlertsList" class="space-y-2"></div>
         </div>
 
-        <div class="glass-card p-4 rounded-3xl shadow-sm space-y-3 border border-slate-200"><div><h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-route text-amber-500"></i> 本隊 13:20~15:50 完整時間對照表</h3><p class="text-[11px] text-slate-500">請嚴格依照時間前往指定關卡進行挑戰</p></div><div id="routeStepper" class="space-y-2"></div></div>
+        <div class="glass-card p-4 rounded-3xl shadow-sm space-y-3 border border-slate-200"><div><h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-route text-amber-500"></i> 本隊 13:30~15:40 完整時間對照表</h3><p class="text-[11px] text-slate-500">請嚴格依照時間前往指定關卡進行挑戰</p></div><div id="routeStepper" class="space-y-2"></div></div>
       </div>
 
       <div id="stuTab-history" class="glass-card p-4 rounded-3xl shadow-sm hidden space-y-3 border border-slate-200"><h3 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2 pb-2 border-b border-slate-200"><i class="fa-solid fa-list-check text-amber-600"></i> 本隊伍過關與得分紀錄履歷</h3><div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200"><tr><th class="px-4 py-2.5 whitespace-nowrap">通關時間</th><th class="px-4 py-2.5 whitespace-nowrap">關卡名稱</th><th class="px-4 py-2.5 text-right whitespace-nowrap">得分</th></tr></thead><tbody id="studentLogsTableBody" class="divide-y divide-slate-200"></tbody></table></div></div>
@@ -470,7 +479,7 @@
       <div class="bg-rose-600 text-white p-5 text-center relative">
         <i class="fa-solid fa-triangle-exclamation text-2xl text-amber-300 mb-1 animate-bounce"></i>
         <h3 class="text-base font-extrabold text-white">緊急求助與通報</h3>
-        <p class="text-xs text-rose-100 mt-0.5">通報會立即同步至大會控制台</p>
+        <p class="text-xs text-rose-100 mt-0.5">通報會庫存並同步至大會控制台</p>
       </div>
       <div class="p-5 space-y-3.5">
         <div class="space-y-1"><label class="block text-xs font-bold text-slate-700">詳細狀況說明：</label><textarea id="emergencyMessageInput" rows="3" placeholder="例如：有學生不慎擦傷，需要醫藥箱支援..." class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs outline-none bg-white text-slate-900"></textarea></div>
@@ -561,9 +570,8 @@
     let localMessages = [];
     let activeChatRoom = 'ALL';
     let lastReadTimeMap = {};
-    const appSessionStartTime = Date.now();
 
-    const TIME_SLOTS = ['13:20~13:30','13:35~13:45','13:55~14:05','14:10~14:20','14:25~14:35','14:40~14:50','14:55~15:05','15:10~15:20','15:25~15:35','15:40~15:50'];
+    const TIME_SLOTS = ['13:30~13:40','13:45~13:55','14:00~14:10','14:15~14:25','14:30~14:40','14:45~14:55','15:00~15:10','15:15~15:25','15:30~15:40'];
     const STATIONS = [
       { id: 'A', name: 'A - 接力猜一猜', normalLocation: '靜思樓穿堂', rainLocation: '總務處後方' },
       { id: 'B', name: 'B - 字首造詞', normalLocation: '國教中心一樓', rainLocation: '活動中心(前)' },
@@ -576,27 +584,29 @@
       { id: 'I', name: 'I - 圖書館冒險', normalLocation: '圖書館', rainLocation: '學務處後方' },
       { id: 'J', name: 'J - 筆劃接力賽', normalLocation: '總務處', rainLocation: '總務處前方' }
     ];
+
+    // A隊純順時針，B隊從最後逆時針
     const TEAM_ROUTES = {
-      '401A': ['A','B','C','D','E','F','G','H','I','J'],
-      '401B': ['B','E','F','A','D','C','G','H','I','I'],
-      '402A': ['B','C','D','E','F','G','H','I','J','A'],
-      '402B': ['C','F','G','B','A','H','A','G','D','J'],
-      '403A': ['C','D','E','F','G','H','I','J','A','B'],
-      '403B': ['D','G','H','C','F','B','H','E','J','A'],
-      '404A': ['D','E','F','G','H','I','J','A','B','C'],
-      '404B': ['E','H','A','D','J','C','C','F','E','B'],
-      '405A': ['E','F','G','H','I','J','A','B','C','D'],
-      '405B': ['F','D','B','E','I','A','D','J','J','C'],
-      '406A': ['F','G','H','I','J','A','B','C','D','E'],
-      '406B': ['G','J','C','F','B','B','E','C','A','D'],
-      '407A': ['G','H','I','J','A','B','C','D','E','F'],
-      '407B': ['H','A','D','G','C','J','F','B','B','E'],
-      '408A': ['H','I','J','A','B','C','D','E','F','G'],
-      '408B': ['I','B','E','H','A','D','J','G','C','F'],
-      '409A': ['I','J','A','B','C','D','E','F','G','H'],
-      '409B': ['J','C','F','I','B','E','E','A','G','H'],
-      '410A': ['J','A','B','C','D','E','F','G','H','I'],
-      '410B': ['A','D','G','J','E','F','B','I','H','H']
+      '401A': ['A','B','C','D','E','F','G','H','I'],
+      '401B': ['J','I','H','G','F','E','D','C','B'],
+      '402A': ['B','C','D','E','F','G','H','I','J'],
+      '402B': ['A','J','I','H','G','F','E','D','C'],
+      '403A': ['C','D','E','F','G','H','I','J','A'],
+      '403B': ['B','A','J','I','H','G','F','E','D'],
+      '404A': ['D','E','F','G','H','I','J','A','B'],
+      '404B': ['C','B','A','J','I','H','G','F','E'],
+      '405A': ['E','F','G','H','I','J','A','B','C'],
+      '405B': ['D','C','B','A','J','I','H','G','F'],
+      '406A': ['F','G','H','I','J','A','B','C','D'],
+      '406B': ['E','D','C','B','A','J','I','H','G'],
+      '407A': ['G','H','I','J','A','B','C','D','E'],
+      '407B': ['F','E','D','C','B','A','J','I','H'],
+      '408A': ['H','I','J','A','B','C','D','E','F'],
+      '408B': ['G','F','E','D','C','B','A','J','I'],
+      '409A': ['I','J','A','B','C','D','E','F','G'],
+      '409B': ['H','G','F','E','D','C','B','A','J'],
+      '410A': ['J','A','B','C','D','E','F','G','H'],
+      '410B': ['I','H','G','F','E','D','C','B','A']
     };
     const TEAM_NAMES = ['401A', '401B', '402A', '402B', '403A', '403B', '404A', '404B', '405A', '405B', '406A', '406B', '407A', '407B', '408A', '408B', '409A', '409B', '410A', '410B'];
     const STATION_IDS = ['A','B','C','D','E','F','G','H','I','J'];
@@ -643,17 +653,33 @@
       } catch (e) { clientIp = '127.0.0.1'; }
     }
 
+    function parseDate(dateStr) {
+      if (!dateStr) return null;
+      if (dateStr instanceof Date) return dateStr;
+      let s = String(dateStr).trim();
+      if (!s) return null;
+      if (/^\d+$/.test(s)) return new Date(Number(s));
+      s = s.replace(' ', 'T');
+      if (!s.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(s)) {
+        s += 'Z';
+      }
+      const d = new Date(s);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
     function formatTWTime(dateStr) {
       if (!dateStr) return '-';
       try {
-        const d = new Date(dateStr);
+        const d = parseDate(dateStr);
+        if (!d) return '-';
         return d.toLocaleTimeString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
       } catch(e) { return '-'; }
     }
     function formatTWDateTime(dateStr) {
       if (!dateStr) return '-';
       try {
-        const d = new Date(dateStr);
+        const d = parseDate(dateStr);
+        if (!d) return '-';
         return d.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
       } catch(e) { return '-'; }
     }
@@ -710,8 +736,18 @@
       return accId;
     }
 
-    function toggleRainPlan() {
+    async function toggleRainPlan() {
       isRainPlanEnabled = !isRainPlanEnabled;
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('system_config').upsert(
+            { key: 'rain_plan', value: String(isRainPlanEnabled), updated_at: new Date().toISOString() },
+            { onConflict: 'key' }
+          );
+        } catch(e) {
+          console.warn('Failed to update rain_plan config:', e);
+        }
+      }
       updateRainPlanUI();
       showToast(isRainPlanEnabled ? '已切換為【雨備地點方案】' : '已恢復為【標準場地動線】', 'info');
       refreshData();
@@ -815,33 +851,6 @@
       }).join('');
     }
 
-    function clearBroadcastHistory() {
-      localBroadcastHistory = [];
-      renderBroadcastHistory();
-      showToast('已清除廣播發送歷史紀錄', 'info');
-    }
-
-    function renderBroadcastHistory() {
-      const container = document.getElementById('broadcastHistoryContainer');
-      if (!container) return;
-      if (localBroadcastHistory.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-500 font-medium py-1.5 text-center">尚無廣播推送歷史紀錄</p>`;
-        return;
-      }
-      container.innerHTML = localBroadcastHistory.map(item => `
-        <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200 shadow-sm text-xs space-y-1">
-          <div class="flex items-center justify-between text-slate-600">
-            <span class="font-bold text-slate-900">${item.message}</span>
-            <span class="font-mono text-[10px] text-amber-700 font-semibold shrink-0 ml-2">${formatTWDateTime(item.created_at)}</span>
-          </div>
-          <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono pt-1 border-t border-slate-200">
-            <span>操作者：${item.operator || 'Admin'}</span>
-            <span>IP: ${item.ip || clientIp}</span>
-          </div>
-        </div>
-      `).join('');
-    }
-
     function updateMarqueeBanner() {
       const banner = document.getElementById('marqueeBanner');
       const text = document.getElementById('marqueeText');
@@ -878,19 +887,19 @@
     function autoSelectCurrentTimeSlot() {
       const now = new Date();
       const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Taipei', hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(now);
-      let h = 13, m = 20;
+      let h = 13, m = 30;
       parts.forEach(p => { if (p.type === 'hour') h = parseInt(p.value); if (p.type === 'minute') m = parseInt(p.value); });
       const totalMins = h * 60 + m;
       const slotTimes = [
-        [13*60+20, 13*60+30], [13*60+35, 13*60+45], [13*60+55, 14*60+5],
-        [14*60+10, 14*60+20], [14*60+25, 14*60+35], [14*60+40, 14*60+50],
-        [14*60+55, 15*60+5], [15*60+10, 15*60+20], [15*60+25, 15*60+35], [15*60+40, 15*60+50]
+        [13*60+30, 13*60+40], [13*60+45, 13*60+55], [14*60+0, 14*60+10],
+        [14*60+15, 14*60+25], [14*60+30, 14*60+40], [14*60+45, 14*60+55],
+        [15*60+0, 15*60+10], [15*60+15, 15*60+25], [15*60+30, 15*60+40]
       ];
       let matchedIdx = 0;
       for (let i = 0; i < slotTimes.length; i++) {
         if (totalMins >= slotTimes[i][0] && totalMins <= slotTimes[i][1] + 4) { matchedIdx = i; break; }
         else if (totalMins > slotTimes[i][1] && i < slotTimes.length - 1 && totalMins < slotTimes[i+1][0]) { matchedIdx = i + 1; break; }
-        else if (totalMins > slotTimes[9][1]) { matchedIdx = 9; }
+        else if (totalMins > slotTimes[8][1]) { matchedIdx = 8; }
       }
       const sel = document.getElementById('stationTimeSlotSelect');
       if (sel) { sel.value = matchedIdx; renderStationActiveTeams(); }
@@ -942,11 +951,25 @@
       if (btn) { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
       try {
         if (supabaseClient) {
-          const { data: account, error } = await supabaseClient.from('accounts').select('*').eq('username', u).eq('password', p).maybeSingle();
-          if (error || !account) {
+          // 使用 ilike 忽略大小寫進行比對（例如輸入 401a 也可順利登入 401A）
+          const { data: accounts, error } = await supabaseClient
+            .from('accounts')
+            .select('*')
+            .ilike('username', u)
+            .eq('password', p);
+
+          if (error) {
+            console.error('Supabase 驗證發生錯誤:', error);
+            showToast('資料庫驗證失敗：' + (error.message || '連線錯誤'), 'error');
+            return;
+          }
+
+          if (!accounts || accounts.length === 0) {
             showToast('帳號或密碼錯誤，請重新確認！', 'error');
             return;
           }
+
+          const account = accounts[0];
           const role = getNormalizedRole(account.role, account.username);
           currentUser = { id: account.username, name: account.display_name || account.username, role: role };
         } else {
@@ -954,7 +977,6 @@
           currentUser = { id: u, name: u, role: role };
         }
 
-        // Save session state to SessionStorage so page refreshes don't log out
         sessionStorage.setItem('xshs_user_session', JSON.stringify(currentUser));
 
         document.getElementById('loginModal').classList.add('hidden');
@@ -1149,18 +1171,19 @@
     function renderAdminGpsTab() {
       const grid = document.getElementById('gpsTeamGrid');
       if (!grid) return;
-      grid.innerHTML = localTeams.map(t => {
+      const sortedTeams = [...localTeams].sort((a, b) => a.team_name.localeCompare(b.team_name, undefined, { numeric: true }));
+      grid.innerHTML = sortedTeams.map(t => {
         const hasGps = !!(t.lat && t.lng);
         const latVal = hasGps ? Number(t.lat).toFixed(7) : '未連線';
         const lngVal = hasGps ? Number(t.lng).toFixed(7) : '未連線';
-        const updateTimeStr = t.gps_updated_at ? formatTWTime(t.gps_updated_at) : '-';
+        const updateTimeStr = t.gps_updated_at ? formatTWDateTime(t.gps_updated_at) : '無紀錄';
         return `
           <div class="p-3 bg-white rounded-2xl border ${hasGps ? 'border-amber-400' : 'border-slate-200'} space-y-1.5 shadow-sm">
-            <div class="flex justify-between items-center"><span class="font-bold text-xs text-slate-900">${formatTeamName(t.team_name)}</span><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${hasGps ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-slate-100 text-slate-400'}">${hasGps ? '● 實時連線' : '○ 未定位'}</span></div>
+            <div class="flex justify-between items-center"><span class="font-bold text-xs text-slate-900">${formatTeamName(t.team_name)}</span><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${hasGps ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-400 border border-slate-200'}">${hasGps ? '已連線' : '未連線'}</span></div>
             <div class="space-y-0.5 font-mono text-[11px] text-slate-700">
               <p>緯度 (Lat): <span class="font-bold ${hasGps ? 'text-amber-600' : 'text-slate-400'}">${latVal}</span></p>
               <p>經度 (Lng): <span class="font-bold ${hasGps ? 'text-amber-600' : 'text-slate-400'}">${lngVal}</span></p>
-              <p class="text-[10px] text-slate-500 pt-0.5">時間: ${updateTimeStr}</p>
+              <p class="text-[10px] text-slate-500 pt-0.5">最後更新時間: <span class="font-bold text-slate-700">${updateTimeStr}</span></p>
             </div>
             <div class="pt-1 flex gap-1.5">
               <button onclick="focusMapOnTeam('${t.team_name}')" ${!hasGps ? 'disabled' : ''} class="btn-touch flex-1 py-1 bg-white hover:bg-slate-50 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 text-amber-600 border border-slate-300 rounded-lg text-xs font-bold shadow-sm"><i class="fa-solid fa-crosshairs mr-1"></i> 聚焦定位</button>
@@ -1266,7 +1289,7 @@
           <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-3">
             <div class="flex justify-between items-center pb-2 border-b border-slate-200">
               <span class="font-extrabold text-sm text-amber-600 flex items-center gap-1.5"><i class="fa-solid fa-flag"></i> ${formatTeamName(teamId)}</span>
-              <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-mono font-bold">10時段關卡動線</span>
+              <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-mono font-bold">9時段關卡動線</span>
             </div>
             <div class="grid grid-cols-2 gap-2 text-xs">
               ${TIME_SLOTS.map((slot, sIdx) => {
@@ -1378,7 +1401,7 @@
       const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Taipei', hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(now);
       let h = 0, m = 0;
       parts.forEach(p => { if (p.type === 'hour') h = parseInt(p.value); if (p.type === 'minute') m = parseInt(p.value); });
-      return (h * 60 + m) >= (15 * 60 + 50);
+      return (h * 60 + m) >= (15 * 60 + 40);
     }
 
     function switchStudentTab(tab) {
@@ -1407,21 +1430,21 @@
       document.getElementById('studentTotalScore').innerText = myTeam.total_score || 0;
       const completedStations = new Set(myLogs.map(l => l.station_name));
       const count = completedStations.size;
-      const percent = Math.min(100, Math.round((count / 10) * 100));
+      const percent = Math.min(100, Math.round((count / 9) * 100));
       
-      document.getElementById('studentCompletedCountText').innerText = `${count}/10 關`;
-      document.getElementById('studentProgressBadge').innerText = `已過 ${count} / 10 關`;
-      document.getElementById('stuStampProgressText').innerText = `${percent}% (${count}/10關)`;
+      document.getElementById('studentCompletedCountText').innerText = `${count}/9 關`;
+      document.getElementById('studentProgressBadge').innerText = `已過 ${count} / 9 關`;
+      document.getElementById('stuStampProgressText').innerText = `${percent}% (${count}/9關)`;
       document.getElementById('stuStampProgressBar').style.width = `${percent}%`;
 
       const noticeBanner = document.getElementById('completionNoticeBanner');
       if (noticeBanner) {
-        if (count >= 10 || isEventFinished()) { noticeBanner.classList.remove('hidden'); noticeBanner.classList.add('flex'); }
+        if (count >= 9 || isEventFinished()) { noticeBanner.classList.remove('hidden'); noticeBanner.classList.add('flex'); }
         else { noticeBanner.classList.add('hidden'); }
       }
 
-      const routeArray = TEAM_ROUTES[currentUser.id] || ['A','B','C','D','E','F','G','H','I','J'];
-      const activeSlotIdx = Math.min(count, 9);
+      const routeArray = TEAM_ROUTES[currentUser.id] || ['A','B','C','D','E','F','G','H','I'];
+      const activeSlotIdx = Math.min(count, 8);
       const activeStId = routeArray[activeSlotIdx];
       const activeStation = STATIONS.find(s => s.id === activeStId) || STATIONS[0];
       document.getElementById('stuActiveTimeSlotText').innerText = `時段 ${activeSlotIdx + 1} (${TIME_SLOTS[activeSlotIdx]})`;
@@ -1915,12 +1938,12 @@
       if (!currentUser) return false;
       const roomMsgs = getMessagesForRoom(roomId);
       if (roomMsgs.length === 0) return false;
-      const lastRead = lastReadTimeMap[roomId] || appSessionStartTime;
+      const lastRead = lastReadTimeMap[roomId] || 0;
 
       return roomMsgs.some(m => {
         const isFromMe = isSameAccount(m.sender, currentUser.id) || (currentUser.role === 'ADMIN' && isAdminAccount(m.sender));
         if (isFromMe) return false;
-        const msgTime = new Date(m.created_at).getTime() || 0;
+        const msgTime = parseDate(m.created_at)?.getTime() || 0;
         return msgTime > lastRead;
       });
     }
@@ -1944,7 +1967,7 @@
           }
         }
         if (roomKey && latestMessageTimeMap[roomKey] !== undefined) {
-          const timeNum = new Date(m.created_at).getTime() || 0;
+          const timeNum = parseDate(m.created_at)?.getTime() || 0;
           if (timeNum > latestMessageTimeMap[roomKey]) {
             latestMessageTimeMap[roomKey] = timeNum;
           }
