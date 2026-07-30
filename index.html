@@ -3,117 +3,707 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GitHub Pages 多系統入口管理中心 - XSHS LandQuest</title>
+  <title>新社高中 大地遊戲與校歌競賽全功能整合系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@300;400;500;600;700;900&display=swap');
     * { max-width: 100%; box-sizing: border-box; }
     body {
-      font-family: 'Noto Sans TC', 'Inter', sans-serif;
+      font-family: 'Noto Sans TC', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: #0f172a;
       color: #f8fafc;
       min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: manipulation;
     }
-    .glass-panel {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+    .glass-card {
+      background: rgba(30, 41, 59, 0.8);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #f8fafc;
     }
-    .hover-glow:hover {
-      box-shadow: 0 0 25px rgba(245, 158, 11, 0.25);
-      border-color: rgba(245, 158, 11, 0.5);
+    .glass-card-light {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      color: #0f172a;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
     }
+    .stamp-badge { position: relative; overflow: hidden; }
+    .stamp-badge.completed::after {
+      content: "✓ 通過";
+      position: absolute;
+      top: 12px;
+      right: -24px;
+      transform: rotate(25deg);
+      background: #10b981;
+      color: #ffffff;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+    @keyframes alertPulse { 0%, 100% { background-color: #e11d48; } 50% { background-color: #be123c; } }
+    .animate-alert { animation: alertPulse 1.2s infinite; }
+    @keyframes marqueeScroll { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+    .animate-marquee { display: inline-block; white-space: nowrap; animation: marqueeScroll 20s linear infinite; }
+    @keyframes slotRoll { 0% { transform: scale(0.92); opacity: 0.7; } 50% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 0.9; } }
+    .animate-roll { animation: slotRoll 0.08s infinite; }
+    .btn-touch { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+    .pushpin-container { position: relative; width: 60px; height: 70px; display: flex; flex-direction: column; align-items: center; }
+    .pushpin-label { background: #1e293b; color: #f8fafc; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 8px; border: 1px solid #475569; white-space: nowrap; margin-bottom: 2px; }
+    .pushpin-graphic { position: relative; width: 24px; height: 38px; }
+    .pushpin-head { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #f59e0b, #d97706 60%, #b45309 100%); position: absolute; top: 0; left: 1px; z-index: 2; }
+    .pushpin-needle { width: 2.5px; height: 20px; background: linear-gradient(to right, #94a3b8, #ffffff, #64748b); position: absolute; top: 16px; left: 11px; z-index: 1; }
   </style>
 </head>
-<body class="flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950">
+<body class="flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950 min-h-screen">
 
-  <header class="sticky top-0 z-50 glass-panel border-b border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 py-3.5 flex items-center justify-between min-w-0">
+  <div id="toastContainer" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none w-[92%] max-w-md"></div>
+
+  <div id="marqueeBanner" class="bg-amber-400 text-slate-950 text-xs font-black py-2.5 px-4 flex items-center overflow-hidden shadow-md hidden relative border-b border-amber-300 z-50">
+    <i class="fa-solid fa-bullhorn mr-2 shrink-0 animate-bounce text-slate-900 text-sm"></i>
+    <div class="whitespace-nowrap overflow-hidden w-full relative">
+      <div id="marqueeText" class="animate-marquee font-extrabold">大會廣播：請各小隊遵守闖關秩序並隨時補充水分！</div>
+    </div>
+  </div>
+
+  <header class="glass-card sticky top-0 z-40 border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3 min-w-0">
       <div class="flex items-center gap-3 min-w-0">
-        <div class="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shrink-0">
-          <i class="fa-solid fa-layer-group"></i>
+        <div class="w-10 h-10 rounded-xl bg-white border border-amber-300 flex items-center justify-center overflow-hidden shadow-lg shrink-0 p-0.5">
+          <img src="https://sshs.tc.edu.tw/var/file/69/1069/msys_1069_413586_22128.png" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="新社高中校徽" class="w-full h-full object-contain">
+          <div class="w-full h-full bg-amber-500 text-slate-950 hidden items-center justify-center font-black">
+            <i class="fa-solid fa-layer-group"></i>
+          </div>
         </div>
         <div class="min-w-0">
-          <h1 class="font-extrabold text-base sm:text-lg tracking-tight truncate text-white">XSHS 大地遊戲多系統子資料夾總入口</h1>
-          <p class="text-xs text-slate-400 font-mono truncate">https://sshs-freshman-camp.github.io/XSHS-LandQuestRunTrack/</p>
+          <h1 class="font-extrabold text-base sm:text-lg tracking-tight text-white truncate">新社高中 多系統整合中心</h1>
+          <p class="text-xs text-amber-400 font-mono truncate">XSHS-LandQuestRunTrack / 全功能單一入口</p>
         </div>
+      </div>
+
+      <!-- 子系統切換選單 -->
+      <div class="flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-700 text-xs font-bold overflow-x-auto no-scrollbar">
+        <button onclick="switchSystemModule('song')" id="navBtn-song" class="px-3 py-1.5 rounded-xl transition bg-purple-600 text-white font-black"><i class="fa-solid fa-music mr-1"></i>校歌抽籤</button>
+        <button onclick="switchSystemModule('student')" id="navBtn-student" class="px-3 py-1.5 rounded-xl transition text-slate-400 hover:text-white"><i class="fa-solid fa-graduation-cap mr-1 text-emerald-400"></i>學生闖關</button>
+        <button onclick="switchSystemModule('station')" id="navBtn-station" class="px-3 py-1.5 rounded-xl transition text-slate-400 hover:text-white"><i class="fa-solid fa-headset mr-1 text-indigo-400"></i>關主計分</button>
+        <button onclick="switchSystemModule('admin')" id="navBtn-admin" class="px-3 py-1.5 rounded-xl transition text-slate-400 hover:text-white"><i class="fa-solid fa-user-shield mr-1 text-amber-400"></i>管理控制台</button>
       </div>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-4 py-6 sm:py-8 flex-grow w-full space-y-8">
-    <section class="space-y-2">
-      <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">點擊開啟目標獨立子系統</h2>
-      <p class="text-slate-400 text-xs sm:text-sm">每個子系統皆為獨立之資料夾，預設載入該資料夾內之 <code class="text-amber-300 font-mono">index.html</code>。</p>
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full space-y-8">
+
+    <!-- 1. 校歌獨立抽籤模組 (SONG MODULE) -->
+    <section id="module-song" class="space-y-6">
+      <div class="glass-card p-6 sm:p-8 rounded-3xl space-y-6 text-center relative overflow-hidden border border-purple-500/30">
+        <div class="max-w-2xl mx-auto space-y-2">
+          <span class="px-3 py-1 bg-purple-500/20 text-purple-300 border border-purple-500/30 font-extrabold text-xs rounded-full">
+            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> 全校 10 班登場號碼不重複分配
+          </span>
+          <h2 class="text-2xl sm:text-4xl font-black text-white tracking-tight">校歌競賽登場順序抽籤</h2>
+          <p class="text-slate-400 text-xs sm:text-sm">提供免帳號直接開獎，系統會自 1~10 順位號碼池中自動進行隨機不重複抽籤。</p>
+        </div>
+
+        <div class="p-6 bg-slate-900/90 rounded-3xl border border-purple-500/40 text-center min-h-[130px] flex flex-col items-center justify-center space-y-2 shadow-inner">
+          <span id="songHeroSubtitle" class="text-xs font-bold text-slate-400">請點擊下方按鈕啟動全校或單班抽籤</span>
+          <div id="songHeroMainText" class="text-3xl sm:text-5xl font-black text-purple-300 tracking-tight py-1">
+            🎲 點擊啟動開獎
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-3 pt-1">
+          <button id="btnBatchDraw" onclick="startBatchDraw()" class="btn-touch px-8 py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-sm rounded-2xl shadow-xl transition border border-purple-400 flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-bolt text-amber-300 text-lg"></i>
+            <span>一鍵全校 10 班自動抽籤</span>
+          </button>
+
+          <div class="flex items-center gap-2 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-700">
+            <select id="singleClassSelect" class="px-3 py-2 bg-slate-800 text-white font-extrabold text-xs rounded-xl outline-none border border-slate-700">
+              <option value="401 班">401 班</option>
+              <option value="402 班">402 班</option>
+              <option value="403 班">403 班</option>
+              <option value="404 班">404 班</option>
+              <option value="405 班">405 班</option>
+              <option value="406 班">406 班</option>
+              <option value="407 班">407 班</option>
+              <option value="408 班">408 班</option>
+              <option value="409 班">409 班</option>
+              <option value="410 班">410 班</option>
+            </select>
+            <button id="btnSingleDraw" onclick="startSingleClassDraw()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow transition cursor-pointer">
+              單班抽籤
+            </button>
+          </div>
+          <button onclick="resetSongDrawState()" class="px-4 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 border border-rose-500/30 text-xs font-bold rounded-xl transition">
+            重置號碼池
+          </button>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <h3 class="font-extrabold text-lg text-white flex items-center gap-2">
+          <i class="fa-solid fa-grip text-purple-400"></i> 全校 10 班登場順位總覽卡片
+        </h3>
+        <div id="classCardsGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-3.5"></div>
+      </div>
     </section>
 
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-5">
-      <!-- 學生端 -->
-      <a href="student/" class="glass-panel p-6 rounded-3xl border border-slate-800 transition-all duration-300 hover:-translate-y-1.5 hover-glow flex flex-col justify-between group space-y-4">
-        <div class="space-y-3">
-          <div class="flex justify-between items-start">
-            <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl font-bold">
+    <!-- 2. 學生闖關儀表板模組 (STUDENT MODULE) -->
+    <section id="module-student" class="space-y-6 hidden">
+      <div class="glass-card-light p-5 rounded-3xl space-y-4 shadow-md">
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-lg shadow">
               <i class="fa-solid fa-graduation-cap"></i>
             </div>
-            <span class="px-2.5 py-1 bg-amber-400 text-slate-950 font-black rounded-lg text-[11px] font-mono">/student/</span>
-          </div>
-          <div>
-            <h3 class="font-extrabold text-lg text-white group-hover:text-amber-400 transition">學生闖關與校歌抽籤儀表板</h3>
-            <p class="text-slate-400 text-xs mt-1 leading-relaxed">提供免帳號直接選擇 401~410 班進行不重複隨機校歌登場抽籤與數位關卡印章卡。</p>
-          </div>
-        </div>
-        <div class="pt-3.5 border-t border-slate-800 flex items-center justify-between text-xs font-bold text-amber-400">
-          <span>開啟 /student/</span>
-          <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-        </div>
-      </a>
-
-      <!-- 管理員端 -->
-      <a href="admin/" class="glass-panel p-6 rounded-3xl border border-slate-800 transition-all duration-300 hover:-translate-y-1.5 hover-glow flex flex-col justify-between group space-y-4">
-        <div class="space-y-3">
-          <div class="flex justify-between items-start">
-            <div class="w-12 h-12 rounded-2xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400 text-xl font-bold">
-              <i class="fa-solid fa-user-shield"></i>
+            <div>
+              <h2 class="text-base sm:text-lg font-black text-slate-900">學生闖關與數位集章卡</h2>
+              <p class="text-xs text-slate-500 font-medium">免登入可直接選擇隊伍檢視進度</p>
             </div>
-            <span class="px-2.5 py-1 bg-sky-400 text-slate-950 font-black rounded-lg text-[11px] font-mono">/admin/</span>
           </div>
-          <div>
-            <h3 class="font-extrabold text-lg text-white group-hover:text-sky-400 transition">大會總管理員控制台</h3>
-            <p class="text-slate-400 text-xs mt-1 leading-relaxed">查看全校排行榜、審核刪除得分歷史紀錄、一鍵重置全校校歌登場抽籤狀態。</p>
-          </div>
+          <select id="studentTeamSelect" onchange="switchStudentTeam(this.value)" class="px-3.5 py-2 border border-slate-300 rounded-xl font-bold text-xs bg-white text-slate-900 outline-none focus:border-amber-500 shadow-sm">
+          </select>
         </div>
-        <div class="pt-3.5 border-t border-slate-800 flex items-center justify-between text-xs font-bold text-sky-400">
-          <span>開啟 /admin/</span>
-          <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-        </div>
-      </a>
 
-      <!-- 關主端 -->
-      <a href="station/" class="glass-panel p-6 rounded-3xl border border-slate-800 transition-all duration-300 hover:-translate-y-1.5 hover-glow flex flex-col justify-between group space-y-4">
-        <div class="space-y-3">
-          <div class="flex justify-between items-start">
-            <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-xl font-bold">
-              <i class="fa-solid fa-headset"></i>
-            </div>
-            <span class="px-2.5 py-1 bg-indigo-400 text-slate-950 font-black rounded-lg text-[11px] font-mono">/station/</span>
-          </div>
+        <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-200">
           <div>
-            <h3 class="font-extrabold text-lg text-white group-hover:text-indigo-400 transition">關主計分指揮台</h3>
-            <p class="text-slate-400 text-xs mt-1 leading-relaxed">提供關主選擇 401A~410B 小隊並選擇勝敗與諂媚加分，自動算分登錄雲端。</p>
+            <span class="px-2.5 py-0.5 bg-amber-400 text-slate-950 font-black text-[10px] rounded-md">小隊闖關概況</span>
+            <h3 id="studentTeamTitle" class="text-2xl font-black text-slate-900 mt-1">401A 小隊</h3>
+          </div>
+          <div class="text-right">
+            <span class="text-xs text-slate-500 font-bold block">總累積得分</span>
+            <span id="studentTotalScore" class="text-2xl font-black font-mono text-amber-600">0</span>
           </div>
         </div>
-        <div class="pt-3.5 border-t border-slate-800 flex items-center justify-between text-xs font-bold text-indigo-400">
-          <span>開啟 /station/</span>
-          <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+
+        <div class="space-y-2">
+          <h4 class="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
+            <i class="fa-solid fa-stamp text-amber-500"></i> 10 大關卡數位闖關印章卡
+          </h4>
+          <div id="stuStampGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-2"></div>
         </div>
-      </a>
+      </div>
     </section>
+
+    <!-- 3. 關主計分台模組 (STATION MODULE) -->
+    <section id="module-station" class="space-y-6 hidden">
+      <div class="glass-card-light p-5 rounded-3xl space-y-4 border border-slate-200 shadow-md">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+          <h2 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
+            <i class="fa-solid fa-headset text-indigo-600"></i> 關主計分指揮台 (A~J 關卡)
+          </h2>
+          <span class="px-2.5 py-1 bg-indigo-100 text-indigo-900 text-xs font-bold rounded-lg border border-indigo-200">即時登記</span>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold text-slate-700">選擇加分小隊 (401A~410B)：</label>
+          <select id="stationTeamSelect" class="w-full p-3 border border-slate-300 rounded-2xl font-bold text-slate-900 text-sm bg-white outline-none focus:border-amber-500 shadow-sm">
+            <option value="">-- 請選擇小隊 --</option>
+          </select>
+        </div>
+
+        <!-- 兩階段分數評分區 -->
+        <div class="space-y-3.5 p-4 bg-amber-50/60 rounded-2xl border border-amber-200">
+          <div>
+            <label class="block text-xs font-black text-slate-800 mb-1.5 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center">1</span>
+              <span>項目一：基本勝敗成績 (必選)</span>
+            </label>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="btnResultWin" onclick="setResultType('WIN')" class="btn-touch py-2.5 px-3 bg-amber-500 text-slate-950 rounded-xl font-black text-xs transition shadow border-2 border-amber-600 flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-trophy"></i> 勝隊 (+1000分)
+              </button>
+              <button type="button" id="btnResultLoss" onclick="setResultType('LOSS')" class="btn-touch py-2.5 px-3 bg-slate-100 text-slate-600 border border-slate-300 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-medal"></i> 敗隊 (+500分)
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-black text-slate-800 mb-1.5 flex items-center justify-between">
+              <span class="flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center">2</span>
+                <span>項目二：諂媚表現加分</span>
+              </span>
+              <span id="flatteryScopeLabel" class="text-[10px] text-amber-800 font-bold bg-amber-100 px-2 py-0.5 rounded border border-amber-300">(勝隊選項)</span>
+            </label>
+            <div id="flatteryButtonsGroup" class="grid grid-cols-3 gap-2"></div>
+          </div>
+
+          <div class="pt-1">
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">最終給分數 (項目一 + 項目二，鎖定禁止修改)：</label>
+            <input type="number" id="stationPointsInput" value="1000" readonly class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-mono font-black bg-slate-100 text-slate-900 outline-none">
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-xs font-bold text-slate-700">備註說明 (選填)：</label>
+          <input type="text" id="stationNoteInput" placeholder="選填，可留空" class="w-full p-3 border border-slate-300 rounded-2xl text-xs bg-white text-slate-900 outline-none">
+        </div>
+
+        <button id="btnSubmitScore" onclick="submitStationScore()" class="btn-touch w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl shadow transition text-sm flex items-center justify-center gap-2">
+          <i class="fa-solid fa-paper-plane"></i> 送出得分並更新排行榜
+        </button>
+      </div>
+    </section>
+
+    <!-- 4. 大會總管理員模組 (ADMIN MODULE) -->
+    <section id="module-admin" class="space-y-6 hidden">
+      <div class="glass-card p-5 rounded-3xl space-y-4 border border-slate-800">
+        <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+          <h2 class="font-extrabold text-white text-base flex items-center gap-2">
+            <i class="fa-solid fa-user-shield text-amber-400"></i> 大會總管理員控制台
+          </h2>
+          <button onclick="exportCSV('leaderboard')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs border border-amber-400 shadow">
+            <i class="fa-solid fa-file-csv"></i> 匯出 CSV
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm">
+            <thead class="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+              <tr><th class="px-4 py-3 text-center w-16">名次</th><th class="px-4 py-3">小隊</th><th class="px-4 py-3 text-right">總得分</th></tr>
+            </thead>
+            <tbody id="leaderboardTableBody" class="divide-y divide-slate-800/80 font-medium text-slate-200"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="glass-card p-5 rounded-3xl space-y-4 border border-slate-800">
+        <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+          <h3 class="font-bold text-white text-base flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-emerald-400"></i> 得分歷史紀錄與審核</h3>
+          <button onclick="exportCSV('logs')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs border border-amber-400 shadow"><i class="fa-solid fa-file-csv"></i> 匯出 CSV</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm">
+            <thead class="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+              <tr>
+                <th class="px-3 py-2.5 whitespace-nowrap">時間</th>
+                <th class="px-3 py-2.5 whitespace-nowrap">關卡</th>
+                <th class="px-3 py-2.5 whitespace-nowrap">小隊</th>
+                <th class="px-3 py-2.5 text-right whitespace-nowrap">分數</th>
+                <th class="px-3 py-2.5 text-center whitespace-nowrap">操作</th>
+              </tr>
+            </thead>
+            <tbody id="logsTableBody" class="divide-y divide-slate-800/80"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </main>
 
-  <footer class="glass-panel border-t border-slate-800 py-4 text-center text-slate-500 text-xs mt-auto">
-    <p>臺中市立新社高級中學 多系統子資料夾導覽 &copy; 2026</p>
+  <footer class="glass-card border-t border-slate-800 py-4 text-center text-slate-500 text-xs mt-auto">
+    <p>臺中市立新社高級中學 大地遊戲與校歌競賽系統 &copy; 2026</p>
   </footer>
 
+  <script>
+    const SUPABASE_URL = 'https://xfevmqguantotrkatvoa.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_uQcbXqsRGxU-uLRagPtwHQ_6SSAUT59';
+
+    let supabaseClient = null;
+    try {
+      if (typeof window.supabase !== 'undefined') {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+      }
+    } catch(e){}
+
+    const TEAM_NAMES = ['401A', '401B', '402A', '402B', '403A', '403B', '404A', '404B', '405A', '405B', '406A', '406B', '407A', '407B', '408A', '408B', '409A', '409B', '410A', '410B'];
+    const ALL_CLASSES = ['401 班','402 班','403 班','404 班','405 班','406 班','407 班','408 班','409 班','410 班'];
+    const STATIONS = [
+      { id: 'A', name: 'A - 接力猜一猜' }, { id: 'B', name: 'B - 字首造詞' }, { id: 'C', name: 'C - 比手畫腳' },
+      { id: 'D', name: 'D - 你畫我猜' }, { id: 'E', name: 'E - 成雙成對' }, { id: 'F', name: 'F - 圈地稱王' },
+      { id: 'G', name: 'G - 一叫到位' }, { id: 'H', name: 'H - 跳跳虎' }, { id: 'I', name: 'I - 圖書館冒險' },
+      { id: 'J', name: 'J - 筆劃接力賽' }
+    ];
+
+    let currentStudentTeam = '401A';
+    let selectedResultType = 'WIN';
+    let selectedFlatteryScore = 0;
+    let localTeams = TEAM_NAMES.map(name => ({ team_name: name, total_score: 0 }));
+    let localLogs = [];
+    let songDrawState = { assigned: {}, available: [1,2,3,4,5,6,7,8,9,10] };
+
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      let bgClass = 'bg-slate-800 text-white border-slate-700 shadow-xl';
+      if (type === 'success') bgClass = 'bg-emerald-600 text-white border-emerald-500 shadow-xl';
+      else if (type === 'error') bgClass = 'bg-rose-600 text-white border-rose-500 shadow-xl';
+
+      toast.className = `px-4 py-2.5 rounded-2xl border text-xs font-semibold pointer-events-auto flex items-center justify-between gap-3 transition-all duration-300 transform translate-y-2 opacity-0 w-full ${bgClass}`;
+      toast.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()" class="text-xs opacity-60 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>`;
+      container.appendChild(toast);
+      requestAnimationFrame(() => { toast.classList.remove('translate-y-2', 'opacity-0'); });
+      setTimeout(() => { toast.remove(); }, 3000);
+    }
+
+    function switchSystemModule(modName) {
+      ['song', 'student', 'station', 'admin'].forEach(m => {
+        const mod = document.getElementById('module-' + m);
+        const btn = document.getElementById('navBtn-' + m);
+        if (mod) mod.classList.toggle('hidden', m !== modName);
+        if (btn) {
+          if (m === modName) btn.className = 'px-3 py-1.5 rounded-xl transition bg-purple-600 text-white font-black';
+          else btn.className = 'px-3 py-1.5 rounded-xl transition text-slate-400 hover:text-white';
+        }
+      });
+    }
+
+    // 1. 校歌抽籤模組邏輯
+    async function fetchSongDrawState() {
+      if (!supabaseClient) return;
+      try {
+        const { data } = await supabaseClient.from('system_config').select('*').eq('key', 'school_song_draw_state');
+        if (data && data.length > 0 && data[0].value) {
+          songDrawState = JSON.parse(data[0].value);
+        }
+      } catch(e){}
+      renderSongDrawCards();
+    }
+
+    function renderSongDrawCards() {
+      const grid = document.getElementById('classCardsGrid');
+      const assignedMap = songDrawState.assigned || {};
+      if (grid) {
+        grid.innerHTML = ALL_CLASSES.map(cls => {
+          const slot = assignedMap[cls];
+          const isDrawn = slot !== undefined && slot !== null;
+          return `
+            <div class="p-4 rounded-2xl border text-center transition flex flex-col justify-between h-32 ${isDrawn ? 'bg-purple-900/40 border-purple-500/60 shadow-lg' : 'bg-slate-900/50 border-slate-800 opacity-70'}">
+              <span class="text-xs font-bold text-slate-400">${cls}</span>
+              <div class="py-1">
+                ${isDrawn ? `<span class="text-2xl sm:text-3xl font-black font-mono text-amber-400">第 ${slot} 順位</span>` : `<span class="text-xs font-bold text-slate-500">未抽籤</span>`}
+              </div>
+              <span class="text-[10px] ${isDrawn ? 'text-purple-300 font-bold' : 'text-slate-600'}">${isDrawn ? '✓ 已確定' : '等候開獎'}</span>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    async function startBatchDraw() {
+      if (!supabaseClient) { showToast('無網路連線！', 'error'); return; }
+      await fetchSongDrawState();
+      const assignedMap = songDrawState.assigned || {};
+      const remainingClasses = ALL_CLASSES.filter(c => !assignedMap[c]);
+
+      if (remainingClasses.length === 0) {
+        showToast('全校 10 個班級皆已完成抽籤！', 'info');
+        return;
+      }
+
+      let step = 0;
+      const interval = setInterval(async () => {
+        step++;
+        const randSlot = Math.floor(Math.random() * 10) + 1;
+        document.getElementById('songHeroMainText').innerHTML = `<span class="text-amber-400 font-mono animate-roll">🎲 搖籤中... ${randSlot}</span>`;
+
+        if (step >= 15) {
+          clearInterval(interval);
+          await executeBatchDraw(remainingClasses);
+        }
+      }, 70);
+    }
+
+    async function executeBatchDraw(undrawnClasses) {
+      try {
+        const { data } = await supabaseClient.from('system_config').select('*').eq('key', 'school_song_draw_state');
+        let state = { assigned: {}, available: [1,2,3,4,5,6,7,8,9,10] };
+        if (data && data.length > 0 && data[0].value) {
+          try { state = JSON.parse(data[0].value); } catch(e){}
+        }
+
+        const shuffledSlots = [...state.available].sort(() => Math.random() - 0.5);
+
+        undrawnClasses.forEach((cls) => {
+          if (shuffledSlots.length > 0) {
+            const slot = shuffledSlots.pop();
+            state.assigned[cls] = slot;
+            const availIdx = state.available.indexOf(slot);
+            if (availIdx !== -1) state.available.splice(availIdx, 1);
+          }
+        });
+
+        await saveSongDrawStateToCloud(state);
+
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+        }
+
+        document.getElementById('songHeroMainText').innerHTML = `🎉 全校抽籤完成！`;
+        showToast('🎉 一鍵全校自動抽籤完畢！', 'success');
+      } catch(e) {
+        showToast('抽籤失敗', 'error');
+      }
+    }
+
+    async function startSingleClassDraw() {
+      const clsName = document.getElementById('singleClassSelect').value;
+      if (!clsName) return;
+
+      await fetchSongDrawState();
+      if (songDrawState.assigned && songDrawState.assigned[clsName]) {
+        showToast(`${clsName} 已完成抽籤：第 ${songDrawState.assigned[clsName]} 順位`, 'info');
+        return;
+      }
+
+      if (!songDrawState.available || songDrawState.available.length === 0) {
+        showToast('登場號碼池已空！', 'error');
+        return;
+      }
+
+      let step = 0;
+      const interval = setInterval(async () => {
+        step++;
+        const randSlot = Math.floor(Math.random() * 10) + 1;
+        document.getElementById('songHeroMainText').innerHTML = `<span class="text-amber-400 font-mono animate-roll">🎲 ${clsName} 搖籤中... ${randSlot}</span>`;
+
+        if (step >= 12) {
+          clearInterval(interval);
+          await executeSingleDraw(clsName);
+        }
+      }, 70);
+    }
+
+    async function executeSingleDraw(clsName) {
+      try {
+        const { data } = await supabaseClient.from('system_config').select('*').eq('key', 'school_song_draw_state');
+        let state = { assigned: {}, available: [1,2,3,4,5,6,7,8,9,10] };
+        if (data && data.length > 0 && data[0].value) {
+          try { state = JSON.parse(data[0].value); } catch(e){}
+        }
+
+        const randIdx = Math.floor(Math.random() * state.available.length);
+        const drawnSlot = state.available[randIdx];
+        state.available.splice(randIdx, 1);
+
+        if (!state.assigned) state.assigned = {};
+        state.assigned[clsName] = drawnSlot;
+
+        await saveSongDrawStateToCloud(state);
+
+        document.getElementById('songHeroMainText').innerHTML = `🎉 ${clsName} 抽出第 <span class="text-amber-400 font-mono">${drawnSlot}</span> 順位！`;
+        showToast(`🎉 恭喜！${clsName} 抽出第 ${drawnSlot} 順位登場！`, 'success');
+      } catch(e) { showToast('抽籤失敗', 'error'); }
+    }
+
+    async function saveSongDrawStateToCloud(state) {
+      songDrawState = state;
+      await supabaseClient.from('system_config').upsert({
+        key: 'school_song_draw_state',
+        value: JSON.stringify(state),
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+
+      renderSongDrawCards();
+    }
+
+    async function resetSongDrawState() {
+      if (!supabaseClient) return;
+      const initialState = { assigned: {}, available: [1,2,3,4,5,6,7,8,9,10] };
+      try {
+        await saveSongDrawStateToCloud(initialState);
+        document.getElementById('songHeroMainText').innerText = '🎲 準備開始抽籤';
+        showToast('已重置全校校歌抽籤號碼池！', 'success');
+      } catch(e) { showToast('重置失敗', 'error'); }
+    }
+
+    function setResultType(type) {
+      selectedResultType = type;
+      selectedFlatteryScore = 0;
+      updateScoringUI();
+    }
+
+    function setFlatteryScore(pts) {
+      selectedFlatteryScore = pts;
+      updateScoringUI();
+    }
+
+    function updateScoringUI() {
+      const btnWin = document.getElementById('btnResultWin');
+      const btnLoss = document.getElementById('btnResultLoss');
+      const scopeLabel = document.getElementById('flatteryScopeLabel');
+      const flatteryGroup = document.getElementById('flatteryButtonsGroup');
+      const scoreInput = document.getElementById('stationPointsInput');
+
+      if (!btnWin || !btnLoss) return;
+
+      if (selectedResultType === 'WIN') {
+        btnWin.className = "btn-touch py-2.5 px-3 bg-amber-500 text-slate-950 rounded-xl font-black text-xs shadow border-2 border-amber-600 flex items-center justify-center gap-1.5";
+        btnLoss.className = "btn-touch py-2.5 px-3 bg-slate-100 text-slate-600 border border-slate-300 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5";
+        if (scopeLabel) scopeLabel.innerText = "(勝隊加分: +0, +50, +100)";
+        
+        const winFlatteryOpts = [0, 50, 100];
+        if (flatteryGroup) {
+          flatteryGroup.innerHTML = winFlatteryOpts.map(pts => `
+            <button type="button" onclick="setFlatteryScore(${pts})" class="btn-touch py-2 px-1 ${selectedFlatteryScore === pts ? 'bg-amber-400 border-2 border-amber-600 text-slate-950 font-black shadow' : 'bg-slate-50 border border-slate-300 text-slate-700 font-bold'} rounded-xl text-xs transition text-center flex flex-col items-center justify-center">
+              <span class="text-xs font-black">+${pts} 分</span>
+            </button>
+          `).join('');
+        }
+        if (scoreInput) scoreInput.value = 1000 + selectedFlatteryScore;
+      } else {
+        btnWin.className = "btn-touch py-2.5 px-3 bg-slate-100 text-slate-600 border border-slate-300 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5";
+        btnLoss.className = "btn-touch py-2.5 px-3 bg-slate-800 text-amber-400 rounded-xl font-black text-xs shadow border-2 border-slate-900 flex items-center justify-center gap-1.5";
+        if (scopeLabel) scopeLabel.innerText = "(敗隊加分: +0, +150, +250)";
+
+        const lossFlatteryOpts = [0, 150, 250];
+        if (flatteryGroup) {
+          flatteryGroup.innerHTML = lossFlatteryOpts.map(pts => `
+            <button type="button" onclick="setFlatteryScore(${pts})" class="btn-touch py-2 px-1 ${selectedFlatteryScore === pts ? 'bg-amber-400 border-2 border-amber-600 text-slate-950 font-black shadow' : 'bg-slate-50 border border-slate-300 text-slate-700 font-bold'} rounded-xl text-xs transition text-center flex flex-col items-center justify-center">
+              <span class="text-xs font-black">+${pts} 分</span>
+            </button>
+          `).join('');
+        }
+        if (scoreInput) scoreInput.value = 500 + selectedFlatteryScore;
+      }
+    }
+
+    async function submitStationScore() {
+      const teamName = document.getElementById('stationTeamSelect').value;
+      const ptsVal = document.getElementById('stationPointsInput').value;
+      const noteVal = document.getElementById('stationNoteInput').value.trim();
+
+      if (!teamName || !ptsVal) { showToast('請選擇隊伍與計分！', 'error'); return; }
+      if (!supabaseClient) { showToast('無網路連線！', 'error'); return; }
+
+      try {
+        const { error } = await supabaseClient.from('score_logs').insert([{
+          station_name: '關主計分台',
+          team_name: teamName,
+          points: parseInt(ptsVal),
+          note: noteVal,
+          created_at: new Date().toISOString()
+        }]);
+
+        if (error) throw error;
+        showToast(`成功為 ${teamName} 登記 +${ptsVal} 分！`, 'success');
+        document.getElementById('stationNoteInput').value = '';
+        refreshData();
+      } catch(e) { showToast('登記失敗！', 'error'); }
+    }
+
+    async function refreshData() {
+      if (!supabaseClient) return;
+      try {
+        const { data: logsData } = await supabaseClient.from('score_logs').select('*').order('created_at', { ascending: false });
+        if (logsData) localLogs = logsData;
+
+        const teamScores = {};
+        TEAM_NAMES.forEach(name => teamScores[name] = 0);
+        localLogs.forEach(l => { if (teamScores[l.team_name] !== undefined) teamScores[l.team_name] += (l.points || 0); });
+
+        localTeams = TEAM_NAMES.map(name => ({ team_name: name, total_score: teamScores[name] || 0 })).sort((a,b) => b.total_score - a.total_score);
+      } catch(e){}
+
+      renderLeaderboard();
+      renderLogs();
+      renderStudentView();
+    }
+
+    function renderLeaderboard() {
+      const tbody = document.getElementById('leaderboardTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = localTeams.map((t, idx) => `
+        <tr class="hover:bg-slate-800/40">
+          <td class="px-4 py-3 text-center font-black text-amber-400">#${idx + 1}</td>
+          <td class="px-4 py-3 font-bold text-white">${t.team_name} 小隊</td>
+          <td class="px-4 py-3 text-right font-black font-mono text-amber-400 text-base">${t.total_score} 分</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderLogs() {
+      const tbody = document.getElementById('logsTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = localLogs.map(l => `
+        <tr class="hover:bg-slate-800/40">
+          <td class="px-3 py-2.5 font-mono text-xs text-slate-400">${new Date(l.created_at).toLocaleTimeString('zh-TW')}</td>
+          <td class="px-3 py-2.5 font-bold text-white">${l.station_name || '-'}</td>
+          <td class="px-3 py-2.5 font-bold text-amber-400">${l.team_name}</td>
+          <td class="px-3 py-2.5 text-right font-black font-mono text-emerald-400">+${l.points}</td>
+          <td class="px-3 py-2.5 text-center"><button onclick="deleteScoreLog(${l.id})" class="px-2 py-1 bg-rose-600/20 hover:bg-rose-600 text-rose-300 border border-rose-500/30 rounded-lg text-xs font-bold transition">刪除</button></td>
+        </tr>
+      `).join('');
+    }
+
+    async function deleteScoreLog(id) {
+      if (!supabaseClient) return;
+      try {
+        await supabaseClient.from('score_logs').delete().eq('id', id);
+        showToast('已刪除得分紀錄', 'success');
+        refreshData();
+      } catch(e){}
+    }
+
+    function renderStudentView() {
+      const myTeam = localTeams.find(t => t.team_name === currentStudentTeam) || { total_score: 0 };
+      const myLogs = localLogs.filter(l => l.team_name === currentStudentTeam);
+      const scoreEl = document.getElementById('studentTotalScore');
+      if (scoreEl) scoreEl.innerText = myTeam.total_score || 0;
+
+      const grid = document.getElementById('stuStampGrid');
+      if (grid) {
+        grid.innerHTML = STATIONS.map(st => {
+          const isPassed = myLogs.some(l => l.station_name && l.station_name.includes(st.id));
+          return `
+            <div class="stamp-badge ${isPassed ? 'completed bg-emerald-50 border-emerald-300' : 'bg-slate-50 border-slate-200'} p-3 rounded-2xl border text-center flex flex-col justify-between h-20 shadow-sm">
+              <span class="font-extrabold text-xs text-slate-800">${st.name}</span>
+              <span class="text-[10px] ${isPassed ? 'text-emerald-600 font-bold' : 'text-slate-400'}">${isPassed ? '已通過' : '未挑戰'}</span>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function switchStudentTeam(teamName) {
+      currentStudentTeam = teamName;
+      const titleEl = document.getElementById('studentTeamTitle');
+      if (titleEl) titleEl.innerText = `${teamName} 小隊`;
+      renderStudentView();
+    }
+
+    function exportCSV(type) {
+      let csv = "data:text/csv;charset=utf-8,\uFEFF";
+      if (type === 'leaderboard') {
+        csv += "名次,小隊,總分\n";
+        localTeams.forEach((t, i) => csv += `${i+1},${t.team_name},${t.total_score}\n`);
+      } else {
+        csv += "時間,關卡,小隊,分數,備註\n";
+        localLogs.forEach(l => csv += `"${l.created_at}","${l.station_name}",${l.team_name},${l.points},"${l.note}"\n`);
+      }
+      const link = document.createElement("a");
+      link.setAttribute("href", encodeURI(csv));
+      link.setAttribute("download", `XSHS_Data_${type}_${Date.now()}.csv`);
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    }
+
+    window.onload = function() {
+      const studentSelect = document.getElementById('studentTeamSelect');
+      const stationSelect = document.getElementById('stationTeamSelect');
+
+      if (studentSelect) {
+        studentSelect.innerHTML = TEAM_NAMES.map(t => `<option value="${t}">${t} 小隊</option>`).join('');
+      }
+      if (stationSelect) {
+        stationSelect.innerHTML = '<option value="">-- 請選擇小隊 --</option>' + TEAM_NAMES.map(t => `<option value="${t}">${t} 小隊</option>`).join('');
+      }
+
+      updateScoringUI();
+      fetchSongDrawState();
+      refreshData();
+      setInterval(refreshData, 3000);
+      setInterval(fetchSongDrawState, 3000);
+    };
+  </script>
 </body>
 </html>
