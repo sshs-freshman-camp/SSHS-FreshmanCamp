@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>關主計分台 - XSHS LandQuest</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #f1f5f9; color: #0f172a; font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="p-4">
+  <div class="max-w-lg mx-auto space-y-6">
+    <header class="flex justify-between items-center">
+      <h1 class="text-xl font-black">關主計分台</h1>
+      <a href="../index.html" class="px-4 py-2 bg-white rounded-xl text-xs font-bold border">總入口</a>
+    </header>
+    <div class="bg-white p-6 rounded-3xl shadow-sm border space-y-4">
+      <label class="block text-sm font-bold">選擇登記小隊：</label>
+      <select id="teamSelect" class="w-full p-4 border rounded-2xl font-bold">
+        <!-- 401A 至 410B 選項由 JS 填充 -->
+      </select>
+      <div class="grid grid-cols-2 gap-2">
+        <button class="py-4 bg-emerald-600 text-white rounded-2xl font-black text-lg">勝隊登記 (+1000)</button>
+        <button class="py-4 bg-rose-600 text-white rounded-2xl font-black text-lg">敗隊登記 (+500)</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const teams = ['401A', '401B', '402A', '402B', '403A', '403B', '404A', '404B', '405A', '405B', '406A', '406B', '407A', '407B', '408A', '408B', '409A', '409B', '410A', '410B'];
+    const select = document.getElementById('teamSelect');
+    teams.forEach(t => select.innerHTML += `<option value="${t}">${t} 小隊</option>`);
+  </script>
+</body>
+</html>
