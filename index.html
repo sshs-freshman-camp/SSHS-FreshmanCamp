@@ -3,35 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>新社高中 大地遊戲與校歌競賽全功能整合系統</title>
+  <title>大地遊戲闖關計分與路線導引系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+  
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@300;400;500;600;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@300;400;500;600;700;900&display=swap');
     * { max-width: 100%; box-sizing: border-box; }
     body {
-      font-family: 'Noto Sans TC', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: #0f172a;
-      color: #f8fafc;
-      min-height: 100vh;
+      font-family: 'Noto Sans TC', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #f1f5f9;
+      color: #0f172a;
       overflow-x: hidden;
+      max-width: 100vw;
+      -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
+      letter-spacing: -0.01em;
     }
+    .font-mono { font-family: 'Inter', monospace; }
     .glass-card {
-      background: rgba(30, 41, 59, 0.8);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: #f8fafc;
-    }
-    .glass-card-light {
       background: #ffffff;
       border: 1px solid #e2e8f0;
       color: #0f172a;
+      max-width: 100%;
       box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
     }
     .stamp-badge { position: relative; overflow: hidden; }
@@ -48,474 +46,630 @@
       padding: 2px 20px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.15);
     }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     @keyframes alertPulse { 0%, 100% { background-color: #e11d48; } 50% { background-color: #be123c; } }
     .animate-alert { animation: alertPulse 1.2s infinite; }
     @keyframes marqueeScroll { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-    .animate-marquee { display: inline-block; white-space: nowrap; animation: marqueeScroll 20s linear infinite; }
-    @keyframes slotRoll { 0% { transform: scale(0.92); opacity: 0.7; } 50% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 0.9; } }
-    .animate-roll { animation: slotRoll 0.08s infinite; }
-    .btn-touch { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+    .animate-marquee { display: inline-block; white-space: nowrap; animation: marqueeScroll 20s linear infinite; will-change: transform; }
+    .animate-marquee:hover, .animate-marquee:active { animation-play-state: paused; }
+    #qrReader video { object-fit: cover !important; border-radius: 1rem; width: 100% !important; }
+    #qrReader__dashboard { display: none !important; }
+    .leaflet-popup-content-wrapper { border-radius: 1rem; font-family: inherit; font-size: 13px; font-weight: 600; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; }
+    .leaflet-popup-tip { background: #ffffff; }
+    .leaflet-marker-icon, .custom-pushpin-icon { transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1) !important; }
+    .btn-touch { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; }
     .pushpin-container { position: relative; width: 60px; height: 70px; display: flex; flex-direction: column; align-items: center; }
-    .pushpin-label { background: #1e293b; color: #f8fafc; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 8px; border: 1px solid #475569; white-space: nowrap; margin-bottom: 2px; }
+    .pushpin-label { background: #ffffff; color: #0f172a; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.12); white-space: nowrap; margin-bottom: 2px; }
     .pushpin-graphic { position: relative; width: 24px; height: 38px; }
-    .pushpin-head { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #f59e0b, #d97706 60%, #b45309 100%); position: absolute; top: 0; left: 1px; z-index: 2; }
-    .pushpin-needle { width: 2.5px; height: 20px; background: linear-gradient(to right, #94a3b8, #ffffff, #64748b); position: absolute; top: 16px; left: 11px; z-index: 1; }
+    .pushpin-head { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #f59e0b, #d97706 60%, #b45309 100%); box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3), inset 2px 2px 4px rgba(255,255,255,0.8), 0 4px 8px rgba(0,0,0,0.2); position: absolute; top: 0; left: 1px; z-index: 2; }
+    .pushpin-head::after { content: ''; position: absolute; top: 3px; left: 4px; width: 6px; height: 6px; background: rgba(255,255,255,0.8); border-radius: 50%; }
+    .pushpin-needle { width: 2.5px; height: 20px; background: linear-gradient(to right, #94a3b8, #ffffff, #64748b); position: absolute; top: 16px; left: 11px; z-index: 1; border-bottom-left-radius: 2px; border-bottom-right-radius: 2px; }
+    .pushpin-shadow { width: 14px; height: 5px; background: rgba(0,0,0,0.2); border-radius: 50%; position: absolute; bottom: 0px; left: 5px; filter: blur(1px); }
   </style>
 </head>
-<body class="flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950 min-h-screen">
-
+<body class="min-h-full text-slate-900 flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950 pb-10 sm:pb-6">
   <div id="toastContainer" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none w-[92%] max-w-md"></div>
-
-  <div id="marqueeBanner" class="bg-amber-400 text-slate-950 text-xs font-black py-2.5 px-4 flex items-center overflow-hidden shadow-md hidden relative border-b border-amber-300 z-50">
-    <i class="fa-solid fa-bullhorn mr-2 shrink-0 animate-bounce text-slate-900 text-sm"></i>
+  
+  <div id="marqueeBanner" class="bg-amber-400 text-slate-950 text-xs font-black py-2 px-4 flex items-center overflow-hidden shadow-sm hidden relative border-b border-amber-300">
+    <i class="fa-solid fa-bullhorn mr-2 shrink-0 animate-bounce z-10 bg-amber-400 pr-1 text-slate-900"></i>
     <div class="whitespace-nowrap overflow-hidden w-full relative">
-      <div id="marqueeText" class="animate-marquee font-extrabold">大會廣播：請各小隊遵守闖關秩序並隨時補充水分！</div>
+      <div id="marqueeText" class="animate-marquee cursor-pointer">大會廣播：請各隊遵守闖關秩序並隨時補充水分！</div>
     </div>
   </div>
-
-  <header class="glass-card sticky top-0 z-40 border-b border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3 min-w-0">
+  
+  <header class="bg-white text-slate-900 shadow-sm sticky top-0 z-40 border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-3.5 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-y-2.5 gap-x-3">
       <div class="flex items-center gap-3 min-w-0">
-        <div class="w-10 h-10 rounded-xl bg-white border border-amber-300 flex items-center justify-center overflow-hidden shadow-lg shrink-0 p-0.5">
-          <img src="https://sshs.tc.edu.tw/var/file/69/1069/msys_1069_413586_22128.png" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="新社高中校徽" class="w-full h-full object-contain">
-          <div class="w-full h-full bg-amber-500 text-slate-950 hidden items-center justify-center font-black">
-            <i class="fa-solid fa-layer-group"></i>
+        <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center border border-slate-200 shrink-0 overflow-hidden shadow-sm">
+          <img src="https://sshs.tc.edu.tw/var/file/69/1069/msys_1069_413586_22128.png" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="新社高中校徽" class="w-full h-full object-contain p-0.5">
+          <div class="w-full h-full bg-amber-100 hidden items-center justify-center text-amber-600">
+            <i class="fa-solid fa-compass text-lg"></i>
           </div>
         </div>
         <div class="min-w-0">
-          <h1 class="font-extrabold text-base sm:text-lg tracking-tight text-white truncate">新社高中 多系統整合中心</h1>
-          <p class="text-xs text-amber-400 font-mono truncate">XSHS-LandQuestRunTrack / 全功能單一入口</p>
+          <h1 class="font-extrabold text-base sm:text-lg tracking-tight flex items-center gap-2 text-slate-900">
+            <span class="truncate">大地遊戲導引系統</span>
+          </h1>
+          <p class="text-xs text-slate-500 font-medium truncate">新社高中 智慧導引管理平台</p>
         </div>
       </div>
-
-      <!-- 子系統切換選單 -->
-      <div class="flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-700 text-xs font-bold overflow-x-auto no-scrollbar">
-        <button onclick="switchSystemModule('song')" id="navBtn-song" class="px-3 py-1.5 rounded-xl transition bg-purple-600 text-white font-black"><i class="fa-solid fa-music mr-1"></i>校歌抽籤</button>
-        <button onclick="switchSystemModule('student')" id="navBtn-student" class="px-3 py-1.5 rounded-xl transition text-slate-400 hover:text-white"><i class="fa-solid fa-graduation-cap mr-1 text-emerald-400"></i>學生闖關</button>
-        <button onclick="switchSystemModule('station')" id="navBtn-station" class="px-3 py-1.5 rounded-xl transition text-slate-400 hover:text-white"><i class="fa-solid fa-headset mr-1 text-indigo-400"></i>關主計分</button>
-        <button onclick="switchSystemModule('admin')" id="navBtn-admin" class="px-3 py-1.5 rounded-xl transition text-slate-400 hover:text-white"><i class="fa-solid fa-user-shield mr-1 text-amber-400"></i>管理控制台</button>
+      <div class="flex flex-wrap items-center gap-2 ml-auto">
+        <div id="dbStatusBadge" class="hidden xs:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 border border-emerald-200 text-emerald-700">
+          <span id="dbPingDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="dbStatusText">已連線</span>
+        </div>
+        <div id="userBadge" class="hidden items-center gap-1.5 bg-slate-100 border border-slate-300 px-3 py-1.5 rounded-xl text-xs font-semibold">
+          <span id="currentUserName" class="max-w-[80px] sm:max-w-[120px] truncate text-slate-800">未登入</span>
+          <span id="currentUserRoleBadge" class="bg-amber-400 text-slate-950 font-extrabold px-1.5 py-0.5 rounded text-[10px] shrink-0">未授權</span>
+        </div>
+        <button onclick="toggleAuth()" class="bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-extrabold px-3.5 py-2 rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm shrink-0 cursor-pointer">
+          <i id="authBtnIcon" class="fa-solid fa-right-to-bracket text-xs"></i>
+          <span id="loginBtnText">登入</span>
+        </button>
       </div>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full space-y-8">
-
-    <!-- 1. 校歌獨立抽籤模組 (SONG MODULE) -->
-    <section id="module-song" class="space-y-6">
-      <div class="glass-card p-6 sm:p-8 rounded-3xl space-y-6 text-center relative overflow-hidden border border-purple-500/30">
-        <div class="max-w-2xl mx-auto space-y-2">
-          <span class="px-3 py-1 bg-purple-500/20 text-purple-300 border border-purple-500/30 font-extrabold text-xs rounded-full">
-            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> 全校 10 班登場號碼不重複分配
-          </span>
-          <h2 class="text-2xl sm:text-4xl font-black text-white tracking-tight">校歌競賽登場順序抽籤</h2>
-          <p class="text-slate-400 text-xs sm:text-sm">提供免帳號直接開獎，系統會自 1~10 順位號碼池中自動進行隨機不重複抽籤。</p>
-        </div>
-
-        <div class="p-6 bg-slate-900/90 rounded-3xl border border-purple-500/40 text-center min-h-[130px] flex flex-col items-center justify-center space-y-2 shadow-inner">
-          <span id="songHeroSubtitle" class="text-xs font-bold text-slate-400">請點擊下方按鈕啟動全校或單班抽籤</span>
-          <div id="songHeroMainText" class="text-3xl sm:text-5xl font-black text-purple-300 tracking-tight py-1">
-            🎲 點擊啟動開獎
+  <main class="max-w-7xl mx-auto px-3 sm:px-5 py-4 sm:py-6 flex-grow w-full">
+    <!-- ADMIN VIEW -->
+    <section id="adminView" class="space-y-4 hidden">
+      <div id="adminEmergencyBanner" class="hidden animate-alert text-white p-3.5 rounded-2xl shadow-md border border-rose-600 items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-black/20 flex items-center justify-center text-lg shrink-0">🚨</div>
+          <div>
+            <h3 class="font-bold text-sm tracking-tight flex items-center gap-2 text-white">
+              <span>完全未處置緊急求助通報</span>
+              <span id="adminEmergencyTime" class="text-xs font-mono font-semibold bg-black/30 px-2 py-0.5 rounded-md"></span>
+            </h3>
+            <p id="adminEmergencyText" class="text-xs font-medium mt-0.5 text-rose-100">載入警報內容中...</p>
           </div>
         </div>
+        <button id="btnBannerResolve" onclick="openResolveAlertModal()" class="px-3 py-1.5 bg-white text-rose-700 hover:bg-rose-50 active:scale-95 text-xs font-bold rounded-xl shadow shrink-0 cursor-pointer">發送處置</button>
+      </div>
+      
+      <div class="glass-card p-4 rounded-2xl shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-user-shield text-amber-600"></i> 大會總管理員控制台
+          </h2>
+        </div>
+        <div class="flex flex-wrap gap-1.5 bg-slate-100 p-1.5 rounded-xl text-xs font-semibold border border-slate-200">
+          <button onclick="switchAdminTab('leaderboard')" id="tabBtn-leaderboard" class="px-3 py-2 rounded-lg transition bg-white text-slate-900 font-bold shadow-sm border border-slate-200"><i class="fa-solid fa-trophy mr-1.5 text-amber-500"></i>排行榜</button>
+          <button onclick="switchAdminTab('gps')" id="tabBtn-gps" class="px-3 py-2 rounded-lg transition text-slate-600 hover:text-slate-900"><i class="fa-solid fa-location-crosshairs mr-1.5 text-sky-600"></i>詳細GPS地圖</button>
+          <button onclick="switchAdminTab('logs')" id="tabBtn-logs" class="px-3 py-2 rounded-lg transition text-slate-600 hover:text-slate-900"><i class="fa-solid fa-list-check mr-1.5 text-emerald-600"></i>得分明細</button>
+          <button onclick="switchAdminTab('routes')" id="tabBtn-routes" class="px-3 py-2 rounded-lg transition text-slate-600 hover:text-slate-900"><i class="fa-solid fa-route mr-1.5 text-indigo-600"></i>對戰動線</button>
+          <button onclick="switchAdminTab('alerts')" id="tabBtn-alerts" class="px-3 py-2 rounded-lg transition text-slate-600 hover:text-slate-900 relative"><i class="fa-solid fa-bullhorn mr-1.5 text-rose-600"></i>求助<span id="alertsBadgeCount" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-600 text-white rounded-full text-[9px] font-extrabold items-center justify-center">0</span></button>
+          <button onclick="switchAdminTab('auth')" id="tabBtn-auth" class="px-3 py-2 rounded-lg transition text-slate-600 hover:text-slate-900"><i class="fa-solid fa-users mr-1.5 text-amber-600"></i>帳號管理</button>
+          <button onclick="switchAdminTab('config')" id="tabBtn-config" class="px-3 py-2 rounded-lg transition text-slate-600 hover:text-slate-900"><i class="fa-solid fa-gear mr-1.5 text-slate-600"></i>廣播與雨備設定</button>
+        </div>
+      </div>
 
-        <div class="flex flex-wrap items-center justify-center gap-3 pt-1">
-          <button id="btnBatchDraw" onclick="startBatchDraw()" class="btn-touch px-8 py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-sm rounded-2xl shadow-xl transition border border-purple-400 flex items-center justify-center gap-2 cursor-pointer">
-            <i class="fa-solid fa-bolt text-amber-300 text-lg"></i>
-            <span>一鍵全校 10 班自動抽籤</span>
-          </button>
+      <!-- 排行榜 -->
+      <div id="adminTab-leaderboard" class="space-y-4">
+        <div class="grid grid-cols-3 gap-3">
+          <div class="glass-card p-3.5 rounded-2xl border border-slate-200"><p class="text-xs text-slate-500 font-semibold">參賽小隊</p><p class="text-xl font-black text-slate-900 mt-1" id="statTeamCount">20 隊</p></div>
+          <div class="glass-card p-3.5 rounded-2xl border border-slate-200"><p class="text-xs text-slate-500 font-semibold">關卡數量</p><p class="text-xl font-black text-slate-900 mt-1" id="statStationCount">10 關</p></div>
+          <div class="glass-card p-3.5 rounded-2xl border border-slate-200"><p class="text-xs text-slate-500 font-semibold">完全未處置求助</p><p class="text-xl font-black text-rose-600 mt-1" id="statPendingAlerts">0 件</p></div>
+        </div>
+        
+        <div id="podiumContainer" class="grid grid-cols-3 gap-2 sm:gap-4 max-w-2xl mx-auto pt-2"></div>
 
-          <div class="flex items-center gap-2 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-700">
-            <select id="singleClassSelect" class="px-3 py-2 bg-slate-800 text-white font-extrabold text-xs rounded-xl outline-none border border-slate-700">
-              <option value="401 班">401 班</option>
-              <option value="402 班">402 班</option>
-              <option value="403 班">403 班</option>
-              <option value="404 班">404 班</option>
-              <option value="405 班">405 班</option>
-              <option value="406 班">406 班</option>
-              <option value="407 班">407 班</option>
-              <option value="408 班">408 班</option>
-              <option value="409 班">409 班</option>
-              <option value="410 班">410 班</option>
+        <div class="glass-card rounded-2xl overflow-hidden shadow-sm border border-slate-200">
+          <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+            <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-ranking-star text-amber-500"></i> 全校小隊總排行榜</h3>
+            <button onclick="exportCSV('leaderboard')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition flex items-center gap-1.5 border border-amber-400 shadow-sm"><i class="fa-solid fa-file-csv"></i> 匯出 CSV</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm">
+              <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                <tr><th class="px-4 py-3 text-center w-16">名次</th><th class="px-4 py-3">小隊</th><th class="px-4 py-3 text-right">總得分</th></tr>
+              </thead>
+              <tbody id="leaderboardTableBody" class="divide-y divide-slate-200 font-medium text-slate-800"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- GPS地圖 -->
+      <div id="adminTab-gps" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
+        <div class="flex flex-wrap justify-between items-center pb-2.5 border-b border-slate-200 gap-2">
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-map-marked-alt text-sky-600"></i> 即時高精度 GPS 地圖監控</h3>
+            <p class="text-xs text-slate-500 mt-0.5">顯示精準座標與最後更新紀錄</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="mapStyleSelect" onchange="switchMapStyle(this.value)" class="text-xs font-bold px-3 py-1.5 border border-slate-300 rounded-xl bg-white text-slate-800 outline-none shadow-sm">
+              <option value="street" selected>🗺️ 一般街道 (Voyager)</option>
+              <option value="satellite">🛰️ 衛星實景 (Esri High-Res)</option>
             </select>
-            <button id="btnSingleDraw" onclick="startSingleClassDraw()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow transition cursor-pointer">
-              單班抽籤
-            </button>
+            <button onclick="hideTeamTrack()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs border border-slate-300 shadow-sm"><i class="fa-solid fa-eye-slash mr-1 text-rose-600"></i> 隱藏軌跡</button>
+            <button onclick="refreshData()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 font-bold rounded-xl text-xs border border-slate-300 shadow-sm"><i class="fa-solid fa-arrows-rotate mr-1 text-amber-600"></i> 重整</button>
           </div>
-          <button onclick="resetSongDrawState()" class="px-4 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 border border-rose-500/30 text-xs font-bold rounded-xl transition">
-            重置號碼池
-          </button>
         </div>
+        <div id="gpsLiveMap" class="w-full h-[380px] sm:h-[500px] rounded-2xl border border-slate-300 shadow-inner z-10 bg-slate-200"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="gpsTeamGrid"></div>
       </div>
 
-      <div class="space-y-4">
-        <h3 class="font-extrabold text-lg text-white flex items-center gap-2">
-          <i class="fa-solid fa-grip text-purple-400"></i> 全校 10 班登場順位總覽卡片
-        </h3>
-        <div id="classCardsGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-3.5"></div>
-      </div>
-    </section>
-
-    <!-- 2. 學生闖關儀表板模組 (STUDENT MODULE) -->
-    <section id="module-student" class="space-y-6 hidden">
-      <div class="glass-card-light p-5 rounded-3xl space-y-4 shadow-md">
-        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-lg shadow">
-              <i class="fa-solid fa-graduation-cap"></i>
-            </div>
-            <div>
-              <h2 class="text-base sm:text-lg font-black text-slate-900">學生闖關與數位集章卡</h2>
-              <p class="text-xs text-slate-500 font-medium">免登入可直接選擇隊伍檢視進度</p>
-            </div>
-          </div>
-          <select id="studentTeamSelect" onchange="switchStudentTeam(this.value)" class="px-3.5 py-2 border border-slate-300 rounded-xl font-bold text-xs bg-white text-slate-900 outline-none focus:border-amber-500 shadow-sm">
-          </select>
-        </div>
-
-        <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-200">
-          <div>
-            <span class="px-2.5 py-0.5 bg-amber-400 text-slate-950 font-black text-[10px] rounded-md">小隊闖關概況</span>
-            <h3 id="studentTeamTitle" class="text-2xl font-black text-slate-900 mt-1">401A 小隊</h3>
-          </div>
-          <div class="text-right">
-            <span class="text-xs text-slate-500 font-bold block">總累積得分</span>
-            <span id="studentTotalScore" class="text-2xl font-black font-mono text-amber-600">0</span>
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          <h4 class="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
-            <i class="fa-solid fa-stamp text-amber-500"></i> 10 大關卡數位闖關印章卡
-          </h4>
-          <div id="stuStampGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-2"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 3. 關主計分台模組 (STATION MODULE) -->
-    <section id="module-station" class="space-y-6 hidden">
-      <div class="glass-card-light p-5 rounded-3xl space-y-4 border border-slate-200 shadow-md">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-200">
-          <h2 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
-            <i class="fa-solid fa-headset text-indigo-600"></i> 關主計分指揮台 (A~J 關卡)
-          </h2>
-          <span class="px-2.5 py-1 bg-indigo-100 text-indigo-900 text-xs font-bold rounded-lg border border-indigo-200">即時登記</span>
-        </div>
-
-        <div class="space-y-1.5">
-          <label class="block text-xs font-bold text-slate-700">選擇加分小隊 (401A~410B)：</label>
-          <select id="stationTeamSelect" class="w-full p-3 border border-slate-300 rounded-2xl font-bold text-slate-900 text-sm bg-white outline-none focus:border-amber-500 shadow-sm">
-            <option value="">-- 請選擇小隊 --</option>
-          </select>
-        </div>
-
-        <!-- 兩階段分數評分區 -->
-        <div class="space-y-3.5 p-4 bg-amber-50/60 rounded-2xl border border-amber-200">
-          <div>
-            <label class="block text-xs font-black text-slate-800 mb-1.5 flex items-center gap-1.5">
-              <span class="w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center">1</span>
-              <span>項目一：基本勝敗成績 (必選)</span>
-            </label>
-            <div class="grid grid-cols-2 gap-2">
-              <button type="button" id="btnResultWin" onclick="setResultType('WIN')" class="btn-touch py-2.5 px-3 bg-amber-500 text-slate-950 rounded-xl font-black text-xs transition shadow border-2 border-amber-600 flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-trophy"></i> 勝隊 (+1000分)
-              </button>
-              <button type="button" id="btnResultLoss" onclick="setResultType('LOSS')" class="btn-touch py-2.5 px-3 bg-slate-100 text-slate-600 border border-slate-300 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-medal"></i> 敗隊 (+500分)
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-black text-slate-800 mb-1.5 flex items-center justify-between">
-              <span class="flex items-center gap-1.5">
-                <span class="w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center">2</span>
-                <span>項目二：諂媚表現加分</span>
-              </span>
-              <span id="flatteryScopeLabel" class="text-[10px] text-amber-800 font-bold bg-amber-100 px-2 py-0.5 rounded border border-amber-300">(勝隊選項)</span>
-            </label>
-            <div id="flatteryButtonsGroup" class="grid grid-cols-3 gap-2"></div>
-          </div>
-
-          <div class="pt-1">
-            <label class="block text-[11px] font-bold text-slate-500 mb-1">最終給分數 (項目一 + 項目二，鎖定禁止修改)：</label>
-            <input type="number" id="stationPointsInput" value="1000" readonly class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-mono font-black bg-slate-100 text-slate-900 outline-none">
-          </div>
-        </div>
-
-        <div class="space-y-1">
-          <label class="block text-xs font-bold text-slate-700">備註說明 (選填)：</label>
-          <input type="text" id="stationNoteInput" placeholder="選填，可留空" class="w-full p-3 border border-slate-300 rounded-2xl text-xs bg-white text-slate-900 outline-none">
-        </div>
-
-        <button id="btnSubmitScore" onclick="submitStationScore()" class="btn-touch w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl shadow transition text-sm flex items-center justify-center gap-2">
-          <i class="fa-solid fa-paper-plane"></i> 送出得分並更新排行榜
-        </button>
-      </div>
-    </section>
-
-    <!-- 4. 大會總管理員模組 (ADMIN MODULE) -->
-    <section id="module-admin" class="space-y-6 hidden">
-      <div class="glass-card p-5 rounded-3xl space-y-4 border border-slate-800">
-        <div class="flex justify-between items-center pb-3 border-b border-slate-800">
-          <h2 class="font-extrabold text-white text-base flex items-center gap-2">
-            <i class="fa-solid fa-user-shield text-amber-400"></i> 大會總管理員控制台
-          </h2>
-          <button onclick="exportCSV('leaderboard')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs border border-amber-400 shadow">
-            <i class="fa-solid fa-file-csv"></i> 匯出 CSV
-          </button>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs sm:text-sm">
-            <thead class="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
-              <tr><th class="px-4 py-3 text-center w-16">名次</th><th class="px-4 py-3">小隊</th><th class="px-4 py-3 text-right">總得分</th></tr>
-            </thead>
-            <tbody id="leaderboardTableBody" class="divide-y divide-slate-800/80 font-medium text-slate-200"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="glass-card p-5 rounded-3xl space-y-4 border border-slate-800">
-        <div class="flex justify-between items-center pb-3 border-b border-slate-800">
-          <h3 class="font-bold text-white text-base flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-emerald-400"></i> 得分歷史紀錄與審核</h3>
-          <button onclick="exportCSV('logs')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs border border-amber-400 shadow"><i class="fa-solid fa-file-csv"></i> 匯出 CSV</button>
+      <!-- 得分歷史 -->
+      <div id="adminTab-logs" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
+        <div class="flex justify-between items-center pb-2.5 border-b border-slate-200">
+          <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-emerald-600"></i> 全校得分歷史紀錄與審核</h3>
+          <button onclick="exportCSV('logs')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs border border-amber-400 shadow-sm"><i class="fa-solid fa-file-csv"></i> 匯出 CSV</button>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs sm:text-sm">
-            <thead class="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+            <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
               <tr>
-                <th class="px-3 py-2.5 whitespace-nowrap">時間</th>
-                <th class="px-3 py-2.5 whitespace-nowrap">關卡</th>
+                <th class="px-3 py-2.5 whitespace-nowrap">時間 (台灣時間)</th>
+                <th class="px-3 py-2.5 whitespace-nowrap">關卡名稱與地點</th>
                 <th class="px-3 py-2.5 whitespace-nowrap">小隊</th>
                 <th class="px-3 py-2.5 text-right whitespace-nowrap">分數</th>
+                <th class="px-3 py-2.5 whitespace-nowrap">IP 位址</th>
+                <th class="px-3 py-2.5 whitespace-nowrap">備註說明</th>
                 <th class="px-3 py-2.5 text-center whitespace-nowrap">操作</th>
               </tr>
             </thead>
-            <tbody id="logsTableBody" class="divide-y divide-slate-800/80"></tbody>
+            <tbody id="logsTableBody" class="divide-y divide-slate-200"></tbody>
           </table>
         </div>
       </div>
+
+      <!-- 對戰動線 -->
+      <div id="adminTab-routes" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
+        <div class="pb-2 border-b border-slate-200 flex justify-between items-center">
+          <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-map-location-dot text-indigo-600"></i> 對戰動線總覽表 (13:30~15:40)</h3>
+        </div>
+        <div id="routesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+
+      <!-- 求助事件 -->
+      <div id="adminTab-alerts" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+          <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-bullhorn text-rose-600"></i> 緊急求助事件紀錄</h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm">
+            <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+              <tr>
+                <th class="px-3 py-2.5 whitespace-nowrap">通報時間 (台灣時間)</th>
+                <th class="px-3 py-2.5 whitespace-nowrap">通報者</th>
+                <th class="px-3 py-2.5 whitespace-nowrap">狀況說明</th>
+                <th class="px-3 py-2.5 whitespace-nowrap">處置備註</th>
+                <th class="px-3 py-2.5 text-center whitespace-nowrap">處理狀態與操作</th>
+              </tr>
+            </thead>
+            <tbody id="alertsTableBody" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 帳號管理 -->
+      <div id="adminTab-auth" class="glass-card rounded-2xl p-4 shadow-sm hidden space-y-4 border border-slate-200">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-200"><h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-users text-amber-600"></i> 獨立帳號密碼管理系統 (依 ID 順序)</h3><button onclick="fetchAccounts()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-300 shadow-sm"><i class="fa-solid fa-arrows-rotate text-amber-600"></i> 重新載入</button></div>
+        <div class="overflow-x-auto"><table class="w-full text-left text-xs sm:text-sm"><thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200"><tr><th class="px-3 py-2.5 whitespace-nowrap">ID</th><th class="px-3 py-2.5 whitespace-nowrap">帳號</th><th class="px-3 py-2.5 whitespace-nowrap">顯示名稱</th><th class="px-3 py-2.5 whitespace-nowrap">權限</th><th class="px-3 py-2.5 whitespace-nowrap">密碼</th><th class="px-3 py-2.5 text-center whitespace-nowrap">儲存</th></tr></thead><tbody id="accountsTableBody" class="divide-y divide-slate-200"></tbody></table></div>
+      </div>
+
+      <!-- 廣播與雨備設定 -->
+      <div id="adminTab-config" class="glass-card rounded-2xl p-5 shadow-sm hidden space-y-5 border border-slate-200">
+        <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2 pb-2.5 border-b border-slate-200"><i class="fa-solid fa-sliders text-amber-600"></i> 廣播與雨備方案管理</h3>
+        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h4 class="font-bold text-sm text-slate-900 flex items-center gap-1.5"><i class="fa-solid fa-cloud-showers-heavy text-sky-600"></i> 全校雨備方案切換</h4>
+              <p class="text-xs text-slate-500 mt-0.5">預設隱藏雨備。啟動後關卡地點同步更新為雨備場地。</p>
+            </div>
+            <button id="rainPlanToggleBtn" onclick="toggleRainPlan()" class="btn-touch px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition shadow flex items-center gap-1.5"><i class="fa-solid fa-toggle-off text-base text-amber-400"></i> 啟動雨備地點</button>
+          </div>
+          <div id="rainPlanStatusBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-white text-slate-800 border border-slate-200"><i class="fa-solid fa-sun text-amber-500"></i> <span>目前狀態：晴天標準場地動線</span></div>
+        </div>
+        <div class="space-y-2">
+          <label class="block text-xs sm:text-sm font-bold text-slate-700">廣播跑馬燈管理：</label>
+          <div class="flex flex-wrap gap-2">
+            <input type="text" id="broadcastInput" placeholder="例如：請各小隊注意闖關時間..." class="flex-1 min-w-[200px] px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm outline-none bg-white text-slate-900 focus:border-amber-500">
+            <button onclick="addBroadcastMessage()" class="btn-touch px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-xs sm:text-sm shadow"><i class="fa-solid fa-plus mr-1.5"></i> 新增廣播</button>
+            <button onclick="clearAllBroadcastMessages()" class="btn-touch px-3 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs sm:text-sm transition"><i class="fa-solid fa-trash-can mr-1"></i> 清空廣播</button>
+          </div>
+          <div id="activeBroadcastsContainer" class="pt-2 space-y-2"></div>
+        </div>
+        <div class="pt-4 border-t border-slate-200 space-y-2"><p class="text-xs sm:text-sm font-bold text-rose-600 flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> 系統成績資料重置</p><button onclick="openConfirmModal('確定要清空全校所有闖關成績與得分紀錄嗎？此操作無法復原！', confirmResetData)" class="btn-touch px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow flex items-center gap-2"><i class="fa-solid fa-trash-arrow-up"></i> 清空並重置所有闖關成績紀錄</button></div>
+      </div>
     </section>
 
+    <!-- STATION LEADER VIEW -->
+    <section id="stationView" class="space-y-4 hidden">
+      <div class="glass-card p-4 sm:p-5 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+          <div>
+            <div class="flex items-center gap-2"><span class="px-2.5 py-1 bg-slate-100 text-amber-600 text-xs font-bold rounded-lg border border-slate-200 flex items-center gap-1.5"><i class="fa-solid fa-headset"></i> 關主指揮台</span></div>
+            <h2 id="stationTitle" class="text-xl sm:text-2xl font-black text-slate-900 mt-1.5">關卡名稱</h2>
+            <p id="stationLocation" class="text-xs text-slate-600 flex items-center gap-1.5 mt-1"><i class="fa-solid fa-location-dot text-rose-500"></i> 地點載入中...</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="openQrScannerModal()" class="btn-touch flex-1 sm:flex-none px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shadow"><i class="fa-solid fa-camera text-amber-400"></i> 相機掃 QR</button>
+            <button onclick="openEmergencyModal()" class="btn-touch px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow"><i class="fa-solid fa-triangle-exclamation"></i> SOS 求助</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 glass-card p-4 sm:p-5 rounded-3xl shadow-sm space-y-4 border border-slate-200">
+          <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-200">
+            <h3 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2"><i class="fa-solid fa-circle-plus text-amber-600"></i> 關卡成績登記</h3>
+          </div>
+          <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-clock-rotate-left text-amber-600"></i> 當前時段預計對戰隊伍：</span>
+              <select id="stationTimeSlotSelect" onchange="renderStationActiveTeams()" class="text-xs font-bold px-2 py-1 border border-slate-300 rounded-lg bg-white text-slate-800 outline-none">
+              </select>
+            </div>
+            <div id="activeTeamsQuickPick" class="flex flex-wrap gap-2 pt-0.5">
+            </div>
+          </div>
+          
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-slate-700">目前選擇加分的小隊：</label>
+            <select id="stationTeamSelect" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl font-bold text-slate-900 text-xs bg-white outline-none shadow-sm"></select>
+          </div>
+
+          <!-- 項目一與項目二計分區塊 -->
+          <div id="scoringPresetBox" class="space-y-3.5 w-full">
+            <!-- 項目一：基本勝敗成績 -->
+            <div>
+              <label class="block text-xs font-bold text-slate-800 mb-1.5 flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center shrink-0">1</span>
+                <span>項目一：基本勝敗成績</span>
+              </label>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" id="btnResultWin" onclick="setResultType('WIN')" class="btn-touch py-2.5 px-3 bg-amber-500 text-slate-950 rounded-xl font-black text-xs active:scale-95 transition shadow border-2 border-amber-600 flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-trophy text-amber-900"></i> 勝隊 (+1000分)
+                </button>
+                <button type="button" id="btnResultLoss" onclick="setResultType('LOSS')" class="btn-touch py-2.5 px-3 bg-slate-100 text-slate-600 border border-slate-300 rounded-xl font-bold text-xs active:scale-95 transition flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-medal text-slate-400"></i> 敗隊 (+500分)
+                </button>
+              </div>
+            </div>
+
+            <!-- 項目二：諂媚表現加分 -->
+            <div>
+              <label class="block text-xs font-bold text-slate-800 mb-1.5 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center shrink-0">2</span>
+                  <span>項目二：諂媚表現加分</span>
+                </span>
+                <span id="flatteryScopeLabel" class="text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">(勝隊選項)</span>
+              </label>
+              <div id="flatteryButtonsGroup" class="grid grid-cols-3 gap-2">
+              </div>
+            </div>
+
+            <!-- 最終加總 -->
+            <div class="pt-0.5 w-full">
+              <label class="block text-[11px] font-bold text-slate-500 mb-1">最終給分數 (項目一 + 項目二，由系統自動計算，不得手動修改)：</label>
+              <input type="number" id="stationPointsInput" value="1000" readonly class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-mono font-bold bg-slate-100 text-slate-900 outline-none cursor-not-allowed">
+            </div>
+          </div>
+          
+          <div class="space-y-1"><label class="block text-xs font-bold text-slate-700">備註說明 (選填)</label><input type="text" id="stationNoteInput" placeholder="選填，可留空" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs bg-white text-slate-900 outline-none"></div>
+
+          <div class="flex gap-2 pt-1">
+            <button id="btnSubmitScore" onclick="submitStationScore()" class="btn-touch flex-grow py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow transition flex items-center justify-center gap-2 text-xs"><i class="fa-solid fa-paper-plane"></i> 送出得分並更新排行榜</button>
+            <button onclick="undoLastStationScore()" title="撤銷上一筆給分" class="btn-touch px-3 py-3 bg-white hover:bg-slate-100 text-amber-600 border border-slate-300 font-bold rounded-xl shadow-sm transition text-xs"><i class="fa-solid fa-rotate-left"></i> 撤銷</button>
+          </div>
+        </div>
+
+        <div class="glass-card p-4 rounded-3xl shadow-sm flex flex-col justify-between border border-slate-200 relative overflow-hidden">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200"><h3 class="font-bold text-xs flex items-center gap-2 text-slate-900"><i class="fa-solid fa-stopwatch text-amber-600"></i> 賽事關卡計時器</h3></div>
+          
+          <div class="py-3 text-center flex flex-col items-center justify-center space-y-3">
+            <div class="text-4xl font-black font-mono tracking-tight text-slate-900" id="timerDisplay">05:00<span class="text-lg text-slate-400">.0</span></div>
+            
+            <div class="flex items-center justify-center gap-2 w-full max-w-xs">
+              <div class="flex items-center gap-1">
+                <input type="number" id="customMinInput" min="0" max="99" value="5" class="w-14 py-1.5 px-2 border border-slate-300 rounded-xl text-center font-mono font-bold text-sm bg-white text-slate-900">
+                <span class="text-xs font-bold text-slate-600">分</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <input type="number" id="customSecInput" min="0" max="59" value="0" class="w-14 py-1.5 px-2 border border-slate-300 rounded-xl text-center font-mono font-bold text-sm bg-white text-slate-900">
+                <span class="text-xs font-bold text-slate-600">秒</span>
+              </div>
+              <button onclick="applyCustomTimerInput()" class="px-3 py-1.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700">設定</button>
+            </div>
+
+            <div class="flex items-center gap-1 flex-wrap justify-center pt-1">
+              <button onclick="adjustTimerSeconds(-60)" class="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold hover:bg-rose-100">-1分</button>
+              <button onclick="adjustTimerSeconds(-10)" class="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold hover:bg-rose-100">-10s</button>
+              <button onclick="adjustTimerSeconds(10)" class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold hover:bg-emerald-100">+10s</button>
+              <button onclick="adjustTimerSeconds(60)" class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold hover:bg-emerald-100">+1分</button>
+            </div>
+          </div>
+          
+          <div class="flex gap-2"><button onclick="toggleTimer()" id="timerStartBtn" class="btn-touch flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-xl shadow transition text-xs"><i class="fa-solid fa-play"></i> 開始計時</button><button onclick="resetTimer()" class="btn-touch w-10 py-2 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl transition flex items-center justify-center shadow-sm"><i class="fa-solid fa-rotate-right"></i></button></div>
+        </div>
+      </div>
+
+      <div id="stationMyAlertsBox" class="glass-card p-4 rounded-3xl shadow-sm space-y-2 border border-slate-200 hidden">
+        <h3 class="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200"><i class="fa-solid fa-bullhorn text-rose-600"></i> 本關卡求助事件處置回覆狀況</h3>
+        <div id="stationMyAlertsList" class="space-y-2"></div>
+      </div>
+
+      <div id="stSubTab-history" class="glass-card p-3.5 rounded-2xl shadow-sm space-y-2 border border-slate-200"><h3 class="font-bold text-xs flex items-center gap-2 text-slate-900"><i class="fa-solid fa-clock-rotate-left text-amber-600"></i> 本關卡近期加分明細</h3><div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200"><tr><th class="px-3 py-2 whitespace-nowrap">時間 (台灣時間)</th><th class="px-3 py-2 whitespace-nowrap">隊伍</th><th class="px-3 py-2 text-right whitespace-nowrap">分數</th><th class="px-3 py-2 whitespace-nowrap">IP</th><th class="px-3 py-2 whitespace-nowrap">備註</th></tr></thead><tbody id="stationLogsBody" class="divide-y divide-slate-200"></tbody></table></div></div>
+    </section>
+
+    <!-- STUDENT VIEW -->
+    <section id="studentView" class="space-y-4 hidden">
+      <div id="completionNoticeBanner" class="hidden p-4 rounded-3xl bg-amber-400 text-slate-950 font-extrabold text-sm border-2 border-amber-500 shadow-lg flex items-center gap-3 animate-bounce">
+        <i class="fa-solid fa-flag-checkered text-2xl"></i>
+        <div>
+          <p class="text-base">🎉 全隊已完成所有關卡挑戰或活動時間已結束！</p>
+          <p class="text-xs font-bold mt-0.5 text-slate-900">請全體隊員即刻前往【活動中心】進行大會集合與頒獎！</p>
+        </div>
+      </div>
+
+      <div class="bg-white text-slate-900 p-4 sm:p-5 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden flex flex-col justify-between gap-3">
+        <i class="fa-solid fa-flag text-8xl absolute -right-4 -bottom-4 text-slate-100 rotate-[-15deg] pointer-events-none"></i>
+        <div class="relative z-10">
+          <div class="flex items-center gap-2 flex-wrap"><span class="px-2.5 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-extrabold rounded-md uppercase flex items-center gap-1"><i class="fa-solid fa-users"></i> 小隊儀表板</span><span id="studentProgressBadge" class="px-2.5 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-md border border-slate-200">已過 0 / 10 關</span><span id="stuGpsStatusBadge" class="px-2.5 py-0.5 bg-slate-100 border border-slate-200 text-amber-600 text-[10px] font-bold rounded-md flex items-center gap-1"><i class="fa-solid fa-location-crosshairs animate-pulse"></i> <span>GPS定位中...</span></span></div>
+          <h2 id="studentTeamTitle" class="text-2xl font-black mt-2 tracking-tight text-slate-900">載入中...</h2>
+          <p class="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5"><i class="fa-solid fa-circle-info"></i> 請依照專屬路線與時段表前往地點挑戰關卡</p>
+        </div>
+        <div class="flex gap-2 relative z-10 w-full">
+          <button onclick="openTeamQrModal()" class="btn-touch flex-1 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow"><i class="fa-solid fa-qrcode text-amber-400"></i> 出示 QR 碼</button>
+          <button onclick="openEmergencyModal()" class="btn-touch flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow"><i class="fa-solid fa-triangle-exclamation"></i> 求助 SOS</button>
+        </div>
+        <div class="flex gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 w-full justify-around relative z-10"><div class="text-center"><p class="text-xs text-slate-500 font-semibold">累積得分</p><p id="studentTotalScore" class="text-2xl font-black mt-0.5 font-mono text-amber-600">0</p></div><div class="w-px bg-slate-200"></div><div class="text-center"><p class="text-xs text-slate-500 font-semibold">通關進度</p><p id="studentCompletedCountText" class="text-2xl font-black mt-0.5 font-mono text-emerald-600">0/10 關</p></div></div>
+      </div>
+
+      <div class="flex flex-wrap border-b border-slate-200 gap-1 pb-1 text-xs font-bold"><button onclick="switchStudentTab('quest')" id="stuTabBtn-quest" class="px-3.5 py-2 rounded-xl transition bg-white text-slate-900 border border-slate-300 shadow-sm"><i class="fa-solid fa-compass mr-1.5 text-amber-600"></i> 當前任務與數位集章</button><button onclick="openMapModal()" class="px-3.5 py-2 rounded-xl transition bg-white text-slate-800 border border-slate-300 shadow-sm hover:bg-slate-50"><i class="fa-solid fa-map mr-1.5 text-amber-600"></i> 校園總地圖</button><button onclick="switchStudentTab('history')" id="stuTabBtn-history" class="px-3.5 py-2 rounded-xl transition bg-slate-100 text-slate-600 hover:bg-slate-200"><i class="fa-solid fa-list-ol mr-1.5 text-amber-600"></i> 得分履歷</button></div>
+      
+      <div id="stuTab-quest" class="space-y-4">
+        <div class="glass-card p-4 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden">
+          <div class="flex flex-col justify-between gap-2 pb-3 border-b border-slate-200">
+            <div><div class="flex items-center gap-2"><span class="px-2.5 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-extrabold rounded-md shadow-sm">當前指定挑戰關卡</span><span id="stuActiveTimeSlotText" class="px-2.5 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-mono font-bold rounded-md border border-slate-200">時段 1 (13:30~13:40)</span></div><h3 id="stuActiveStationTitle" class="text-xl font-black text-slate-900 mt-2">載入動線中...</h3></div>
+            <div id="stuActiveLocationBadge" class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-50 text-rose-600 border border-slate-200 rounded-xl text-xs font-bold self-start"><i class="fa-solid fa-location-dot text-rose-500 animate-bounce"></i><span id="stuActiveLocationText">地點查詢中...</span></div>
+          </div>
+        </div>
+
+        <div class="glass-card p-4 rounded-3xl shadow-sm space-y-3 border border-slate-200">
+          <div><h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-stamp text-amber-500"></i> 10 大關卡數位闖關集章卡 (A~J)</h3><p class="text-[11px] text-slate-500 mt-0.5">關主上傳成績後此處將自動蓋上專屬通關章</p></div>
+          <div class="space-y-1 bg-slate-50 p-2.5 rounded-2xl border border-slate-200"><div class="flex justify-between items-center text-xs font-bold"><span class="text-slate-500 text-[11px]">通關印章收集進度</span><span id="stuStampProgressText" class="text-amber-600 font-black text-[11px]">0% (0/10關)</span></div><div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden"><div id="stuStampProgressBar" class="bg-amber-400 h-2.5 rounded-full transition-all duration-700 w-0"></div></div></div>
+          <div id="stuStampGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-0.5"></div>
+        </div>
+
+        <div id="studentMyAlertsBox" class="glass-card p-4 rounded-3xl shadow-sm space-y-2 border border-slate-200 hidden">
+          <h3 class="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200"><i class="fa-solid fa-bullhorn text-rose-600"></i> 本隊求助事件處置回覆狀況</h3>
+          <div id="studentMyAlertsList" class="space-y-2"></div>
+        </div>
+
+        <div class="glass-card p-4 rounded-3xl shadow-sm space-y-3 border border-slate-200"><div><h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-route text-amber-500"></i> 本隊 13:30~15:40 完整時間對照表</h3><p class="text-[11px] text-slate-500">請嚴格依照時間前往指定關卡進行挑戰</p></div><div id="routeStepper" class="space-y-2"></div></div>
+      </div>
+
+      <div id="stuTab-history" class="glass-card p-4 rounded-3xl shadow-sm hidden space-y-3 border border-slate-200"><h3 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2 pb-2 border-b border-slate-200"><i class="fa-solid fa-list-check text-amber-600"></i> 本隊伍過關與得分紀錄履歷</h3><div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200"><tr><th class="px-4 py-2.5 whitespace-nowrap">通關時間</th><th class="px-4 py-2.5 whitespace-nowrap">關卡名稱</th><th class="px-4 py-2.5 text-right whitespace-nowrap">得分</th></tr></thead><tbody id="studentLogsTableBody" class="divide-y divide-slate-200"></tbody></table></div></div>
+    </section>
   </main>
 
-  <footer class="glass-card border-t border-slate-800 py-4 text-center text-slate-500 text-xs mt-auto">
-    <p>臺中市立新社高級中學 大地遊戲與校歌競賽系統 &copy; 2026</p>
-  </footer>
+  <div id="chatWidgetBtn" onclick="toggleChatModal()" class="fixed bottom-5 right-5 z-[90] w-14 h-14 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-full shadow-2xl border-2 border-amber-300 flex items-center justify-center text-xl cursor-pointer transition transform active:scale-95">
+    <i class="fa-solid fa-comments"></i>
+    <span id="chatBadgeDot" class="hidden absolute top-0 right-0 w-4 h-4 bg-rose-600 rounded-full border-2 border-white animate-pulse"></span>
+  </div>
+
+  <div id="chatModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[150] hidden items-center justify-center p-2 sm:p-4">
+    <div class="bg-white rounded-3xl max-w-3xl w-full shadow-2xl overflow-hidden border border-slate-200 flex flex-col h-[580px]">
+      <div class="bg-slate-100 text-slate-900 p-3.5 flex justify-between items-center border-b border-slate-200 shrink-0">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-comments text-amber-600 text-lg"></i>
+          <h3 class="font-extrabold text-sm sm:text-base text-slate-900">大會即時對話中心</h3>
+        </div>
+        <button onclick="toggleChatModal()" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center cursor-pointer transition"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="flex-1 flex overflow-hidden min-h-0 bg-slate-50">
+        <div class="w-48 sm:w-60 border-r border-slate-200 bg-white flex flex-col shrink-0">
+          <div class="p-2.5 bg-slate-100 border-b border-slate-200 text-xs font-extrabold text-slate-700 flex items-center justify-between">
+            <span>💬 頻道與聊天室</span>
+            <span class="text-[10px] text-slate-500 font-normal">時間排序</span>
+          </div>
+          <div id="chatRoomButtonContainer" class="flex-1 overflow-y-auto p-1.5 space-y-1">
+          </div>
+        </div>
+
+        <div class="flex-1 flex flex-col bg-white min-w-0">
+          <div class="p-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-2 min-w-0">
+              <span id="activeRoomBadge" class="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 font-black text-xs truncate shrink-0">📌 全體廣播</span>
+            </div>
+          </div>
+
+          <div id="chatMessagesContainer" class="p-3 flex-1 overflow-y-auto space-y-2.5 bg-slate-50/50">
+          </div>
+
+          <div class="p-2.5 bg-white border-t border-slate-200 flex gap-2 shrink-0">
+            <input type="text" id="chatInputText" onkeydown="if(event.key==='Enter') sendChatMessage()" placeholder="輸入訊息..." class="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs bg-white text-slate-900 outline-none focus:border-amber-500">
+            <button id="btnSendChat" onclick="sendChatMessage()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black rounded-xl text-xs shadow shrink-0 flex items-center justify-center min-w-[65px]">發送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="loginModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-center justify-center p-3.5 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl overflow-hidden border border-slate-200 my-auto">
+      <div class="bg-slate-100 text-slate-900 p-5 text-center relative border-b border-slate-200">
+        <div class="w-12 h-12 rounded-2xl bg-white mx-auto mb-2 flex items-center justify-center border border-slate-200 shadow-sm overflow-hidden p-1">
+          <img src="https://sshs.tc.edu.tw/var/file/69/1069/msys_1069_413586_22128.png" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="新社高中校徽" class="w-full h-full object-contain">
+          <div class="w-full h-full bg-amber-100 hidden items-center justify-center text-amber-600 rounded-xl">
+            <i class="fa-solid fa-shield-halved text-xl"></i>
+          </div>
+        </div>
+        <h3 class="text-base font-extrabold text-slate-900">系統帳號登入</h3>
+        <p class="text-xs text-slate-500 mt-0.5">請輸入您的帳號與密碼進行驗證 (需完全符合大小寫)</p>
+      </div>
+      <form onsubmit="handleLoginSubmit(event)" class="p-5 space-y-3.5">
+        <div class="space-y-1"><label class="block text-xs font-bold text-slate-700">帳號 (Username)：</label><input type="text" id="loginUsernameInput" placeholder="例如：admin, A, 401A" required autocomplete="off" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 bg-white outline-none focus:border-amber-500"></div>
+        <div class="space-y-1"><label class="block text-xs font-bold text-slate-700">密碼 (Password)：</label><input type="password" id="loginPasswordInput" placeholder="請輸入密碼" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-mono outline-none bg-white text-slate-900 focus:border-amber-500"></div>
+        <button id="btnLoginSubmit" type="submit" class="btn-touch w-full py-3 mt-1 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black rounded-xl shadow transition text-xs sm:text-sm">登入系統</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="emergencyModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[130] hidden items-center justify-center p-3.5 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl overflow-hidden border-2 border-rose-600 my-auto">
+      <div class="bg-rose-600 text-white p-5 text-center relative">
+        <i class="fa-solid fa-triangle-exclamation text-2xl text-amber-300 mb-1 animate-bounce"></i>
+        <h3 class="text-base font-extrabold text-white">緊急求助與通報</h3>
+        <p class="text-xs text-rose-100 mt-0.5">通報會庫存並同步至大會控制台</p>
+      </div>
+      <div class="p-5 space-y-3.5">
+        <div class="space-y-1"><label class="block text-xs font-bold text-slate-700">詳細狀況說明：</label><textarea id="emergencyMessageInput" rows="3" placeholder="例如：有學生不慎擦傷，需要醫藥箱支援..." class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs outline-none bg-white text-slate-900"></textarea></div>
+        <div class="flex gap-2 pt-1"><button onclick="closeEmergencyModal()" class="btn-touch flex-1 py-2.5 bg-slate-100 border border-slate-300 text-slate-700 font-bold rounded-xl text-xs">取消</button><button id="btnSubmitSos" onclick="submitEmergencyAlert()" class="btn-touch flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow transition text-xs flex items-center justify-center gap-1.5"><i class="fa-solid fa-paper-plane"></i> 發送求助</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[160] hidden items-center justify-center p-3.5">
+    <div class="bg-white rounded-3xl max-w-xs w-full p-5 text-center space-y-3.5 shadow-2xl border border-slate-200 my-auto">
+      <div class="w-11 h-11 rounded-2xl bg-amber-500/10 text-amber-600 border border-amber-500/20 flex items-center justify-center mx-auto text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <h3 class="font-extrabold text-base text-slate-900">系統確認提示</h3>
+      <p id="confirmModalMsg" class="text-xs text-slate-600 font-medium"></p>
+      <div class="flex gap-2 pt-1"><button onclick="closeConfirmModal(false)" class="btn-touch flex-1 py-2 bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs rounded-xl">取消</button><button onclick="closeConfirmModal(true)" class="btn-touch flex-1 py-2 bg-rose-600 text-white font-bold text-xs rounded-xl shadow">確認執行</button></div>
+    </div>
+  </div>
+
+  <div id="resolveAlertModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[135] hidden items-center justify-center p-3.5 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl overflow-hidden border border-slate-200 my-auto">
+      <div class="bg-slate-100 text-slate-900 p-4 text-center relative border-b border-slate-200"><i class="fa-solid fa-clipboard-check text-2xl text-amber-600 mb-1"></i><h3 class="text-base font-extrabold text-slate-900">處置說明與進度更新</h3></div>
+      <div class="p-4 space-y-3">
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs space-y-1"><p><span class="font-bold text-amber-600">通報者：</span><span id="resModalStation" class="font-bold text-slate-900"></span></p><p><span class="font-bold text-amber-600">狀況說明：</span><span id="resModalMsg" class="text-slate-700"></span></p></div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold text-slate-700">處理狀態切換：</label>
+          <select id="resModalStatusSelect" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 bg-white outline-none">
+            <option value="PENDING">⚠️ 處理中 / 現場跟進中</option>
+            <option value="RESOLVED">✅ 已處置完結 (核銷)</option>
+          </select>
+        </div>
+        <div class="space-y-1"><label class="block text-xs font-bold text-slate-700">處置狀況與進度說明：</label><textarea id="resolutionNoteInput" rows="3" placeholder="例如：已派教官帶醫藥箱前往現場包紮..." class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs outline-none bg-white text-slate-900"></textarea></div>
+        <div class="flex gap-2 pt-1"><button onclick="closeResolveAlertModal()" class="btn-touch flex-1 py-2.5 bg-slate-100 border border-slate-300 text-slate-700 font-bold rounded-xl text-xs">取消</button><button id="btnConfirmResolve" onclick="confirmResolveAlert()" class="btn-touch flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl shadow text-xs"><i class="fa-solid fa-check mr-1"></i> 儲存進度</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="qrScannerModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[140] hidden items-center justify-center p-3.5">
+    <div class="bg-white rounded-3xl max-w-xs w-full p-4 text-center space-y-3 shadow-2xl border border-slate-200">
+      <h3 class="font-extrabold text-sm text-slate-900 flex items-center justify-center gap-1.5"><i class="fa-solid fa-camera text-amber-600"></i> 相機 QR Code 簽到</h3>
+      <div id="qrReader" class="w-full max-w-[240px] mx-auto overflow-hidden rounded-2xl border border-slate-300 min-h-[200px] bg-slate-100"></div>
+      <p id="qrScanStatus" class="text-xs text-slate-500 font-bold">請將鏡頭對準隊伍出示之 QR Code</p>
+      <button onclick="closeQrScannerModal()" class="btn-touch w-full py-2 bg-slate-100 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl">關閉相機</button>
+    </div>
+  </div>
+
+  <div id="teamQrModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[140] hidden items-center justify-center p-3.5">
+    <div class="bg-white rounded-3xl max-w-xs w-full p-5 text-center space-y-3.5 shadow-2xl border border-slate-200">
+      <h3 class="font-extrabold text-base text-slate-900 flex items-center justify-center gap-1.5"><i class="fa-solid fa-qrcode text-amber-600"></i> 隊伍專屬 QR 碼</h3>
+      <div id="qrContainer" class="p-3 bg-white rounded-2xl border border-slate-300 inline-block shadow-inner"><img id="qrImage" src="" alt="Team QR" class="w-40 h-40 mx-auto"></div>
+      <p id="teamQrName" class="font-black text-slate-900 text-sm"></p>
+      <button onclick="closeTeamQrModal()" class="btn-touch w-full py-2 bg-slate-100 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl">關閉</button>
+    </div>
+  </div>
+
+  <div id="mapModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[140] hidden items-center justify-center p-2.5 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-4xl w-full shadow-2xl overflow-hidden my-auto flex flex-col max-h-[90vh] border border-slate-200">
+      <div class="bg-slate-100 text-slate-900 p-3.5 flex justify-between items-center shrink-0 border-b border-slate-200">
+        <h3 class="font-bold text-sm flex items-center gap-2 text-slate-900"><i class="fa-solid fa-map-location-dot text-amber-600"></i> 校園闖關平面地圖</h3>
+        <button onclick="closeMapModal()" class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-2 overflow-auto flex-grow relative flex items-center justify-center bg-slate-100 min-h-[280px]">
+        <img id="campusMapImg" src="map.png" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'400\' viewBox=\'0 0 600 400\'><rect width=\'600\' height=\'400\' fill=\'%23f1f5f9\'/><text x=\'50%\' y=\'45%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23d97706\' font-size=\'22\' font-weight=\'bold\'>🗺️ 新社高中 校園闖關平面圖</text><text x=\'50%\' y=\'58%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%2364748b\' font-size=\'14\'>（請將地圖圖檔命名為 map.png 置於專案同目錄）</text></svg>';" alt="Campus Map" class="max-w-full h-auto rounded-xl shadow-md border border-slate-200 object-contain">
+      </div>
+      <div class="p-3 bg-slate-50 border-t border-slate-200 text-xs flex items-center justify-between shrink-0"><span class="font-bold text-slate-600 text-[11px]">🗺️ 校園平面導覽圖</span><button onclick="closeMapModal()" class="px-3.5 py-1.5 bg-slate-200 text-slate-800 border border-slate-300 rounded-lg font-bold cursor-pointer">關閉</button></div>
+    </div>
+  </div>
+
+  <footer class="bg-white text-slate-500 text-xs py-3 text-center border-t border-slate-200"><p>臺中市立新社高級中學 大地遊戲闖關導引系統 &copy; 2026</p></footer>
 
   <script>
     const SUPABASE_URL = 'https://xfevmqguantotrkatvoa.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_uQcbXqsRGxU-uLRagPtwHQ_6SSAUT59';
-
+    
     let supabaseClient = null;
     try {
       if (typeof window.supabase !== 'undefined') {
-        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+          auth: { persistSession: false },
+          realtime: { autoConnect: false }
+        });
       }
-    } catch(e){}
+    } catch(err) {
+      console.error('Supabase 初始化失敗:', err);
+    }
 
-    const TEAM_NAMES = ['401A', '401B', '402A', '402B', '403A', '403B', '404A', '404B', '405A', '405B', '406A', '406B', '407A', '407B', '408A', '408B', '409A', '409B', '410A', '410B'];
-    const ALL_CLASSES = ['401 班','402 班','403 班','404 班','405 班','406 班','407 班','408 班','409 班','410 班'];
-    const STATIONS = [
-      { id: 'A', name: 'A - 接力猜一猜' }, { id: 'B', name: 'B - 字首造詞' }, { id: 'C', name: 'C - 比手畫腳' },
-      { id: 'D', name: 'D - 你畫我猜' }, { id: 'E', name: 'E - 成雙成對' }, { id: 'F', name: 'F - 圈地稱王' },
-      { id: 'G', name: 'G - 一叫到位' }, { id: 'H', name: 'H - 跳跳虎' }, { id: 'I', name: 'I - 圖書館冒險' },
-      { id: 'J', name: 'J - 筆劃接力賽' }
-    ];
+    let currentUser = null;
+    let clientIp = '127.0.0.1';
+    let isActionPending = false;
+    let localMessages = [];
+    let activeChatRoom = 'ALL';
+    let lastReadTimeMap = {};
 
-    let currentStudentTeam = '401A';
     let selectedResultType = 'WIN';
     let selectedFlatteryScore = 0;
-    let localTeams = TEAM_NAMES.map(name => ({ team_name: name, total_score: 0 }));
+
+    const TIME_SLOTS = ['13:30~13:40','13:45~13:55','14:00~14:10','14:15~14:25','14:30~14:40','14:45~14:55','15:00~15:10','15:15~15:25','15:30~15:40'];
+    const STATIONS = [
+      { id: 'A', name: 'A - 接力猜一猜', normalLocation: '靜思樓穿堂', rainLocation: '總務處後方' },
+      { id: 'B', name: 'B - 字首造詞', normalLocation: '國教中心一樓', rainLocation: '活動中心(前)' },
+      { id: 'C', name: 'C - 比手畫腳', normalLocation: '新龍崗', rainLocation: '活動中心(後)' },
+      { id: 'D', name: 'D - 你畫我猜', normalLocation: '餐廳', rainLocation: '餐廳' },
+      { id: 'E', name: 'E - 成雙成對', normalLocation: '活動中心', rainLocation: '活動中心舞台' },
+      { id: 'F', name: 'F - 圈地稱王', normalLocation: '遮雨棚', rainLocation: '遮雨棚' },
+      { id: 'G', name: 'G - 一叫到位', normalLocation: '司令台', rainLocation: '勤學樓川堂' },
+      { id: 'H', name: 'H - 跳跳虎', normalLocation: '學務處', rainLocation: '學務處前方' },
+      { id: 'I', name: 'I - 圖書館冒險', normalLocation: '圖書館', rainLocation: '學務處後方' },
+      { id: 'J', name: 'J - 筆劃接力賽', normalLocation: '總務處', rainLocation: '總務處前方' }
+    ];
+
+    const TEAM_ROUTES = {
+      '401A': ['A','B','C','D','E','F','G','H','I'],
+      '401B': ['J','I','H','G','F','E','D','C','B'],
+      '402A': ['B','C','D','E','F','G','H','I','J'],
+      '402B': ['A','J','I','H','G','F','E','D','C'],
+      '403A': ['C','D','E','F','G','H','I','J','A'],
+      '403B': ['B','A','J','I','H','G','F','E','D'],
+      '404A': ['D','E','F','G','H','I','J','A','B'],
+      '404B': ['C','B','A','J','I','H','G','F','E'],
+      '405A': ['E','F','G','H','I','J','A','B','C'],
+      '405B': ['D','C','B','A','J','I','H','G','F'],
+      '406A': ['F','G','H','I','J','A','B','C','D'],
+      '406B': ['E','D','C','B','A','J','I','H','G'],
+      '407A': ['G','H','I','J','A','B','C','D','E'],
+      '407B': ['F','E','D','C','B','A','J','I','H'],
+      '408A': ['H','I','J','A','B','C','D','E','F'],
+      '408B': ['G','F','E','D','C','B','A','J','I'],
+      '409A': ['I','J','A','B','C','D','E','F','G'],
+      '409B': ['H','G','F','E','D','C','B','A','J'],
+      '410A': ['J','A','B','C','D','E','F','G','H'],
+      '410B': ['I','H','G','F','E','D','C','B','A']
+    };
+    const TEAM_NAMES = ['401A', '401B', '402A', '402B', '403A', '403B', '404A', '404B', '405A', '405B', '406A', '406B', '407A', '407B', '408A', '408B', '409A', '409B', '410A', '410B'];
+    const STATION_IDS = ['A','B','C','D','E','F','G','H','I','J'];
+
+    let localTeams = TEAM_NAMES.map(name => ({ team_name: name, total_score: 0, lat: null, lng: null, gps_updated_at: null }));
     let localLogs = [];
-    let songDrawState = { assigned: {}, available: [1,2,3,4,5,6,7,8,9,10] };
-
-    function showToast(msg, type = 'info') {
-      const container = document.getElementById('toastContainer');
-      if (!container) return;
-      const toast = document.createElement('div');
-      let bgClass = 'bg-slate-800 text-white border-slate-700 shadow-xl';
-      if (type === 'success') bgClass = 'bg-emerald-600 text-white border-emerald-500 shadow-xl';
-      else if (type === 'error') bgClass = 'bg-rose-600 text-white border-rose-500 shadow-xl';
-
-      toast.className = `px-4 py-2.5 rounded-2xl border text-xs font-semibold pointer-events-auto flex items-center justify-between gap-3 transition-all duration-300 transform translate-y-2 opacity-0 w-full ${bgClass}`;
-      toast.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()" class="text-xs opacity-60 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>`;
-      container.appendChild(toast);
-      requestAnimationFrame(() => { toast.classList.remove('translate-y-2', 'opacity-0'); });
-      setTimeout(() => { toast.remove(); }, 3000);
-    }
-
-    function switchSystemModule(modName) {
-      ['song', 'student', 'station', 'admin'].forEach(m => {
-        const mod = document.getElementById('module-' + m);
-        const btn = document.getElementById('navBtn-' + m);
-        if (mod) mod.classList.toggle('hidden', m !== modName);
-        if (btn) {
-          if (m === modName) btn.className = 'px-3 py-1.5 rounded-xl transition bg-purple-600 text-white font-black';
-          else btn.className = 'px-3 py-1.5 rounded-xl transition text-slate-400 hover:text-white';
-        }
-      });
-    }
-
-    // 1. 校歌抽籤模組邏輯
-    async function fetchSongDrawState() {
-      if (!supabaseClient) return;
-      try {
-        const { data } = await supabaseClient.from('system_config').select('*').eq('key', 'school_song_draw_state');
-        if (data && data.length > 0 && data[0].value) {
-          songDrawState = JSON.parse(data[0].value);
-        }
-      } catch(e){}
-      renderSongDrawCards();
-    }
-
-    function renderSongDrawCards() {
-      const grid = document.getElementById('classCardsGrid');
-      const assignedMap = songDrawState.assigned || {};
-      if (grid) {
-        grid.innerHTML = ALL_CLASSES.map(cls => {
-          const slot = assignedMap[cls];
-          const isDrawn = slot !== undefined && slot !== null;
-          return `
-            <div class="p-4 rounded-2xl border text-center transition flex flex-col justify-between h-32 ${isDrawn ? 'bg-purple-900/40 border-purple-500/60 shadow-lg' : 'bg-slate-900/50 border-slate-800 opacity-70'}">
-              <span class="text-xs font-bold text-slate-400">${cls}</span>
-              <div class="py-1">
-                ${isDrawn ? `<span class="text-2xl sm:text-3xl font-black font-mono text-amber-400">第 ${slot} 順位</span>` : `<span class="text-xs font-bold text-slate-500">未抽籤</span>`}
-              </div>
-              <span class="text-[10px] ${isDrawn ? 'text-purple-300 font-bold' : 'text-slate-600'}">${isDrawn ? '✓ 已確定' : '等候開獎'}</span>
-            </div>
-          `;
-        }).join('');
-      }
-    }
-
-    async function startBatchDraw() {
-      if (!supabaseClient) { showToast('無網路連線！', 'error'); return; }
-      await fetchSongDrawState();
-      const assignedMap = songDrawState.assigned || {};
-      const remainingClasses = ALL_CLASSES.filter(c => !assignedMap[c]);
-
-      if (remainingClasses.length === 0) {
-        showToast('全校 10 個班級皆已完成抽籤！', 'info');
-        return;
-      }
-
-      let step = 0;
-      const interval = setInterval(async () => {
-        step++;
-        const randSlot = Math.floor(Math.random() * 10) + 1;
-        document.getElementById('songHeroMainText').innerHTML = `<span class="text-amber-400 font-mono animate-roll">🎲 搖籤中... ${randSlot}</span>`;
-
-        if (step >= 15) {
-          clearInterval(interval);
-          await executeBatchDraw(remainingClasses);
-        }
-      }, 70);
-    }
-
-    async function executeBatchDraw(undrawnClasses) {
-      try {
-        const { data } = await supabaseClient.from('system_config').select('*').eq('key', 'school_song_draw_state');
-        let state = { assigned: {}, available: [1,2,3,4,5,6,7,8,9,10] };
-        if (data && data.length > 0 && data[0].value) {
-          try { state = JSON.parse(data[0].value); } catch(e){}
-        }
-
-        const shuffledSlots = [...state.available].sort(() => Math.random() - 0.5);
-
-        undrawnClasses.forEach((cls) => {
-          if (shuffledSlots.length > 0) {
-            const slot = shuffledSlots.pop();
-            state.assigned[cls] = slot;
-            const availIdx = state.available.indexOf(slot);
-            if (availIdx !== -1) state.available.splice(availIdx, 1);
-          }
-        });
-
-        await saveSongDrawStateToCloud(state);
-
-        if (typeof confetti === 'function') {
-          confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
-        }
-
-        document.getElementById('songHeroMainText').innerHTML = `🎉 全校抽籤完成！`;
-        showToast('🎉 一鍵全校自動抽籤完畢！', 'success');
-      } catch(e) {
-        showToast('抽籤失敗', 'error');
-      }
-    }
-
-    async function startSingleClassDraw() {
-      const clsName = document.getElementById('singleClassSelect').value;
-      if (!clsName) return;
-
-      await fetchSongDrawState();
-      if (songDrawState.assigned && songDrawState.assigned[clsName]) {
-        showToast(`${clsName} 已完成抽籤：第 ${songDrawState.assigned[clsName]} 順位`, 'info');
-        return;
-      }
-
-      if (!songDrawState.available || songDrawState.available.length === 0) {
-        showToast('登場號碼池已空！', 'error');
-        return;
-      }
-
-      let step = 0;
-      const interval = setInterval(async () => {
-        step++;
-        const randSlot = Math.floor(Math.random() * 10) + 1;
-        document.getElementById('songHeroMainText').innerHTML = `<span class="text-amber-400 font-mono animate-roll">🎲 ${clsName} 搖籤中... ${randSlot}</span>`;
-
-        if (step >= 12) {
-          clearInterval(interval);
-          await executeSingleDraw(clsName);
-        }
-      }, 70);
-    }
-
-    async function executeSingleDraw(clsName) {
-      try {
-        const { data } = await supabaseClient.from('system_config').select('*').eq('key', 'school_song_draw_state');
-        let state = { assigned: {}, available: [1,2,3,4,5,6,7,8,9,10] };
-        if (data && data.length > 0 && data[0].value) {
-          try { state = JSON.parse(data[0].value); } catch(e){}
-        }
-
-        const randIdx = Math.floor(Math.random() * state.available.length);
-        const drawnSlot = state.available[randIdx];
-        state.available.splice(randIdx, 1);
-
-        if (!state.assigned) state.assigned = {};
-        state.assigned[clsName] = drawnSlot;
-
-        await saveSongDrawStateToCloud(state);
-
-        document.getElementById('songHeroMainText').innerHTML = `🎉 ${clsName} 抽出第 <span class="text-amber-400 font-mono">${drawnSlot}</span> 順位！`;
-        showToast(`🎉 恭喜！${clsName} 抽出第 ${drawnSlot} 順位登場！`, 'success');
-      } catch(e) { showToast('抽籤失敗', 'error'); }
-    }
-
-    async function saveSongDrawStateToCloud(state) {
-      songDrawState = state;
-      await supabaseClient.from('system_config').upsert({
-        key: 'school_song_draw_state',
-        value: JSON.stringify(state),
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'key' });
-
-      renderSongDrawCards();
-    }
-
-    async function resetSongDrawState() {
-      if (!supabaseClient) return;
-      const initialState = { assigned: {}, available: [1,2,3,4,5,6,7,8,9,10] };
-      try {
-        await saveSongDrawStateToCloud(initialState);
-        document.getElementById('songHeroMainText').innerText = '🎲 準備開始抽籤';
-        showToast('已重置全校校歌抽籤號碼池！', 'success');
-      } catch(e) { showToast('重置失敗', 'error'); }
-    }
+    let localAlerts = [];
+    let localBroadcasts = [];
+    let currentAdminTab = 'leaderboard';
+    let pendingResolveAlertId = null;
+    let pendingConfirmAction = null;
+    let isRainPlanEnabled = false;
+    let gpsLeafletMap = null;
+    let gpsLeafletTileLayer = null;
+    let gpsLeafletMarkers = {};
+    let gpsTrackPolyline = null;
+    let currentActiveTrackTeam = null;
+    let gpsWatchId = null;
+    let html5QrCode = null;
+    let currentMapStyle = 'street';
+    let stationTimerSeconds = 300;
+    let stationTimerInterval = null;
+    let isStationTimerRunning = false;
 
     function setResultType(type) {
       selectedResultType = type;
@@ -538,171 +692,1627 @@
       if (!btnWin || !btnLoss) return;
 
       if (selectedResultType === 'WIN') {
-        btnWin.className = "btn-touch py-2.5 px-3 bg-amber-500 text-slate-950 rounded-xl font-black text-xs shadow border-2 border-amber-600 flex items-center justify-center gap-1.5";
-        btnLoss.className = "btn-touch py-2.5 px-3 bg-slate-100 text-slate-600 border border-slate-300 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5";
+        btnWin.className = "btn-touch py-2.5 px-3 bg-amber-500 text-slate-950 rounded-xl font-black text-xs active:scale-95 transition shadow border-2 border-amber-600 flex items-center justify-center gap-1.5";
+        btnLoss.className = "btn-touch py-2.5 px-3 bg-slate-100 text-slate-600 border border-slate-300 rounded-xl font-bold text-xs active:scale-95 transition flex items-center justify-center gap-1.5";
         if (scopeLabel) scopeLabel.innerText = "(勝隊加分: +0, +50, +100)";
         
         const winFlatteryOpts = [0, 50, 100];
         if (flatteryGroup) {
-          flatteryGroup.innerHTML = winFlatteryOpts.map(pts => `
-            <button type="button" onclick="setFlatteryScore(${pts})" class="btn-touch py-2 px-1 ${selectedFlatteryScore === pts ? 'bg-amber-400 border-2 border-amber-600 text-slate-950 font-black shadow' : 'bg-slate-50 border border-slate-300 text-slate-700 font-bold'} rounded-xl text-xs transition text-center flex flex-col items-center justify-center">
-              <span class="text-xs font-black">+${pts} 分</span>
-            </button>
-          `).join('');
+          flatteryGroup.innerHTML = winFlatteryOpts.map(pts => {
+            const isActive = selectedFlatteryScore === pts;
+            return `
+              <button type="button" onclick="setFlatteryScore(${pts})" class="btn-touch py-2 px-1 ${isActive ? 'bg-amber-400 border-2 border-amber-600 text-slate-950 font-black shadow' : 'bg-slate-50 border border-slate-300 text-slate-700 font-bold'} rounded-xl text-xs transition text-center flex flex-col items-center justify-center">
+                <span class="text-xs font-black">+${pts} 分</span>
+                <span class="text-[9px] opacity-80">${pts === 0 ? '(無諂媚)' : '(諂媚加分)'}</span>
+              </button>
+            `;
+          }).join('');
         }
         if (scoreInput) scoreInput.value = 1000 + selectedFlatteryScore;
       } else {
-        btnWin.className = "btn-touch py-2.5 px-3 bg-slate-100 text-slate-600 border border-slate-300 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5";
-        btnLoss.className = "btn-touch py-2.5 px-3 bg-slate-800 text-amber-400 rounded-xl font-black text-xs shadow border-2 border-slate-900 flex items-center justify-center gap-1.5";
+        btnWin.className = "btn-touch py-2.5 px-3 bg-slate-100 text-slate-600 border border-slate-300 rounded-xl font-bold text-xs active:scale-95 transition flex items-center justify-center gap-1.5";
+        btnLoss.className = "btn-touch py-2.5 px-3 bg-slate-800 text-amber-400 rounded-xl font-black text-xs active:scale-95 transition shadow border-2 border-slate-900 flex items-center justify-center gap-1.5";
         if (scopeLabel) scopeLabel.innerText = "(敗隊加分: +0, +150, +250)";
 
         const lossFlatteryOpts = [0, 150, 250];
         if (flatteryGroup) {
-          flatteryGroup.innerHTML = lossFlatteryOpts.map(pts => `
-            <button type="button" onclick="setFlatteryScore(${pts})" class="btn-touch py-2 px-1 ${selectedFlatteryScore === pts ? 'bg-amber-400 border-2 border-amber-600 text-slate-950 font-black shadow' : 'bg-slate-50 border border-slate-300 text-slate-700 font-bold'} rounded-xl text-xs transition text-center flex flex-col items-center justify-center">
-              <span class="text-xs font-black">+${pts} 分</span>
-            </button>
-          `).join('');
+          flatteryGroup.innerHTML = lossFlatteryOpts.map(pts => {
+            const isActive = selectedFlatteryScore === pts;
+            return `
+              <button type="button" onclick="setFlatteryScore(${pts})" class="btn-touch py-2 px-1 ${isActive ? 'bg-amber-400 border-2 border-amber-600 text-slate-950 font-black shadow' : 'bg-slate-50 border border-slate-300 text-slate-700 font-bold'} rounded-xl text-xs transition text-center flex flex-col items-center justify-center">
+                <span class="text-xs font-black">+${pts} 分</span>
+                <span class="text-[9px] opacity-80">${pts === 0 ? '(無諂媚)' : '(諂媚加分)'}</span>
+              </button>
+            `;
+          }).join('');
         }
         if (scoreInput) scoreInput.value = 500 + selectedFlatteryScore;
       }
     }
 
-    async function submitStationScore() {
-      const teamName = document.getElementById('stationTeamSelect').value;
-      const ptsVal = document.getElementById('stationPointsInput').value;
-      const noteVal = document.getElementById('stationNoteInput').value.trim();
+    function normalizeBroadcasts(raw) {
+      if (!Array.isArray(raw)) return [];
+      return raw.map((item, idx) => {
+        if (typeof item === 'string') {
+          return { id: Date.now() + idx, text: item, visible: true };
+        }
+        return {
+          id: item.id || (Date.now() + idx),
+          text: item.text || item.message || '',
+          visible: item.visible !== undefined ? item.visible : true
+        };
+      });
+    }
 
-      if (!teamName || !ptsVal) { showToast('請選擇隊伍與計分！', 'error'); return; }
-      if (!supabaseClient) { showToast('無網路連線！', 'error'); return; }
-
+    async function fetchClientIp() {
       try {
-        const { error } = await supabaseClient.from('score_logs').insert([{
-          station_name: '關主計分台',
-          team_name: teamName,
-          points: parseInt(ptsVal),
-          note: noteVal,
-          created_at: new Date().toISOString()
-        }]);
+        const res = await fetch('https://api.ipify.org?format=json');
+        const data = await res.json();
+        if (data && data.ip) clientIp = data.ip;
+      } catch (e) { clientIp = '127.0.0.1'; }
+    }
 
-        if (error) throw error;
-        showToast(`成功為 ${teamName} 登記 +${ptsVal} 分！`, 'success');
-        document.getElementById('stationNoteInput').value = '';
+    function parseDate(dateStr) {
+      if (!dateStr) return null;
+      if (dateStr instanceof Date) return dateStr;
+      let s = String(dateStr).trim();
+      if (!s) return null;
+      if (/^\d+$/.test(s)) return new Date(Number(s));
+      s = s.replace(' ', 'T');
+      if (!s.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(s)) {
+        s += 'Z';
+      }
+      const d = new Date(s);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    function formatTWTime(dateStr) {
+      if (!dateStr) return '-';
+      try {
+        const d = parseDate(dateStr);
+        if (!d) return '-';
+        return d.toLocaleTimeString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      } catch(e) { return '-'; }
+    }
+    function formatTWDateTime(dateStr) {
+      if (!dateStr) return '-';
+      try {
+        const d = parseDate(dateStr);
+        if (!d) return '-';
+        return d.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      } catch(e) { return '-'; }
+    }
+
+    function getNormalizedRole(role, username) {
+      if (!role) {
+        if (username === 'admin' || username === 'ADMIN') return 'ADMIN';
+        if (STATIONS.some(s => s.id === username.toUpperCase())) return 'STATION';
+        return 'STUDENT';
+      }
+      const r = String(role).toUpperCase();
+      if (r.includes('ADMIN')) return 'ADMIN';
+      if (r.includes('STATION')) return 'STATION';
+      return 'STUDENT';
+    }
+
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      let bgClass = 'bg-white text-slate-900 border-slate-300 shadow-xl';
+      let icon = '<i class="fa-solid fa-circle-info text-amber-500"></i>';
+      if (type === 'success') {
+        bgClass = 'bg-emerald-50 text-emerald-900 border-emerald-300 shadow-xl';
+        icon = '<i class="fa-solid fa-circle-check text-emerald-600"></i>';
+      } else if (type === 'error') {
+        bgClass = 'bg-rose-50 text-rose-900 border-rose-300 shadow-xl';
+        icon = '<i class="fa-solid fa-circle-xmark text-rose-600"></i>';
+      }
+      toast.className = `px-4 py-2.5 rounded-2xl border text-xs font-semibold pointer-events-auto flex items-center justify-between gap-3 transition-all duration-300 transform translate-y-2 opacity-0 w-full ${bgClass}`;
+      toast.innerHTML = `<div class="flex items-center gap-2">${icon}<span>${msg}</span></div><button onclick="this.parentElement.remove()" class="text-xs opacity-60 hover:opacity-100 ml-1"><i class="fa-solid fa-xmark"></i></button>`;
+      container.appendChild(toast);
+      requestAnimationFrame(() => { toast.classList.remove('translate-y-2', 'opacity-0'); });
+      setTimeout(() => {
+        toast.classList.add('opacity-0', '-translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    function getStationLocation(st) {
+      if (!st) return '';
+      let loc = isRainPlanEnabled ? (st.rainLocation || st.normalLocation || '') + ' (雨備)' : (st.normalLocation || '');
+      return loc.replace(/^新社高中\s*-\s*/, '');
+    }
+
+    function getAccountDisplayName(accId) {
+      if (!accId) return '';
+      if (accId === 'ALL') return '📌 全體廣播';
+      if (accId === 'ALL_STATIONS') return '📢 關主群組';
+      if (accId === 'ALL_STUDENTS') return '🎓 學生群組';
+      if (accId === 'ADMIN' || accId === 'admin') return '大會總管理員';
+      const st = STATIONS.find(s => s.id === accId);
+      if (st) return `${st.name} (${getStationLocation(st)})`;
+      return accId;
+    }
+
+    async function toggleRainPlan() {
+      if (!supabaseClient) {
+        showToast('無網路或資料庫連線，無法變更設定！', 'error');
+        return;
+      }
+      isRainPlanEnabled = !isRainPlanEnabled;
+      try {
+        await supabaseClient.from('system_config').upsert(
+          { key: 'rain_plan', value: String(isRainPlanEnabled), updated_at: new Date().toISOString() },
+          { onConflict: 'key' }
+        );
+        updateRainPlanUI();
+        showToast(isRainPlanEnabled ? '已切換為【雨備地點方案】' : '已恢復為【標準場地動線】', 'info');
         refreshData();
-      } catch(e) { showToast('登記失敗！', 'error'); }
-    }
-
-    async function refreshData() {
-      if (!supabaseClient) return;
-      try {
-        const { data: logsData } = await supabaseClient.from('score_logs').select('*').order('created_at', { ascending: false });
-        if (logsData) localLogs = logsData;
-
-        const teamScores = {};
-        TEAM_NAMES.forEach(name => teamScores[name] = 0);
-        localLogs.forEach(l => { if (teamScores[l.team_name] !== undefined) teamScores[l.team_name] += (l.points || 0); });
-
-        localTeams = TEAM_NAMES.map(name => ({ team_name: name, total_score: teamScores[name] || 0 })).sort((a,b) => b.total_score - a.total_score);
-      } catch(e){}
-
-      renderLeaderboard();
-      renderLogs();
-      renderStudentView();
-    }
-
-    function renderLeaderboard() {
-      const tbody = document.getElementById('leaderboardTableBody');
-      if (!tbody) return;
-      tbody.innerHTML = localTeams.map((t, idx) => `
-        <tr class="hover:bg-slate-800/40">
-          <td class="px-4 py-3 text-center font-black text-amber-400">#${idx + 1}</td>
-          <td class="px-4 py-3 font-bold text-white">${t.team_name} 小隊</td>
-          <td class="px-4 py-3 text-right font-black font-mono text-amber-400 text-base">${t.total_score} 分</td>
-        </tr>
-      `).join('');
-    }
-
-    function renderLogs() {
-      const tbody = document.getElementById('logsTableBody');
-      if (!tbody) return;
-      tbody.innerHTML = localLogs.map(l => `
-        <tr class="hover:bg-slate-800/40">
-          <td class="px-3 py-2.5 font-mono text-xs text-slate-400">${new Date(l.created_at).toLocaleTimeString('zh-TW')}</td>
-          <td class="px-3 py-2.5 font-bold text-white">${l.station_name || '-'}</td>
-          <td class="px-3 py-2.5 font-bold text-amber-400">${l.team_name}</td>
-          <td class="px-3 py-2.5 text-right font-black font-mono text-emerald-400">+${l.points}</td>
-          <td class="px-3 py-2.5 text-center"><button onclick="deleteScoreLog(${l.id})" class="px-2 py-1 bg-rose-600/20 hover:bg-rose-600 text-rose-300 border border-rose-500/30 rounded-lg text-xs font-bold transition">刪除</button></td>
-        </tr>
-      `).join('');
-    }
-
-    async function deleteScoreLog(id) {
-      if (!supabaseClient) return;
-      try {
-        await supabaseClient.from('score_logs').delete().eq('id', id);
-        showToast('已刪除得分紀錄', 'success');
-        refreshData();
-      } catch(e){}
-    }
-
-    function renderStudentView() {
-      const myTeam = localTeams.find(t => t.team_name === currentStudentTeam) || { total_score: 0 };
-      const myLogs = localLogs.filter(l => l.team_name === currentStudentTeam);
-      const scoreEl = document.getElementById('studentTotalScore');
-      if (scoreEl) scoreEl.innerText = myTeam.total_score || 0;
-
-      const grid = document.getElementById('stuStampGrid');
-      if (grid) {
-        grid.innerHTML = STATIONS.map(st => {
-          const isPassed = myLogs.some(l => l.station_name && l.station_name.includes(st.id));
-          return `
-            <div class="stamp-badge ${isPassed ? 'completed bg-emerald-50 border-emerald-300' : 'bg-slate-50 border-slate-200'} p-3 rounded-2xl border text-center flex flex-col justify-between h-20 shadow-sm">
-              <span class="font-extrabold text-xs text-slate-800">${st.name}</span>
-              <span class="text-[10px] ${isPassed ? 'text-emerald-600 font-bold' : 'text-slate-400'}">${isPassed ? '已通過' : '未挑戰'}</span>
-            </div>
-          `;
-        }).join('');
+      } catch(e) {
+        showToast('雨備設定更新失敗，請檢查網路連線', 'error');
       }
     }
 
-    function switchStudentTeam(teamName) {
-      currentStudentTeam = teamName;
-      const titleEl = document.getElementById('studentTeamTitle');
-      if (titleEl) titleEl.innerText = `${teamName} 小隊`;
-      renderStudentView();
+    function updateRainPlanUI() {
+      const btn = document.getElementById('rainPlanToggleBtn');
+      const badge = document.getElementById('rainPlanStatusBadge');
+      if (btn) {
+        if (isRainPlanEnabled) {
+          btn.className = "btn-touch px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition shadow flex items-center gap-1.5";
+          btn.innerHTML = `<i class="fa-solid fa-toggle-on text-base"></i> 恢復標準場地`;
+        } else {
+          btn.className = "btn-touch px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition shadow flex items-center gap-1.5";
+          btn.innerHTML = `<i class="fa-solid fa-toggle-off text-base text-amber-400"></i> 啟動雨備地點`;
+        }
+      }
+      if (badge) {
+        if (isRainPlanEnabled) {
+          badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300";
+          badge.innerHTML = `<i class="fa-solid fa-cloud-showers-heavy text-amber-600"></i> <span>目前狀態：已啟動雨備地點方案</span>`;
+        } else {
+          badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-800 border border-slate-200";
+          badge.innerHTML = `<i class="fa-solid fa-sun text-amber-500"></i> <span>目前狀態：晴天標準場地動線</span>`;
+        }
+      }
+    }
+
+    async function addBroadcastMessage() {
+      const input = document.getElementById('broadcastInput');
+      const msg = input.value.trim();
+      if (!msg) { showToast('請輸入廣播內容！', 'error'); return; }
+      const newItem = { id: Date.now(), text: msg, visible: true };
+      localBroadcasts.push(newItem);
+      input.value = '';
+      await saveBroadcasts();
+      showToast('已新增廣播消息', 'success');
+    }
+
+    async function toggleBroadcastVisibility(index) {
+      if (index >= 0 && index < localBroadcasts.length) {
+        localBroadcasts[index].visible = !localBroadcasts[index].visible;
+        await saveBroadcasts();
+        showToast(localBroadcasts[index].visible ? '已啟用並顯示該廣播' : '已隱藏該條廣播', 'info');
+      }
+    }
+
+    async function removeBroadcastMessage(index) {
+      if (index >= 0 && index < localBroadcasts.length) {
+        localBroadcasts.splice(index, 1);
+        await saveBroadcasts();
+        showToast('已移除指定廣播條目', 'info');
+      }
+    }
+
+    async function clearAllBroadcastMessages() {
+      localBroadcasts = [];
+      await saveBroadcasts();
+      showToast('已清空全部廣播跑馬燈', 'info');
+    }
+
+    async function saveBroadcasts() {
+      if (!supabaseClient) {
+        showToast('無網路或連線，無法儲存廣播！', 'error');
+        return;
+      }
+      try {
+        await supabaseClient.from('system_config').upsert({ key: 'broadcast_list', value: JSON.stringify(localBroadcasts), updated_at: new Date().toISOString() }, { onConflict: 'key' });
+        renderBroadcastList();
+        updateMarqueeBanner();
+      } catch(e) {
+        showToast('廣播儲存失敗，請檢查網路連線', 'error');
+      }
+    }
+
+    function renderBroadcastList() {
+      const container = document.getElementById('activeBroadcastsContainer');
+      if (!container) return;
+      if (localBroadcasts.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-500 font-medium py-1">目前無廣播跑馬燈項目</p>`;
+        return;
+      }
+      container.innerHTML = localBroadcasts.map((b, idx) => {
+        const textStr = typeof b === 'object' ? b.text : b;
+        const isVisible = typeof b === 'object' ? b.visible : true;
+        return `
+          <div class="flex items-center justify-between p-2.5 ${isVisible ? 'bg-amber-50 border-amber-300' : 'bg-slate-100 border-slate-200 opacity-75'} rounded-xl border text-xs shadow-sm gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="px-2 py-0.5 ${isVisible ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-200 text-slate-600 border-slate-300'} border font-bold rounded-md text-[10px] shrink-0">
+                ${isVisible ? '● 播放中' : '○ 已隱藏'}
+              </span>
+              <span class="font-bold truncate ${isVisible ? 'text-slate-900' : 'text-slate-500 line-through'}">${textStr}</span>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="toggleBroadcastVisibility(${idx})" class="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold rounded-lg text-[11px] transition cursor-pointer flex items-center gap-1">
+                <i class="fa-solid ${isVisible ? 'fa-eye-slash text-slate-500' : 'fa-eye text-amber-600'}"></i>
+                ${isVisible ? '隱藏' : '顯示'}
+              </button>
+              <button onclick="removeBroadcastMessage(${idx})" class="px-2.5 py-1 bg-white hover:bg-rose-50 text-rose-600 border border-slate-300 font-bold rounded-lg text-[11px] transition cursor-pointer flex items-center gap-1">
+                <i class="fa-solid fa-trash-can"></i> 移除
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateMarqueeBanner() {
+      const banner = document.getElementById('marqueeBanner');
+      const text = document.getElementById('marqueeText');
+      if (!banner || !text) return;
+      const activeBroadcasts = localBroadcasts.filter(b => typeof b === 'object' ? b.visible : true);
+      if (activeBroadcasts.length > 0) {
+        const textStr = activeBroadcasts.map(b => typeof b === 'object' ? b.text : b).join(' ｜ 📢 ');
+        text.innerText = `大會廣播：${textStr}`;
+        banner.classList.remove('hidden');
+      } else { banner.classList.add('hidden'); }
+    }
+
+    function getRecordIp(item) {
+      if (!item) return clientIp;
+      return item.ip_address || item.ip || (item.message && item.message.match(/\[IP:\s*([^\]]+)\]/)?.[1]) || (item.note && item.note.match(/\[IP:\s*([^\]]+)\]/)?.[1]) || clientIp;
+    }
+    function cleanNoteText(text) {
+      if (!text) return '-';
+      return text.replace(/\s*\[(帳號|IP):\s*[^\]]+\]/g, '').trim() || '-';
+    }
+    function formatTeamName(name) { return name || ''; }
+
+    function populateDropdowns() {
+      const teamSelect = document.getElementById('stationTeamSelect');
+      if (teamSelect) {
+        teamSelect.innerHTML = '<option value="">-- 請選擇小隊 --</option>' + TEAM_NAMES.map(name => `<option value="${name}">${formatTeamName(name)}</option>`).join('');
+      }
+      const slotSelect = document.getElementById('stationTimeSlotSelect');
+      if (slotSelect) {
+        slotSelect.innerHTML = TIME_SLOTS.map((s, idx) => `<option value="${idx}">時段 ${idx + 1} (${s})</option>`).join('');
+      }
+    }
+
+    function autoSelectCurrentTimeSlot() {
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Taipei', hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(now);
+      let h = 13, m = 30;
+      parts.forEach(p => { if (p.type === 'hour') h = parseInt(p.value); if (p.type === 'minute') m = parseInt(p.value); });
+      const totalMins = h * 60 + m;
+      const slotTimes = [
+        [13*60+30, 13*60+40], [13*60+45, 13*60+55], [14*60+0, 14*60+10],
+        [14*60+15, 14*60+25], [14*60+30, 14*60+40], [14*60+45, 14*60+55],
+        [15*60+0, 15*60+10], [15*60+15, 15*60+25], [15*60+30, 15*60+40]
+      ];
+      let matchedIdx = 0;
+      for (let i = 0; i < slotTimes.length; i++) {
+        if (totalMins >= slotTimes[i][0] && totalMins <= slotTimes[i][1] + 4) { matchedIdx = i; break; }
+        else if (totalMins > slotTimes[i][1] && i < slotTimes.length - 1 && totalMins < slotTimes[i+1][0]) { matchedIdx = i + 1; break; }
+        else if (totalMins > slotTimes[8][1]) { matchedIdx = 8; }
+      }
+      const sel = document.getElementById('stationTimeSlotSelect');
+      if (sel) { sel.value = matchedIdx; renderStationActiveTeams(); }
+    }
+
+    function renderStationActiveTeams() {
+      if (!currentUser || currentUser.role !== 'STATION') return;
+      const stId = currentUser.id.toUpperCase();
+      const slotSelect = document.getElementById('stationTimeSlotSelect');
+      const container = document.getElementById('activeTeamsQuickPick');
+      if (!slotSelect || !container) return;
+      const slotIdx = parseInt(slotSelect.value) || 0;
+      const matchedTeams = TEAM_NAMES.filter(t => TEAM_ROUTES[t] && TEAM_ROUTES[t][slotIdx] === stId);
+      if (matchedTeams.length > 0) {
+        container.innerHTML = matchedTeams.map(t => `
+          <button type="button" onclick="selectStationTeam('${t}')" class="btn-touch flex-1 py-1.5 px-3 bg-white hover:bg-amber-50 text-slate-800 border border-slate-300 rounded-xl font-bold text-xs shadow-sm active:scale-95 transition">
+            <i class="fa-solid fa-users mr-1.5 text-amber-600"></i> ${formatTeamName(t)}
+          </button>
+        `).join('<span class="text-xs font-black text-slate-400 self-center">VS</span>');
+        const teamSelect = document.getElementById('stationTeamSelect');
+        if (teamSelect && !teamSelect.value) teamSelect.value = matchedTeams[0];
+      } else {
+        container.innerHTML = `<span class="text-xs text-slate-500 font-semibold">目前時段尚無指定對戰隊伍</span>`;
+      }
+    }
+
+    function selectStationTeam(teamName) {
+      const select = document.getElementById('stationTeamSelect');
+      if (select) {
+        select.value = teamName;
+        showToast(`已選定隊伍：${formatTeamName(teamName)}`, 'success');
+      }
+    }
+
+    function openLoginModal() {
+      const modal = document.getElementById('loginModal');
+      if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    }
+    function toggleAuth() { currentUser ? handleLogout() : openLoginModal(); }
+
+    async function handleLoginSubmit(event) {
+      event.preventDefault();
+      if (isActionPending) return;
+      
+      if (!supabaseClient) {
+        showToast('無法連線至雲端伺服器，請檢查網路狀態！', 'error');
+        return;
+      }
+
+      const u = document.getElementById('loginUsernameInput').value.trim();
+      const p = document.getElementById('loginPasswordInput').value.trim();
+      const btn = document.getElementById('btnLoginSubmit');
+      
+      if (!u || !p) { showToast('請輸入帳號與密碼！', 'error'); return; }
+      
+      isActionPending = true;
+      if (btn) { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
+      
+      try {
+        const { data: accounts, error } = await supabaseClient
+          .from('accounts')
+          .select('*')
+          .eq('username', u)
+          .eq('password', p);
+
+        if (error) {
+          console.error('Supabase 驗證發生錯誤:', error);
+          showToast('資料庫驗證失敗，請檢查網路連線：' + (error.message || '連線錯誤'), 'error');
+          return;
+        }
+
+        const matchedAccount = accounts ? accounts.find(a => a.username === u && a.password === p) : null;
+
+        if (!matchedAccount) {
+          showToast('帳號或密碼錯誤，請重新確認大小寫！', 'error');
+          return;
+        }
+
+        const role = getNormalizedRole(matchedAccount.role, matchedAccount.username);
+        currentUser = { id: matchedAccount.username, name: matchedAccount.display_name || matchedAccount.username, role: role };
+
+        sessionStorage.setItem('xshs_user_session', JSON.stringify(currentUser));
+
+        document.getElementById('loginModal').classList.add('hidden');
+        document.getElementById('userBadge').classList.remove('hidden');
+        document.getElementById('userBadge').classList.add('flex');
+        document.getElementById('currentUserName').innerText = currentUser.name;
+        document.getElementById('currentUserRoleBadge').innerText = currentUser.role;
+        document.getElementById('loginBtnText').innerText = '登出';
+        document.getElementById('authBtnIcon').className = 'fa-solid fa-right-from-bracket text-xs';
+        showToast(`登入成功！歡迎 ${currentUser.name}`, 'success');
+        if (currentUser.role === 'STUDENT') requestGpsPermission();
+        await refreshData();
+        renderViewsForRole();
+      } catch (e) {
+        showToast('連線驗證失敗，請檢查網路連線！', 'error');
+      } finally {
+        isActionPending = false;
+        if (btn) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+      }
+    }
+
+    function handleLogout() {
+      if (gpsWatchId !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+      }
+      currentUser = null;
+      sessionStorage.removeItem('xshs_user_session');
+      sessionStorage.removeItem('xshs_admin_tab');
+      sessionStorage.removeItem('xshs_student_tab');
+
+      document.getElementById('userBadge').classList.add('hidden');
+      document.getElementById('loginBtnText').innerText = '登入';
+      document.getElementById('authBtnIcon').className = 'fa-solid fa-right-to-bracket text-xs';
+      document.getElementById('adminView').classList.add('hidden');
+      document.getElementById('stationView').classList.add('hidden');
+      document.getElementById('studentView').classList.add('hidden');
+      openLoginModal();
+      showToast('已登出系統', 'info');
+    }
+
+    function restoreSession() {
+      const savedUserStr = sessionStorage.getItem('xshs_user_session');
+      if (savedUserStr) {
+        try {
+          currentUser = JSON.parse(savedUserStr);
+          document.getElementById('loginModal').classList.add('hidden');
+          document.getElementById('userBadge').classList.remove('hidden');
+          document.getElementById('userBadge').classList.add('flex');
+          document.getElementById('currentUserName').innerText = currentUser.name;
+          document.getElementById('currentUserRoleBadge').innerText = currentUser.role;
+          document.getElementById('loginBtnText').innerText = '登出';
+          document.getElementById('authBtnIcon').className = 'fa-solid fa-right-from-bracket text-xs';
+
+          if (currentUser.role === 'STUDENT') {
+            requestGpsPermission();
+            const savedStuTab = sessionStorage.getItem('xshs_student_tab') || 'quest';
+            switchStudentTab(savedStuTab);
+          } else if (currentUser.role === 'ADMIN') {
+            const savedAdminTab = sessionStorage.getItem('xshs_admin_tab') || 'leaderboard';
+            switchAdminTab(savedAdminTab);
+          }
+          return true;
+        } catch(e) {
+          sessionStorage.removeItem('xshs_user_session');
+        }
+      }
+      return false;
+    }
+
+    function requestGpsPermission() {
+      if (!navigator.geolocation) { showToast('此裝置不支援 GPS 定位功能', 'error'); return; }
+      gpsWatchId = navigator.geolocation.watchPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude, lng = pos.coords.longitude;
+          const nowIso = new Date().toISOString();
+          if (currentUser && currentUser.role === 'STUDENT') {
+            const teamObj = localTeams.find(t => t.team_name === currentUser.id);
+            if (teamObj) { teamObj.lat = lat; teamObj.lng = lng; teamObj.gps_updated_at = nowIso; }
+            if (supabaseClient) {
+              try { await supabaseClient.from('teams').update({ lat, lng, gps_updated_at: nowIso }).eq('team_name', currentUser.id); } catch(err) {}
+              try { await supabaseClient.from('location_history').insert([{ team_name: currentUser.id, lat, lng, created_at: nowIso }]); } catch(err) {}
+            }
+          }
+          const b = document.getElementById('stuGpsStatusBadge');
+          if (b) b.innerHTML = `<i class="fa-solid fa-location-dot text-amber-400"></i> GPS已定位 (${lat.toFixed(6)}, ${lng.toFixed(6)})`;
+        },
+        (err) => {
+          const b = document.getElementById('stuGpsStatusBadge');
+          if (b) b.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-400"></i> 請開啟 GPS 權限`;
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+      );
+    }
+
+    function createPushpinIcon(teamName) {
+      return L.divIcon({
+        className: 'custom-pushpin-icon',
+        html: `
+          <div class="pushpin-container">
+            <div class="pushpin-label">${formatTeamName(teamName)}</div>
+            <div class="pushpin-graphic">
+              <div class="pushpin-head"></div>
+              <div class="pushpin-needle"></div>
+              <div class="pushpin-shadow"></div>
+            </div>
+          </div>
+        `,
+        iconSize: [60, 70],
+        iconAnchor: [30, 70],
+        popupAnchor: [0, -65]
+      });
+    }
+
+    function switchMapStyle(style) {
+      currentMapStyle = style;
+      if (!gpsLeafletMap) return;
+      if (gpsLeafletTileLayer) gpsLeafletMap.removeLayer(gpsLeafletTileLayer);
+      let tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+      let maxZoom = 19;
+      if (style === 'satellite') tileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+      gpsLeafletTileLayer = L.tileLayer(tileUrl, { maxZoom }).addTo(gpsLeafletMap);
+      showToast(`已切換地圖風格`, 'info');
+    }
+
+    function initGpsLiveMap() {
+      const container = document.getElementById('gpsLiveMap');
+      if (!container) return;
+      if (!gpsLeafletMap) {
+        gpsLeafletMap = L.map('gpsLiveMap').setView([24.2375893, 120.8071703], 18);
+        switchMapStyle(currentMapStyle);
+      }
+      gpsLeafletMap.invalidateSize();
+      localTeams.forEach((t) => {
+        const hasGps = !!(t.lat && t.lng);
+        if (hasGps) {
+          const pos = [Number(t.lat), Number(t.lng)];
+          if (gpsLeafletMarkers[t.team_name]) {
+            gpsLeafletMarkers[t.team_name].setLatLng(pos);
+          } else {
+            gpsLeafletMarkers[t.team_name] = L.marker(pos, { icon: createPushpinIcon(t.team_name) }).addTo(gpsLeafletMap).bindPopup(`<b>${formatTeamName(t.team_name)}</b>`);
+          }
+        } else {
+          if (gpsLeafletMarkers[t.team_name]) {
+            gpsLeafletMap.removeLayer(gpsLeafletMarkers[t.team_name]);
+            delete gpsLeafletMarkers[t.team_name];
+          }
+        }
+      });
+    }
+
+    function hideTeamTrack() {
+      if (gpsTrackPolyline && gpsLeafletMap) {
+        gpsLeafletMap.removeLayer(gpsTrackPolyline);
+        gpsTrackPolyline = null;
+        currentActiveTrackTeam = null;
+        showToast('已隱藏地圖移動軌跡', 'info');
+      } else {
+        showToast('目前地圖上無顯示中的軌跡', 'info');
+      }
+    }
+
+    async function toggleTeamTrack(teamName) {
+      if (currentActiveTrackTeam === teamName && gpsTrackPolyline) {
+        hideTeamTrack();
+        return;
+      }
+      showTeamTrackOnMap(teamName);
+    }
+
+    async function showTeamTrackOnMap(teamName) {
+      if (!gpsLeafletMap) return;
+      if (!supabaseClient) {
+        showToast('需要網路連線以獲取軌跡資料', 'error');
+        return;
+      }
+      showToast(`載入 ${formatTeamName(teamName)} 移動軌跡...`, 'info');
+      try {
+        const { data: history } = await supabaseClient.from('location_history').select('*').eq('team_name', teamName).order('created_at', { ascending: true });
+        if (history && history.length > 0) {
+          const latLngs = history.map(h => [h.lat, h.lng]);
+          if (gpsTrackPolyline) gpsLeafletMap.removeLayer(gpsTrackPolyline);
+          gpsTrackPolyline = L.polyline(latLngs, { color: '#d97706', weight: 4, opacity: 0.85 }).addTo(gpsLeafletMap);
+          gpsLeafletMap.fitBounds(gpsTrackPolyline.getBounds(), { padding: [20, 20] });
+          currentActiveTrackTeam = teamName;
+          showToast(`已繪製 ${formatTeamName(teamName)} 軌跡 (${history.length}點)`, 'success');
+          return;
+        }
+        showToast(`${formatTeamName(teamName)} 尚無歷史軌跡點`, 'info');
+      } catch(e) { showToast('無法讀取軌跡資料', 'error'); }
+    }
+
+    function renderAdminGpsTab() {
+      const grid = document.getElementById('gpsTeamGrid');
+      if (!grid) return;
+      const sortedTeams = [...localTeams].sort((a, b) => a.team_name.localeCompare(b.team_name, undefined, { numeric: true }));
+      grid.innerHTML = sortedTeams.map(t => {
+        const hasGps = !!(t.lat && t.lng);
+        const latVal = hasGps ? Number(t.lat).toFixed(7) : '未連線';
+        const lngVal = hasGps ? Number(t.lng).toFixed(7) : '未連線';
+        const updateTimeStr = t.gps_updated_at ? formatTWDateTime(t.gps_updated_at) : '無紀錄';
+        return `
+          <div class="p-3 bg-white rounded-2xl border ${hasGps ? 'border-amber-400' : 'border-slate-200'} space-y-1.5 shadow-sm">
+            <div class="flex justify-between items-center"><span class="font-bold text-xs text-slate-900">${formatTeamName(t.team_name)}</span><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${hasGps ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-400 border border-slate-200'}">${hasGps ? '已連線' : '未連線'}</span></div>
+            <div class="space-y-0.5 font-mono text-[11px] text-slate-700">
+              <p>緯度 (Lat): <span class="font-bold ${hasGps ? 'text-amber-600' : 'text-slate-400'}">${latVal}</span></p>
+              <p>經度 (Lng): <span class="font-bold ${hasGps ? 'text-amber-600' : 'text-slate-400'}">${lngVal}</span></p>
+              <p class="text-[10px] text-slate-500 pt-0.5">最後更新時間: <span class="font-bold text-slate-700">${updateTimeStr}</span></p>
+            </div>
+            <div class="pt-1 flex gap-1.5">
+              <button onclick="focusMapOnTeam('${t.team_name}')" ${!hasGps ? 'disabled' : ''} class="btn-touch flex-1 py-1 bg-white hover:bg-slate-50 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 text-amber-600 border border-slate-300 rounded-lg text-xs font-bold shadow-sm"><i class="fa-solid fa-crosshairs mr-1"></i> 聚焦定位</button>
+              <button onclick="toggleTeamTrack('${t.team_name}')" class="btn-touch flex-1 py-1 bg-white hover:bg-slate-50 text-sky-600 border border-slate-300 rounded-lg text-xs font-bold shadow-sm"><i class="fa-solid fa-route mr-1"></i> 軌跡切換</button>
+            </div>
+          </div>`;
+      }).join('');
+      initGpsLiveMap();
+    }
+
+    function focusMapOnTeam(teamName) {
+      if (gpsLeafletMap && gpsLeafletMarkers[teamName]) {
+        const marker = gpsLeafletMarkers[teamName];
+        gpsLeafletMap.setView(marker.getLatLng(), 18);
+        marker.openPopup();
+      } else {
+        showToast(`${formatTeamName(teamName)} 目前尚未連線 GPS 座標`, 'error');
+      }
+    }
+
+    function switchAdminTab(tabName) {
+      currentAdminTab = tabName;
+      sessionStorage.setItem('xshs_admin_tab', tabName);
+      ['leaderboard', 'gps', 'logs', 'routes', 'alerts', 'auth', 'config'].forEach(t => {
+        const el = document.getElementById('adminTab-' + t);
+        const btn = document.getElementById('tabBtn-' + t);
+        if (el) el.classList.toggle('hidden', t !== tabName);
+        if (btn) btn.className = t === tabName ? 'px-3 py-2 rounded-lg bg-white text-slate-900 font-bold border border-slate-200 shadow-sm' : 'px-3 py-2 rounded-lg text-slate-600 hover:text-slate-900';
+      });
+      if (tabName === 'gps') setTimeout(initGpsLiveMap, 100);
+    }
+
+    function renderAdminLeaderboard() {
+      const tbody = document.getElementById('leaderboardTableBody');
+      const podium = document.getElementById('podiumContainer');
+      if (!tbody) return;
+      const sorted = [...localTeams].sort((a,b)=>b.total_score - a.total_score);
+      
+      if (podium && sorted.length >= 3) {
+        podium.innerHTML = `
+          <div class="flex flex-col items-center justify-end">
+            <div class="w-full bg-slate-200 rounded-t-2xl p-3 text-center border border-slate-300 shadow-inner">
+              <span class="text-xs font-black text-slate-600 block">🥈 第二名</span>
+              <span class="font-extrabold text-sm text-slate-900 truncate block mt-1">${formatTeamName(sorted[1].team_name)}</span>
+              <span class="font-black font-mono text-amber-600 text-sm">${sorted[1].total_score}分</span>
+            </div>
+          </div>
+          <div class="flex flex-col items-center justify-end">
+            <div class="w-full bg-amber-100 rounded-t-2xl p-4 text-center border-2 border-amber-400 shadow-md transform -translate-y-2">
+              <span class="text-xs font-black text-amber-800 block">🏆 第一名</span>
+              <span class="font-black text-base text-slate-900 truncate block mt-1">${formatTeamName(sorted[0].team_name)}</span>
+              <span class="font-black font-mono text-amber-700 text-base">${sorted[0].total_score}分</span>
+            </div>
+          </div>
+          <div class="flex flex-col items-center justify-end">
+            <div class="w-full bg-amber-50 rounded-t-2xl p-2.5 text-center border border-amber-200 shadow-inner">
+              <span class="text-xs font-black text-amber-700 block">🥉 第三名</span>
+              <span class="font-extrabold text-xs text-slate-900 truncate block mt-1">${formatTeamName(sorted[2].team_name)}</span>
+              <span class="font-black font-mono text-amber-600 text-xs">${sorted[2].total_score}分</span>
+            </div>
+          </div>
+        `;
+      }
+
+      tbody.innerHTML = sorted.map((t, idx) => {
+        let badge = `#${idx + 1}`;
+        if (idx === 0) badge = '🥇 1';
+        if (idx === 1) badge = '🥈 2';
+        if (idx === 2) badge = '🥉 3';
+        return `<tr class="hover:bg-slate-50"><td class="px-4 py-3 text-center font-black text-slate-700">${badge}</td><td class="px-4 py-3 font-bold text-slate-900">${formatTeamName(t.team_name)}</td><td class="px-4 py-3 text-right font-black font-mono text-amber-600">${t.total_score || 0} 分</td></tr>`;
+      }).join('');
+    }
+
+    function formatStationDisplayName(stName) {
+      if (!stName) return '-';
+      const foundSt = STATIONS.find(s => stName.includes(s.id) || stName.includes(s.name));
+      if (foundSt) return `${foundSt.name} (${getStationLocation(foundSt)})`;
+      return stName;
+    }
+
+    function renderAdminLogs() {
+      const tbody = document.getElementById('logsTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = localLogs.map(l => `
+        <tr class="hover:bg-slate-50">
+          <td class="px-3 py-2.5 font-mono text-xs text-slate-500">${formatTWDateTime(l.created_at)}</td>
+          <td class="px-3 py-2.5 font-bold text-slate-800">${formatStationDisplayName(l.station_name)}</td>
+          <td class="px-3 py-2.5 font-bold text-amber-600">${formatTeamName(l.team_name)}</td>
+          <td class="px-3 py-2.5 text-right font-black font-mono text-emerald-600">+${l.points}</td>
+          <td class="px-3 py-2.5 text-xs font-mono text-slate-500">${getRecordIp(l)}</td>
+          <td class="px-3 py-2.5 text-xs text-slate-700">${cleanNoteText(l.note)}</td>
+          <td class="px-3 py-2.5 text-center"><button onclick="deleteScoreLog(${l.id})" class="px-2 py-1 bg-white hover:bg-rose-50 text-rose-600 border border-slate-300 rounded-lg text-xs font-bold transition shadow-sm">刪除</button></td>
+        </tr>
+      `).join('') || `<tr><td colspan="7" class="text-center py-6 text-slate-500 font-medium">尚無加分紀錄</td></tr>`;
+    }
+
+    function renderAdminRoutes() {
+      const container = document.getElementById('routesContainer');
+      if (!container) return;
+      container.innerHTML = TEAM_NAMES.map((teamId) => {
+        const routeArray = TEAM_ROUTES[teamId] || [];
+        return `
+          <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+              <span class="font-extrabold text-sm text-amber-600 flex items-center gap-1.5"><i class="fa-solid fa-flag"></i> ${formatTeamName(teamId)}</span>
+              <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-mono font-bold">9時段關卡動線</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              ${TIME_SLOTS.map((slot, sIdx) => {
+                const stId = routeArray[sIdx] || 'A';
+                const st = STATIONS.find(s => s.id === stId) || STATIONS[0];
+                return `
+                  <div class="p-2 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-between">
+                    <span class="font-mono text-[10px] text-slate-400 font-bold">${slot}</span>
+                    <span class="font-extrabold text-slate-800 text-xs mt-0.5">${st.name} (${getStationLocation(st)})</span>
+                  </div>`;
+              }).join('')}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function isUnhandledAlert(alertObj) {
+      if (!alertObj) return false;
+      const isPending = (alertObj.status === 'PENDING');
+      const hasNote = cleanNoteText(alertObj.resolution_note) !== '-';
+      return isPending && !hasNote;
+    }
+
+    function renderAdminAlerts() {
+      const tbody = document.getElementById('alertsTableBody');
+      if (!tbody) return;
+      
+      tbody.innerHTML = localAlerts.map(a => {
+        const unhandled = isUnhandledAlert(a);
+        let statusBadge = '';
+        if (unhandled) {
+          statusBadge = `<span class="px-2 py-0.5 bg-rose-100 text-rose-800 border border-rose-300 font-bold rounded-md text-[10px]">🚨 完全未處置</span>`;
+        } else if (a.status === 'PENDING') {
+          statusBadge = `<span class="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 font-bold rounded-md text-[10px]">⚠️ 處理中 (已留說明)</span>`;
+        } else {
+          statusBadge = `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold rounded-md text-[10px]">✅ 已完結</span>`;
+        }
+
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="px-3 py-2.5 font-mono text-xs text-slate-500">${formatTWDateTime(a.created_at)}</td>
+            <td class="px-3 py-2.5 font-bold text-slate-800">${a.operator_account || a.station_name || '通報者'}</td>
+            <td class="px-3 py-2.5 text-xs text-slate-700">${cleanNoteText(a.message)}</td>
+            <td class="px-3 py-2.5 text-xs text-emerald-600 font-semibold">${cleanNoteText(a.resolution_note)}</td>
+            <td class="px-3 py-2.5 text-center flex items-center justify-center gap-2">
+              ${statusBadge}
+              <button onclick="openResolveAlertModal('${a.id}')" class="px-2.5 py-1 ${unhandled ? 'bg-rose-600 text-white font-black' : 'bg-slate-100 text-slate-800 border border-slate-300 font-bold'} text-xs rounded-lg transition shadow-sm cursor-pointer">
+                ${unhandled ? '地點/內容處置' : '編輯處置'}
+              </button>
+            </td>
+          </tr>`;
+      }).join('') || `<tr><td colspan="5" class="text-center py-6 text-slate-500 font-medium">尚無任何求助事件紀錄</td></tr>`;
+    }
+
+    function renderStationLogs() {
+      const tbody = document.getElementById('stationLogsBody');
+      if (!tbody || !currentUser) return;
+      const stLogs = localLogs.filter(l => l.station_name && l.station_name.includes(currentUser.id));
+      tbody.innerHTML = stLogs.map(l => `<tr><td class="px-3 py-2 font-mono text-xs text-slate-500">${formatTWDateTime(l.created_at)}</td><td class="px-3 py-2 font-bold text-slate-800">${formatTeamName(l.team_name)}</td><td class="px-3 py-2 text-right font-black font-mono text-amber-600">+${l.points}</td><td class="px-3 py-2 text-xs font-mono text-slate-500">${getRecordIp(l)}</td><td class="px-3 py-2 text-xs text-slate-700">${cleanNoteText(l.note)}</td></tr>`).join('') || `<tr><td colspan="5" class="text-center py-4 text-slate-500 font-medium">尚無得分紀錄</td></tr>`;
+    }
+
+    async function submitStationScore() {
+      if (isActionPending) return;
+      if (!supabaseClient) {
+        showToast('無法連線至雲端資料庫，請檢查網路連線！', 'error');
+        return;
+      }
+      const teamName = document.getElementById('stationTeamSelect').value;
+      const ptsVal = document.getElementById('stationPointsInput').value;
+      const noteVal = document.getElementById('stationNoteInput').value.trim();
+      const btn = document.getElementById('btnSubmitScore');
+      if (!teamName || isNaN(ptsVal) || ptsVal === '') { showToast('請選擇隊伍並指定分數！', 'error'); return; }
+      isActionPending = true;
+      if (btn) { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
+      const stName = STATIONS.find(s => s.id === currentUser.id)?.name || currentUser.name;
+      const operator = currentUser.id;
+      const noteWithAudit = noteVal ? `${noteVal} [帳號: ${operator}] [IP: ${clientIp}]` : `[帳號: ${operator}] [IP: ${clientIp}]`;
+      const created_at = new Date().toISOString();
+      
+      try {
+        const { error } = await supabaseClient.from('score_logs').insert([{ station_name: stName, team_name: teamName, points: parseInt(ptsVal), note: noteWithAudit, ip_address: clientIp, created_at }]);
+        if (error) throw error;
+        showToast(`登記成功：${formatTeamName(teamName)} +${ptsVal}分`, 'success');
+        document.getElementById('stationNoteInput').value = '';
+        refreshData();
+      } catch(e) { showToast('上傳得分失敗，請確認網路連線！', 'error'); }
+      finally {
+        isActionPending = false;
+        if (btn) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+      }
+    }
+
+    async function undoLastStationScore() {
+      if (!currentUser || currentUser.role !== 'STATION') return;
+      const stLogs = localLogs.filter(l => l.station_name && l.station_name.includes(currentUser.id));
+      if (stLogs.length === 0) { showToast('尚無可撤銷的給分紀錄！', 'info'); return; }
+      const lastItem = stLogs[0];
+      await deleteScoreLog(lastItem.id);
+      showToast(`已成功撤銷：${formatTeamName(lastItem.team_name)} 得分`, 'success');
+    }
+
+    async function deleteScoreLog(id) {
+      if (!supabaseClient) {
+        showToast('無法連線至雲端資料庫！', 'error');
+        return;
+      }
+      try {
+        const { error } = await supabaseClient.from('score_logs').delete().eq('id', id);
+        if (error) throw error;
+        showToast('已刪除分數紀錄', 'success');
+        refreshData();
+      } catch(e) {
+        showToast('刪除紀錄失敗，請檢查網路連線', 'error');
+      }
+    }
+
+    function isEventFinished() {
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Taipei', hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(now);
+      let h = 0, m = 0;
+      parts.forEach(p => { if (p.type === 'hour') h = parseInt(p.value); if (p.type === 'minute') m = parseInt(p.value); });
+      return (h * 60 + m) >= (15 * 60 + 40);
+    }
+
+    function switchStudentTab(tab) {
+      sessionStorage.setItem('xshs_student_tab', tab);
+      const qTab = document.getElementById('stuTab-quest');
+      const hTab = document.getElementById('stuTab-history');
+      const btnQ = document.getElementById('stuTabBtn-quest');
+      const btnH = document.getElementById('stuTabBtn-history');
+      if (tab === 'quest') {
+        if (qTab) qTab.classList.remove('hidden');
+        if (hTab) hTab.classList.add('hidden');
+        if (btnQ) btnQ.className = 'px-3.5 py-2 rounded-xl transition bg-white text-slate-900 border border-slate-300 shadow-sm';
+        if (btnH) btnH.className = 'px-3.5 py-2 rounded-xl transition bg-slate-100 text-slate-600 hover:bg-slate-200';
+      } else {
+        if (qTab) qTab.classList.add('hidden');
+        if (hTab) hTab.classList.remove('hidden');
+        if (btnQ) btnQ.className = 'px-3.5 py-2 rounded-xl transition bg-slate-100 text-slate-600 hover:bg-slate-200';
+        if (btnH) btnH.className = 'px-3.5 py-2 rounded-xl transition bg-white text-slate-900 border border-slate-300 shadow-sm';
+      }
+    }
+
+    function renderStudentView() {
+      if (!currentUser || currentUser.role !== 'STUDENT') return;
+      const myTeam = localTeams.find(t => t.team_name === currentUser.id) || { total_score: 0 };
+      const myLogs = localLogs.filter(l => l.team_name === currentUser.id);
+      document.getElementById('studentTotalScore').innerText = myTeam.total_score || 0;
+      const completedStations = new Set(myLogs.map(l => l.station_name));
+      const count = completedStations.size;
+      const percent = Math.min(100, Math.round((count / 9) * 100));
+      
+      document.getElementById('studentCompletedCountText').innerText = `${count}/9 關`;
+      document.getElementById('studentProgressBadge').innerText = `已過 ${count} / 9 關`;
+      document.getElementById('stuStampProgressText').innerText = `${percent}% (${count}/9關)`;
+      document.getElementById('stuStampProgressBar').style.width = `${percent}%`;
+
+      const noticeBanner = document.getElementById('completionNoticeBanner');
+      if (noticeBanner) {
+        if (count >= 9 || isEventFinished()) { noticeBanner.classList.remove('hidden'); noticeBanner.classList.add('flex'); }
+        else { noticeBanner.classList.add('hidden'); }
+      }
+
+      const routeArray = TEAM_ROUTES[currentUser.id] || ['A','B','C','D','E','F','G','H','I'];
+      const activeSlotIdx = Math.min(count, 8);
+      const activeStId = routeArray[activeSlotIdx];
+      const activeStation = STATIONS.find(s => s.id === activeStId) || STATIONS[0];
+      document.getElementById('stuActiveTimeSlotText').innerText = `時段 ${activeSlotIdx + 1} (${TIME_SLOTS[activeSlotIdx]})`;
+      document.getElementById('stuActiveStationTitle').innerText = activeStation.name;
+      document.getElementById('stuActiveLocationText').innerText = getStationLocation(activeStation);
+
+      const stampGrid = document.getElementById('stuStampGrid');
+      if (stampGrid) {
+        stampGrid.innerHTML = STATIONS.map(st => {
+          const isPassed = myLogs.some(l => l.station_name && l.station_name.includes(st.id));
+          return `<div class="stamp-badge ${isPassed ? 'completed bg-emerald-50 border border-emerald-300' : 'bg-white border border-slate-200'} p-3 rounded-2xl flex flex-col justify-between h-20 text-center shadow-sm"><div class="font-extrabold text-xs text-slate-900">${st.name}</div><div class="text-[10px] ${isPassed ? 'text-emerald-600 font-bold' : 'text-slate-400'}">${isPassed ? '✓已過關' : '未挑戰'}</div></div>`;
+        }).join('');
+      }
+
+      const myAlertsBox = document.getElementById('studentMyAlertsBox');
+      const myAlertsList = document.getElementById('studentMyAlertsList');
+      const myAlerts = localAlerts.filter(a => a.station_id === currentUser.id || a.operator_account === currentUser.id || (a.message && a.message.includes(currentUser.id)));
+      if (myAlertsBox && myAlertsList) {
+        if (myAlerts.length > 0) {
+          myAlertsBox.classList.remove('hidden');
+          myAlertsList.innerHTML = myAlerts.map(a => `
+            <div class="p-2.5 rounded-xl border ${a.status === 'RESOLVED' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'} text-xs space-y-1">
+              <div class="flex justify-between font-bold">
+                <span>求助事件</span>
+                <span class="text-[10px] font-mono">${formatTWDateTime(a.created_at)}</span>
+              </div>
+              <p class="text-[11px]">${cleanNoteText(a.message)}</p>
+              ${a.resolution_note && cleanNoteText(a.resolution_note) !== '-' ? `<div class="pt-1 border-t ${a.status === 'RESOLVED' ? 'border-emerald-200 text-emerald-700' : 'border-rose-200 text-rose-700'} text-[11px] font-bold">大會處置回覆：${cleanNoteText(a.resolution_note)}</div>` : `<div class="text-[10px] text-rose-600 font-bold animate-pulse">大會處理中...</div>`}
+            </div>
+          `).join('');
+        } else { myAlertsBox.classList.add('hidden'); }
+      }
+
+      const stepper = document.getElementById('routeStepper');
+      if (stepper) {
+        stepper.innerHTML = routeArray.map((stId, stepIdx) => {
+          const st = STATIONS.find(s => s.id === stId) || STATIONS[0];
+          const isDone = myLogs.some(l => l.station_name && l.station_name.includes(st.id));
+          return `<div class="p-3 rounded-2xl border flex justify-between items-center text-xs ${isDone ? 'bg-amber-50 border-amber-300' : 'bg-white border-slate-200'}"><div><span class="font-bold font-mono text-slate-500 mr-2">${TIME_SLOTS[stepIdx]}</span><span class="font-bold text-slate-800">${st.name} (${getStationLocation(st)})</span></div><span class="font-bold ${isDone ? 'text-amber-700' : 'text-slate-400'}">${isDone ? '✓已過關' : '未到'}</span></div>`;
+        }).join('');
+      }
+
+      const studentLogsBody = document.getElementById('studentLogsTableBody');
+      if (studentLogsBody) {
+        studentLogsBody.innerHTML = myLogs.map(l => `
+          <tr class="hover:bg-slate-50">
+            <td class="px-4 py-2.5 font-mono text-xs text-slate-500">${formatTWDateTime(l.created_at)}</td>
+            <td class="px-4 py-2.5 font-bold text-slate-800">${formatStationDisplayName(l.station_name)}</td>
+            <td class="px-4 py-2.5 text-right font-black font-mono text-amber-600">+${l.points}</td>
+          </tr>`).join('') || `<tr><td colspan="3" class="text-center py-4 text-slate-500 font-medium">尚無過關紀錄履歷</td></tr>`;
+      }
+    }
+
+    function renderStationMyAlerts() {
+      if (!currentUser || currentUser.role !== 'STATION') return;
+      const box = document.getElementById('stationMyAlertsBox');
+      const list = document.getElementById('stationMyAlertsList');
+      if (!box || !list) return;
+      const stAlerts = localAlerts.filter(a => a.station_id === currentUser.id || a.operator_account === currentUser.id || (a.message && a.message.includes(currentUser.id)));
+      if (stAlerts.length > 0) {
+        box.classList.remove('hidden');
+        list.innerHTML = stAlerts.map(a => `
+          <div class="p-2.5 rounded-xl border ${a.status === 'RESOLVED' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'} text-xs space-y-1">
+            <div class="flex justify-between font-bold">
+              <span>關卡求助</span>
+              <span class="text-[10px] font-mono">${formatTWDateTime(a.created_at)}</span>
+            </div>
+            <p class="text-[11px]">${cleanNoteText(a.message)}</p>
+            ${a.resolution_note && cleanNoteText(a.resolution_note) !== '-' ? `<div class="pt-1 border-t ${a.status === 'RESOLVED' ? 'border-emerald-200 text-emerald-700' : 'border-rose-200 text-rose-700'} text-[11px] font-bold">大會處置回覆：${cleanNoteText(a.resolution_note)}</div>` : `<div class="text-[10px] text-rose-600 font-bold animate-pulse">大會處理中...</div>`}
+          </div>
+        `).join('');
+      } else { box.classList.add('hidden'); }
+    }
+
+    function renderViewsForRole() {
+      if (!currentUser) return;
+      document.getElementById('adminView').classList.toggle('hidden', currentUser.role !== 'ADMIN');
+      document.getElementById('stationView').classList.toggle('hidden', currentUser.role !== 'STATION');
+      document.getElementById('studentView').classList.toggle('hidden', currentUser.role !== 'STUDENT');
+      if (currentUser.role === 'ADMIN') {
+        renderAdminLeaderboard(); renderAdminGpsTab(); renderAdminLogs(); renderAdminRoutes(); renderAdminAlerts(); fetchAccounts(); updateRainPlanUI(); renderBroadcastList();
+      } else if (currentUser.role === 'STATION') {
+        const st = STATIONS.find(s => s.id === currentUser.id) || { id: currentUser.id, name: currentUser.name, normalLocation: currentUser.name, rainLocation: currentUser.name };
+        document.getElementById('stationTitle').innerText = st.name;
+        document.getElementById('stationLocation').innerText = `地點：${getStationLocation(st)}`;
+        autoSelectCurrentTimeSlot();
+        updateScoringUI();
+        renderStationLogs();
+        renderStationMyAlerts();
+      } else if (currentUser.role === 'STUDENT') {
+        document.getElementById('studentTeamTitle').innerText = formatTeamName(currentUser.id);
+        renderStudentView();
+      }
+    }
+
+    async function refreshData() {
+      if (!supabaseClient) {
+        document.getElementById('dbStatusBadge')?.classList.add('hidden');
+        return;
+      }
+
+      try {
+        const { data: logsData } = await supabaseClient.from('score_logs').select('*').order('created_at', { ascending: false });
+        if (logsData) localLogs = logsData;
+        
+        const teamScores = {};
+        TEAM_NAMES.forEach(name => teamScores[name] = 0);
+        localLogs.forEach(l => {
+          if (teamScores[l.team_name] !== undefined) teamScores[l.team_name] += (l.points || 0);
+        });
+
+        const { data: teamsData } = await supabaseClient.from('teams').select('*');
+        localTeams = TEAM_NAMES.map(name => {
+          const found = teamsData ? teamsData.find(t => t.team_name === name) : null;
+          return {
+            team_name: name,
+            total_score: teamScores[name] || 0,
+            lat: found ? found.lat : null,
+            lng: found ? found.lng : null,
+            gps_updated_at: found ? found.gps_updated_at : null
+          };
+        }).sort((a,b) => b.total_score - a.total_score);
+
+        const { data: alertsData } = await supabaseClient.from('system_alerts').select('*').order('created_at', { ascending: false });
+        if (alertsData) localAlerts = alertsData;
+
+        const { data: configData } = await supabaseClient.from('system_config').select('*');
+        if (configData) {
+          const bcItem = configData.find(c => c.key === 'broadcast_list');
+          if (bcItem) { try { localBroadcasts = normalizeBroadcasts(JSON.parse(bcItem.value)); } catch(e){} }
+          const rainItem = configData.find(c => c.key === 'rain_plan');
+          if (rainItem) isRainPlanEnabled = (rainItem.value === 'true');
+        }
+      } catch(e) {
+        console.warn('網路同步連線異常:', e);
+      }
+
+      updateMarqueeBanner();
+      updateRainPlanUI();
+      if (currentUser && currentUser.role === 'ADMIN') renderBroadcastList();
+      
+      const unhandledAlerts = localAlerts.filter(isUnhandledAlert);
+      const pendingCount = unhandledAlerts.length;
+      
+      const statPending = document.getElementById('statPendingAlerts');
+      const alertBadgeCount = document.getElementById('alertsBadgeCount');
+      if (statPending) statPending.innerText = `${pendingCount} 件`;
+      if (alertBadgeCount) {
+        if (pendingCount > 0) {
+          alertBadgeCount.innerText = pendingCount;
+          alertBadgeCount.classList.remove('hidden');
+          alertBadgeCount.classList.add('flex');
+        } else {
+          alertBadgeCount.classList.add('hidden');
+          alertBadgeCount.classList.remove('flex');
+        }
+      }
+      
+      const banner = document.getElementById('adminEmergencyBanner');
+      const latestUnhandled = unhandledAlerts[0];
+      const isAdmin = currentUser && currentUser.role === 'ADMIN';
+      if (banner) {
+        if (latestUnhandled && isAdmin) {
+          banner.classList.remove('hidden');
+          banner.classList.add('flex');
+          document.getElementById('adminEmergencyTime').innerText = `${formatTWTime(latestUnhandled.created_at)}`;
+          document.getElementById('adminEmergencyText').innerText = `【${latestUnhandled.operator_account || latestUnhandled.station_name}】通報：${cleanNoteText(latestUnhandled.message)}`;
+          const resolveBtn = document.getElementById('btnBannerResolve');
+          if (resolveBtn) resolveBtn.setAttribute('onclick', `openResolveAlertModal('${latestUnhandled.id}')`);
+        } else { banner.classList.add('hidden'); }
+      }
+      if (currentUser) renderViewsForRole();
+    }
+
+    function openConfirmModal(msg, action) {
+      pendingConfirmAction = action;
+      document.getElementById('confirmModalMsg').innerText = msg;
+      document.getElementById('confirmModal').classList.remove('hidden');
+      document.getElementById('confirmModal').classList.add('flex');
+    }
+    function closeConfirmModal(executed) {
+      document.getElementById('confirmModal').classList.add('hidden');
+      if (executed && typeof pendingConfirmAction === 'function') pendingConfirmAction();
+      pendingConfirmAction = null;
+    }
+    function openEmergencyModal() { document.getElementById('emergencyModal').classList.remove('hidden'); document.getElementById('emergencyModal').classList.add('flex'); }
+    function closeEmergencyModal() { document.getElementById('emergencyModal').classList.add('hidden'); }
+
+    async function submitEmergencyAlert() {
+      if (isActionPending) return;
+      if (!supabaseClient) {
+        showToast('無法連線至伺服器，發送求助失敗！', 'error');
+        return;
+      }
+      const msg = document.getElementById('emergencyMessageInput').value.trim();
+      const btn = document.getElementById('btnSubmitSos');
+      if (!msg) { showToast('請填寫詳細狀況說明！', 'error'); return; }
+      isActionPending = true;
+      if (btn) { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
+      const operator = currentUser ? currentUser.id : '未知';
+      const stName = currentUser ? currentUser.name : '未知來源';
+      const stId = currentUser ? currentUser.id : 'STUDENT';
+      const created_at = new Date().toISOString();
+      const alertMsg = `${msg} [帳號: ${operator}] [IP: ${clientIp}]`;
+      
+      try {
+        const { error } = await supabaseClient.from('system_alerts').insert([{ station_id: stId, station_name: stName, alert_type: 'SOS求助', message: alertMsg, status: 'PENDING', created_at }]);
+        if (error) throw error;
+        showToast('🚨 已發送 SOS 緊急求助！', 'success');
+        closeEmergencyModal();
+        document.getElementById('emergencyMessageInput').value = '';
+        refreshData();
+      } catch(e) { showToast('發送緊急求助失敗，請檢查網路連線！', 'error'); }
+      finally {
+        isActionPending = false;
+        if (btn) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+      }
+    }
+
+    function openResolveAlertModal(id) {
+      pendingResolveAlertId = id;
+      const item = localAlerts.find(a => String(a.id) === String(id));
+      if (item) {
+        document.getElementById('resModalStation').innerText = item.operator_account || item.station_name;
+        document.getElementById('resModalMsg').innerText = cleanNoteText(item.message);
+        document.getElementById('resModalStatusSelect').value = item.status || 'RESOLVED';
+        document.getElementById('resolutionNoteInput').value = cleanNoteText(item.resolution_note) !== '-' ? cleanNoteText(item.resolution_note) : '';
+        document.getElementById('resolveAlertModal').classList.remove('hidden');
+        document.getElementById('resolveAlertModal').classList.add('flex');
+      }
+    }
+    function closeResolveAlertModal() { document.getElementById('resolveAlertModal').classList.add('hidden'); }
+
+    async function confirmResolveAlert() {
+      if (isActionPending) return;
+      if (!supabaseClient) {
+        showToast('無法連線至雲端伺服器！', 'error');
+        return;
+      }
+      const note = document.getElementById('resolutionNoteInput').value.trim();
+      const statusSelect = document.getElementById('resModalStatusSelect');
+      const targetStatus = statusSelect ? statusSelect.value : 'RESOLVED';
+      const btn = document.getElementById('btnConfirmResolve');
+      if (!note) { showToast('請填寫處置或進度說明！', 'error'); return; }
+      isActionPending = true;
+      if (btn) { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
+      const operator = currentUser ? currentUser.id : 'Admin';
+      
+      try {
+        const resolution_note = `${note} [帳號: ${operator}] [IP: ${clientIp}]`;
+        const { error } = await supabaseClient.from('system_alerts').update({ status: targetStatus, resolution_note, resolved_at: new Date().toISOString() }).eq('id', pendingResolveAlertId);
+        if (error) throw error;
+        showToast(targetStatus === 'RESOLVED' ? '已完成處置與核銷' : '已更新處置進度', 'success');
+        closeResolveAlertModal();
+        refreshData();
+      } catch(e) { showToast('處置作業儲存失敗，請檢查網路連線！', 'error'); }
+      finally {
+        isActionPending = false;
+        if (btn) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+      }
+    }
+
+    function openMapModal() { document.getElementById('mapModal').classList.remove('hidden'); document.getElementById('mapModal').classList.add('flex'); }
+    function closeMapModal() { document.getElementById('mapModal').classList.add('hidden'); }
+    
+    async function openQrScannerModal() {
+      document.getElementById('qrScannerModal').classList.remove('hidden');
+      document.getElementById('qrScannerModal').classList.add('flex');
+      try {
+        if (!html5QrCode) html5QrCode = new Html5Qrcode("qrReader");
+        await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 200, height: 220 } }, (decodedText) => {
+          const match = TEAM_NAMES.find(t => decodedText.toUpperCase().includes(t));
+          if (match) {
+            selectStationTeam(match);
+            showToast(`QR 簽到成功：${formatTeamName(match)}`, 'success');
+            closeQrScannerModal();
+          }
+        }, () => {});
+      } catch(e) {}
+    }
+
+    async function closeQrScannerModal() {
+      if (html5QrCode && html5QrCode.isScanning) { try { await html5QrCode.stop(); } catch(e){} }
+      document.getElementById('qrScannerModal').classList.add('hidden');
+    }
+
+    function openTeamQrModal() {
+      if (!currentUser) return;
+      document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${currentUser.id}`;
+      document.getElementById('teamQrName').innerText = formatTeamName(currentUser.id);
+      document.getElementById('teamQrModal').classList.remove('hidden');
+      document.getElementById('teamQrModal').classList.add('flex');
+    }
+    function closeTeamQrModal() { document.getElementById('teamQrModal').classList.add('hidden'); }
+
+    async function fetchAccounts() {
+      const tbody = document.getElementById('accountsTableBody');
+      if (!tbody || !supabaseClient) return;
+      try {
+        const { data, error } = await supabaseClient.from('accounts').select('*').order('id', { ascending: true });
+        if (!error && data && data.length > 0) {
+          tbody.innerHTML = data.map(acc => `<tr><td class="px-3 py-2.5 font-mono text-slate-400 font-bold">#${acc.id}</td><td class="px-3 py-2.5 font-mono font-bold text-slate-900">${acc.username}</td><td class="px-3 py-2.5 text-slate-800">${acc.display_name}</td><td class="px-3 py-2.5 text-xs"><span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold border border-slate-200">${acc.role}</span></td><td class="px-3 py-2.5"><input type="text" id="pass_${acc.id}" value="${acc.password}" class="px-2.5 py-1 border border-slate-300 rounded-lg text-xs font-mono w-24 bg-white text-slate-900 outline-none"></td><td class="px-3 py-2.5 text-center"><button onclick="updateAccountPass('${acc.id}')" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border border-amber-400 rounded-lg text-xs shadow-sm transition cursor-pointer">儲存</button></td></tr>`).join('');
+        }
+      } catch(e){}
+    }
+
+    async function updateAccountPass(id) {
+      if (isActionPending) return;
+      if (!supabaseClient) { showToast('無網路連線！', 'error'); return; }
+      const passInput = document.getElementById('pass_' + id);
+      if (!passInput) return;
+      const pass = passInput.value.trim();
+      if (!pass) { showToast('請填寫新密碼！', 'error'); return; }
+      isActionPending = true;
+      try {
+        const { error } = await supabaseClient.from('accounts').update({ password: pass }).eq('id', id);
+        if (error) throw error;
+        showToast('密碼已成功儲存', 'success');
+      } catch(e) { showToast('密碼儲存失敗，請檢查網路連線！', 'error'); }
+      finally { isActionPending = false; }
     }
 
     function exportCSV(type) {
       let csv = "data:text/csv;charset=utf-8,\uFEFF";
       if (type === 'leaderboard') {
         csv += "名次,小隊,總分\n";
-        localTeams.forEach((t, i) => csv += `${i+1},${t.team_name},${t.total_score}\n`);
+        localTeams.forEach((t, i) => csv += `${i+1},${formatTeamName(t.team_name)},${t.total_score}\n`);
       } else {
-        csv += "時間,關卡,小隊,分數,備註\n";
-        localLogs.forEach(l => csv += `"${l.created_at}","${l.station_name}",${l.team_name},${l.points},"${l.note}"\n`);
+        csv += "時間,關卡名稱與地點,小隊,分數,IP,備註\n";
+        localLogs.forEach(l => csv += `"${formatTWDateTime(l.created_at)}","${formatStationDisplayName(l.station_name)}",${l.team_name},${l.points},${getRecordIp(l)},"${cleanNoteText(l.note)}"\n`);
       }
       const link = document.createElement("a");
       link.setAttribute("href", encodeURI(csv));
-      link.setAttribute("download", `XSHS_Data_${type}_${Date.now()}.csv`);
+      link.setAttribute("download", `XSHS_${type}_${Date.now()}.csv`);
       document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
 
-    window.onload = function() {
-      const studentSelect = document.getElementById('studentTeamSelect');
-      const stationSelect = document.getElementById('stationTeamSelect');
-
-      if (studentSelect) {
-        studentSelect.innerHTML = TEAM_NAMES.map(t => `<option value="${t}">${t} 小隊</option>`).join('');
+    async function confirmResetData() {
+      if (!supabaseClient) { showToast('無網路連線，無法重置！', 'error'); return; }
+      try {
+        await supabaseClient.from('score_logs').delete().neq('id', 0);
+        await supabaseClient.from('teams').update({ total_score: 0 }).neq('team_name', '');
+        showToast('已重置所有成績資料', 'success');
+        refreshData();
+      } catch(e) {
+        showToast('重置失敗，請重試！', 'error');
       }
-      if (stationSelect) {
-        stationSelect.innerHTML = '<option value="">-- 請選擇小隊 --</option>' + TEAM_NAMES.map(t => `<option value="${t}">${t} 小隊</option>`).join('');
+    }
+
+    function applyCustomTimerInput() {
+      const m = parseInt(document.getElementById('customMinInput').value) || 0;
+      const s = parseInt(document.getElementById('customSecInput').value) || 0;
+      stationTimerSeconds = (m * 60 + s) * 10;
+      updateTimerDisplay();
+      showToast(`計時器設定為 ${m} 分 ${s} 秒`, 'info');
+    }
+
+    function adjustTimerSeconds(deltaSec) { stationTimerSeconds = Math.max(0, stationTimerSeconds + (deltaSec * 10)); updateTimerDisplay(); }
+    
+    function toggleTimer() {
+      const btn = document.getElementById('timerStartBtn');
+      if (isStationTimerRunning) {
+        clearInterval(stationTimerInterval);
+        isStationTimerRunning = false;
+        btn.innerHTML = '<i class="fa-solid fa-play"></i> 開始計時';
+      } else {
+        isStationTimerRunning = true;
+        btn.innerHTML = '<i class="fa-solid fa-pause"></i> 暫停計時';
+        stationTimerInterval = setInterval(() => {
+          if (stationTimerSeconds > 0) { stationTimerSeconds--; updateTimerDisplay(); }
+          else { clearInterval(stationTimerInterval); isStationTimerRunning = false; showToast('關卡計時結束！', 'info'); }
+        }, 100);
+      }
+    }
+
+    function resetTimer() {
+      clearInterval(stationTimerInterval);
+      isStationTimerRunning = false;
+      const m = parseInt(document.getElementById('customMinInput').value) || 5;
+      const s = parseInt(document.getElementById('customSecInput').value) || 0;
+      stationTimerSeconds = (m * 60 + s) * 10;
+      updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+      const display = document.getElementById('timerDisplay');
+      if (!display) return;
+      const totalSecs = Math.floor(stationTimerSeconds / 10);
+      const mins = Math.floor(totalSecs / 60);
+      const secs = totalSecs % 60;
+      const deci = stationTimerSeconds % 10;
+      display.innerHTML = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0') + '<span class="text-lg text-slate-400">.' + deci + '</span>';
+    }
+
+    async function updateRoomReadStatus(roomId) {
+      if (!roomId || !currentUser || !supabaseClient) return;
+      const readTimeIso = new Date(Date.now() + 2000).toISOString();
+      lastReadTimeMap[roomId] = new Date(readTimeIso).getTime();
+
+      try {
+        await supabaseClient.from('chat_read_status').upsert({
+          account_id: currentUser.id,
+          room_id: roomId,
+          last_read_at: readTimeIso
+        }, { onConflict: 'account_id,room_id' });
+      } catch(e) {}
+    }
+
+    async function syncReadStatusesFromCloud() {
+      if (!currentUser || !supabaseClient) return;
+      try {
+        const { data, error } = await supabaseClient.from('chat_read_status').select('*').eq('account_id', currentUser.id);
+        if (data && !error) {
+          data.forEach(item => {
+            if (item.room_id && item.last_read_at) {
+              lastReadTimeMap[item.room_id] = new Date(item.last_read_at).getTime();
+            }
+          });
+        }
+      } catch(e) {}
+    }
+
+    async function toggleChatModal() {
+      const modal = document.getElementById('chatModal');
+      const badgeDot = document.getElementById('chatBadgeDot');
+      if (!modal) return;
+      if (modal.classList.contains('hidden')) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        await updateRoomReadStatus(activeChatRoom);
+        if (badgeDot) badgeDot.classList.add('hidden');
+        loadChatMessages();
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+
+    async function switchChatRoom(roomId) {
+      activeChatRoom = roomId;
+      await updateRoomReadStatus(roomId);
+      loadChatMessages();
+    }
+
+    function isAdminAccount(accId) {
+      if (!accId) return false;
+      const s = String(accId).toUpperCase();
+      return s === 'ADMIN';
+    }
+
+    function isSameAccount(acc1, acc2) {
+      if (!acc1 || !acc2) return false;
+      return String(acc1).toUpperCase() === String(acc2).toUpperCase();
+    }
+
+    function getAllowedRoomsForUser() {
+      if (!currentUser) return ['ALL'];
+      if (currentUser.role === 'ADMIN') {
+        return ['ALL', 'ALL_STATIONS', 'ALL_STUDENTS', ...STATION_IDS, ...TEAM_NAMES];
+      } else if (currentUser.role === 'STATION') {
+        const otherStations = STATION_IDS.filter(s => s !== currentUser.id);
+        return ['ALL', 'ALL_STATIONS', 'ADMIN', ...otherStations];
+      } else {
+        return ['ALL', 'ALL_STUDENTS', 'ADMIN'];
+      }
+    }
+
+    function getMessagesForRoom(roomId) {
+      if (!currentUser) return [];
+      const myId = currentUser.id;
+
+      if (roomId === 'ALL') {
+        return localMessages.filter(m => m.receiver === 'ALL');
+      } else if (roomId === 'ALL_STATIONS') {
+        return localMessages.filter(m => m.receiver === 'ALL_STATIONS');
+      } else if (roomId === 'ALL_STUDENTS') {
+        return localMessages.filter(m => m.receiver === 'ALL_STUDENTS');
+      } else {
+        const targetId = roomId;
+        if (currentUser.role === 'ADMIN') {
+          return localMessages.filter(m => 
+            m.receiver !== 'ALL' && m.receiver !== 'ALL_STATIONS' && m.receiver !== 'ALL_STUDENTS' && (
+              (isAdminAccount(m.sender) && isSameAccount(m.receiver, targetId)) ||
+              (isSameAccount(m.sender, targetId) && isAdminAccount(m.receiver))
+            )
+          );
+        } else {
+          return localMessages.filter(m => 
+            m.receiver !== 'ALL' && m.receiver !== 'ALL_STATIONS' && m.receiver !== 'ALL_STUDENTS' && (
+              (isSameAccount(m.sender, myId) && isSameAccount(m.receiver, targetId)) ||
+              (isSameAccount(m.sender, targetId) && isSameAccount(m.receiver, myId))
+            )
+          );
+        }
+      }
+    }
+
+    function hasUnreadInRoom(roomId) {
+      if (!currentUser) return false;
+      const roomMsgs = getMessagesForRoom(roomId);
+      if (roomMsgs.length === 0) return false;
+      const lastRead = lastReadTimeMap[roomId] || 0;
+
+      return roomMsgs.some(m => {
+        const isFromMe = isSameAccount(m.sender, currentUser.id) || (currentUser.role === 'ADMIN' && isAdminAccount(m.sender));
+        if (isFromMe) return false;
+        const msgTime = parseDate(m.created_at)?.getTime() || 0;
+        return msgTime > lastRead;
+      });
+    }
+
+    function getSortedChatRooms() {
+      const allowed = getAllowedRoomsForUser();
+      const latestMessageTimeMap = {};
+      allowed.forEach(acc => latestMessageTimeMap[acc] = 0);
+
+      localMessages.forEach(m => {
+        let roomKey = null;
+        if (m.receiver === 'ALL') roomKey = 'ALL';
+        else if (m.receiver === 'ALL_STATIONS') roomKey = 'ALL_STATIONS';
+        else if (m.receiver === 'ALL_STUDENTS') roomKey = 'ALL_STUDENTS';
+        else {
+          if (currentUser.role === 'ADMIN') {
+            roomKey = isAdminAccount(m.sender) ? m.receiver : m.sender;
+          } else {
+            if (isSameAccount(m.sender, currentUser.id)) roomKey = m.receiver;
+            else if (isSameAccount(m.receiver, currentUser.id)) roomKey = m.sender;
+          }
+        }
+        if (roomKey && latestMessageTimeMap[roomKey] !== undefined) {
+          const timeNum = parseDate(m.created_at)?.getTime() || 0;
+          if (timeNum > latestMessageTimeMap[roomKey]) {
+            latestMessageTimeMap[roomKey] = timeNum;
+          }
+        }
+      });
+
+      const fixedGroupRooms = ['ALL'];
+      if (allowed.includes('ALL_STATIONS')) fixedGroupRooms.push('ALL_STATIONS');
+      if (allowed.includes('ALL_STUDENTS')) fixedGroupRooms.push('ALL_STUDENTS');
+
+      const nonGroupRooms = allowed.filter(r => !fixedGroupRooms.includes(r)).sort((a, b) => {
+        const timeA = latestMessageTimeMap[a] || 0;
+        const timeB = latestMessageTimeMap[b] || 0;
+        if (timeA !== timeB) return timeB - timeA;
+        return a.localeCompare(b, undefined, { numeric: true });
+      });
+
+      return [...fixedGroupRooms, ...nonGroupRooms];
+    }
+
+    function renderChatRoomButtons(sortedRooms) {
+      const container = document.getElementById('chatRoomButtonContainer');
+      if (!container) return;
+
+      if (!sortedRooms.includes(activeChatRoom)) {
+        activeChatRoom = 'ALL';
       }
 
-      updateScoringUI();
-      fetchSongDrawState();
-      refreshData();
+      const modalIsHidden = document.getElementById('chatModal')?.classList.contains('hidden');
+      let globalHasUnread = false;
+
+      sortedRooms.forEach(rId => {
+        if (hasUnreadInRoom(rId)) {
+          globalHasUnread = true;
+        }
+      });
+
+      const badgeDot = document.getElementById('chatBadgeDot');
+      if (badgeDot) {
+        if (globalHasUnread && modalIsHidden) {
+          badgeDot.classList.remove('hidden');
+        } else {
+          badgeDot.classList.add('hidden');
+        }
+      }
+
+      container.innerHTML = sortedRooms.map(rId => {
+        const isActive = activeChatRoom === rId;
+        const displayName = getAccountDisplayName(rId);
+        const unread = hasUnreadInRoom(rId);
+
+        let activeStyle = isActive
+          ? 'bg-amber-500 text-slate-950 font-black shadow-sm border-amber-400'
+          : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 font-bold';
+
+        let iconTag = '';
+        if (rId === 'ALL') iconTag = '<i class="fa-solid fa-bullhorn text-amber-900 mr-1.5"></i>';
+        else if (rId === 'ALL_STATIONS') iconTag = '<i class="fa-solid fa-headset text-indigo-700 mr-1.5"></i>';
+        else if (rId === 'ALL_STUDENTS') iconTag = '<i class="fa-solid fa-graduation-cap text-emerald-700 mr-1.5"></i>';
+        else if (rId === 'ADMIN') iconTag = '<i class="fa-solid fa-user-shield text-amber-600 mr-1 text-[10px]"></i>';
+        else if (STATIONS.some(s => s.id === rId)) iconTag = '<i class="fa-solid fa-headset text-slate-400 mr-1 text-[10px]"></i>';
+        else iconTag = '<i class="fa-solid fa-users text-slate-400 mr-1 text-[10px]"></i>';
+
+        const isPinnedGroup = ['ALL', 'ALL_STATIONS', 'ALL_STUDENTS'].includes(rId);
+
+        return `
+          <button onclick="switchChatRoom('${rId}')" class="w-full text-left px-2.5 py-2 rounded-xl text-xs border transition flex items-center justify-between min-w-0 ${activeStyle} cursor-pointer">
+            <span class="truncate flex items-center min-w-0">${iconTag}<span class="truncate">${displayName}</span></span>
+            <div class="flex items-center gap-1 shrink-0 ml-1">
+              ${unread ? '<span class="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse inline-block shadow-sm"></span>' : ''}
+              ${isPinnedGroup ? '<span class="text-[9px] bg-amber-600/20 text-slate-900 px-1.5 py-0.2 rounded font-extrabold shrink-0">📌 群組</span>' : ''}
+            </div>
+          </button>
+        `;
+      }).join('');
+
+      const badge = document.getElementById('activeRoomBadge');
+      if (badge) {
+        badge.innerText = getAccountDisplayName(activeChatRoom);
+      }
+
+      const input = document.getElementById('chatInputText');
+      const btn = document.getElementById('btnSendChat');
+      
+      let isBlocked = false;
+      let blockReason = '輸入訊息...';
+
+      if (activeChatRoom === 'ALL' && currentUser && currentUser.role !== 'ADMIN') {
+        isBlocked = true;
+        blockReason = '全體廣播僅限大會管理員發送...';
+      }
+
+      if (input) {
+        input.disabled = isBlocked;
+        input.placeholder = blockReason;
+      }
+      if (btn) {
+        btn.disabled = isBlocked;
+        if (isBlocked) btn.classList.add('opacity-50', 'cursor-not-allowed');
+        else btn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+
+    async function loadChatMessages() {
+      const container = document.getElementById('chatMessagesContainer');
+      if (!container) return;
+
+      if (!currentUser) {
+        container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs flex flex-col items-center gap-2"><i class="fa-solid fa-lock text-slate-300 text-2xl"></i><span>請先登入帳號以開始對話</span></div>`;
+        return;
+      }
+
+      if (!supabaseClient) {
+        container.innerHTML = `<div class="text-center py-8 text-rose-500 text-xs font-bold">無法連線至對話伺服器，請確認網路！</div>`;
+        return;
+      }
+
+      try {
+        const { data, error } = await supabaseClient.from('messages').select('*').order('created_at', { ascending: true });
+        if (data && !error) {
+          localMessages = data;
+        }
+      } catch(e){}
+
+      await syncReadStatusesFromCloud();
+
+      const modalIsVisible = !document.getElementById('chatModal')?.classList.contains('hidden');
+      if (modalIsVisible) {
+        await updateRoomReadStatus(activeChatRoom);
+      }
+
+      const sortedRooms = getSortedChatRooms();
+      renderChatRoomButtons(sortedRooms);
+
+      const filtered = getMessagesForRoom(activeChatRoom);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs flex flex-col items-center gap-2"><i class="fa-solid fa-comments text-slate-300 text-2xl"></i><span>此頻道尚無訊息，輸入訊息即可開始對話！</span></div>`;
+        return;
+      }
+
+      const prevCount = container.children.length;
+      container.innerHTML = filtered.map(m => {
+        const isMe = isSameAccount(m.sender, currentUser.id) || (currentUser.role === 'ADMIN' && isAdminAccount(m.sender));
+        let senderLabel = m.sender;
+        if (isAdminAccount(m.sender)) senderLabel = '大會總管理員';
+        else senderLabel = getAccountDisplayName(m.sender);
+
+        return `
+          <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+            <span class="text-[10px] text-slate-400 px-1 font-mono flex items-center gap-1">${senderLabel} • ${formatTWTime(m.created_at)}</span>
+            <div class="p-2.5 rounded-2xl text-xs max-w-[85%] mt-0.5 shadow-sm break-words ${isMe ? 'bg-amber-500 text-slate-950 font-bold rounded-tr-none' : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none'}">
+              ${m.message}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (filtered.length > prevCount) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    async function sendChatMessage() {
+      const input = document.getElementById('chatInputText');
+      const btn = document.getElementById('btnSendChat');
+      if (!currentUser) { showToast('請先登入系統後再發送訊息！', 'error'); return; }
+      if (!supabaseClient) { showToast('無法連線至伺服器，發送失敗！', 'error'); return; }
+
+      const text = input.value.trim();
+      if (!text) return;
+
+      if (activeChatRoom === 'ALL' && currentUser.role !== 'ADMIN') {
+        showToast('【全體廣播】頻道僅限大會總管理員發送訊息！', 'error');
+        return;
+      }
+
+      let targetReceiver = activeChatRoom;
+
+      const newMsg = {
+        sender: currentUser.id,
+        receiver: targetReceiver,
+        message: text,
+        created_at: new Date().toISOString()
+      };
+
+      input.value = '';
+      if (btn) { btn.disabled = true; btn.classList.add('opacity-50'); }
+
+      try {
+        const { error } = await supabaseClient.from('messages').insert([newMsg]);
+        if (error) {
+          showToast('訊息發送連線問題：' + error.message, 'error');
+        } else {
+          showToast('訊息已發送', 'success');
+        }
+      } catch(e) {
+        showToast('發送網路失敗！', 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.classList.remove('opacity-50'); }
+        await updateRoomReadStatus(activeChatRoom);
+        await loadChatMessages();
+      }
+    }
+
+    window.onload = async function() {
+      fetchClientIp();
+      populateDropdowns();
+      
+      const isRestored = restoreSession();
+      if (!isRestored) {
+        openLoginModal();
+      }
+
+      await refreshData();
+      if (currentUser) renderViewsForRole();
       setInterval(refreshData, 3000);
-      setInterval(fetchSongDrawState, 3000);
+      setInterval(loadChatMessages, 3000);
     };
   </script>
 </body>
