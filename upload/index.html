@@ -76,6 +76,7 @@
           <option value="409">409 班</option>
           <option value="410">410 班</option>
           <option value="工作人員">📸 工作人員 / 大會紀錄相簿</option>
+          <option value="未分類">❓ 未分類 / 其他照片</option>
         </select>
       </div>
 
@@ -99,7 +100,7 @@
         </div>
       </div>
 
-      <!-- 照片預覽區與狀態追蹤 (修復手機版防重疊排版) -->
+      <!-- 照片預覽區與狀態追蹤 -->
       <div id="previewContainer" class="hidden space-y-2">
         <div class="flex justify-between items-center text-xs font-bold text-slate-300">
           <span class="flex items-center gap-1.5">
@@ -112,14 +113,14 @@
           </button>
         </div>
         
-        <!-- 縮圖網格：加入 h-80 與修復卡片高度 -->
+        <!-- 縮圖網格：修復 iOS 手機版縮圖重疊與擠壓問題 -->
         <div id="thumbnailGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-80 overflow-y-auto p-2.5 bg-slate-900/90 rounded-2xl border border-slate-800"></div>
       </div>
 
       <!-- 上傳進度條與狀態文字 -->
       <div id="progressBox" class="hidden space-y-1.5 pt-1">
         <div class="flex justify-between items-center text-xs font-bold">
-          <span id="uploadStatusText" class="text-amber-400 font-mono">準備上傳中...</span>
+          <span id="uploadStatusText" class="text-amber-400 font-mono">準備批次上傳中...</span>
           <span id="percentText" class="text-slate-300 font-mono">0%</span>
         </div>
         <div class="w-full bg-slate-800 rounded-full h-3.5 overflow-hidden border border-slate-700">
@@ -148,8 +149,8 @@
         <i class="fa-solid fa-circle-check"></i> 上傳確認須知：
       </h3>
       <ul class="text-[11px] sm:text-xs space-y-1 text-slate-400 list-disc list-inside font-medium leading-relaxed">
-        <li>命名格式為：<strong class="text-amber-300">班級_日期時間_原檔名</strong>（如：<code class="text-amber-400 font-mono">401_20260801_143000_IMG_0001.jpg</code> 或 <code class="text-amber-400 font-mono">工作人員_20260801_143000_photo.jpg</code>）。</li>
-        <li>選擇<strong class="text-amber-300">「工作人員 / 大會紀錄相簿」</strong>會自動寫入雲端硬碟中的「工作人員」專屬資料夾。</li>
+        <li>命名格式為：<strong class="text-amber-300">班級_日期時間_原檔名</strong>（如：<code class="text-amber-400 font-mono">401_20260801_143000_IMG_0001.jpg</code> 或 <code class="text-amber-400 font-mono">未分類_20260801_143000_photo.jpg</code>）。</li>
+        <li>選擇<strong class="text-amber-300">「未分類 / 其他照片」</strong>會自動寫入雲端硬碟中的「未分類」專屬資料夾。</li>
         <li>上傳過程<strong class="text-amber-300">完全無時間限制</strong>，會持續等待直到照片完全成功存入雲端。</li>
       </ul>
     </div>
@@ -166,7 +167,9 @@
     let selectedFiles = [];
 
     function getClassLabel(val) {
-      return val === '工作人員' ? '工作人員相簿' : `${val} 班`;
+      if (val === '工作人員') return '工作人員相簿';
+      if (val === '未分類') return '未分類相簿';
+      return `${val} 班`;
     }
 
     function showToast(msg, type = 'info') {
@@ -262,7 +265,6 @@
       }
     }
 
-    // 重新編寫 updatePreviewGrid，給予每個 DOM 卡片 h-28 或 h-32 的明確物理高度，解決 iOS 縮圖重疊 bug
     function updatePreviewGrid() {
       const container = document.getElementById('previewContainer');
       const grid = document.getElementById('thumbnailGrid');
@@ -316,7 +318,6 @@
         const sizeMB = (item.file.size / 1024 / 1024).toFixed(1);
 
         const div = document.createElement('div');
-        // 給定 h-28 sm:h-32 明確高度，阻斷 iOS Safari 縮圖重疊崩壞
         div.className = `relative w-full h-28 sm:h-32 rounded-2xl overflow-hidden border ${borderStyle} bg-slate-800 shadow-md flex flex-col justify-between p-1.5`;
         div.innerHTML = `
           <img src="${item.previewUrl}" class="absolute inset-0 w-full h-full object-cover z-0">
