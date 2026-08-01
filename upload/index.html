@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>活動照片原檔直傳系統 - 新社高中</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;600;700;800;900&display=swap');
+    * { max-width: 100%; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans TC', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #f8fafc;
+      min-height: 100vh;
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    }
+    .drop-zone {
+      border: 2px dashed rgba(245, 158, 11, 0.4);
+      transition: all 0.2s ease-in-out;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.08);
+      transform: scale(1.01);
+    }
+    .btn-touch { min-height: 48px; }
+  </style>
+</head>
+<body class="flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950 min-h-screen p-4 sm:p-6">
+
+  <!-- Toast 通知容器 -->
+  <div id="toastContainer" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none w-[92%] max-w-md"></div>
+
+  <div class="max-w-2xl mx-auto w-full space-y-6 my-auto">
+    
+    <!-- 頂部 Header -->
+    <header class="text-center space-y-2">
+      <div class="w-16 h-16 rounded-3xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-3xl mx-auto shadow-xl shadow-amber-500/20">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+      </div>
+      <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight">活動照片原檔直傳系統</h1>
+      <p class="text-xs sm:text-sm text-slate-400 font-medium">免登入 • 免表單 • 無時間/秒數限制上傳</p>
+    </header>
+
+    <!-- 主要上傳控制卡片 -->
+    <div class="glass-card p-5 sm:p-7 rounded-3xl space-y-5 border border-slate-700">
+      
+      <!-- 步驟 1：班級選擇區 -->
+      <div class="space-y-2">
+        <label class="block text-xs sm:text-sm font-extrabold text-amber-400 flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center">1</span>
+          <span>選擇上傳班級：</span>
+        </label>
+        <select id="classSelect" class="w-full p-3.5 bg-slate-900 border-2 border-slate-700 focus:border-amber-500 rounded-2xl text-sm font-black text-white outline-none transition cursor-pointer">
+          <option value="401">401 班</option>
+          <option value="402">402 班</option>
+          <option value="403">403 班</option>
+          <option value="404">404 班</option>
+          <option value="405">405 班</option>
+          <option value="406">406 班</option>
+          <option value="407">407 班</option>
+          <option value="408">408 班</option>
+          <option value="409">409 班</option>
+          <option value="410">410 班</option>
+        </select>
+      </div>
+
+      <!-- 步驟 2：多張相片選擇區 -->
+      <div class="space-y-2">
+        <label class="block text-xs sm:text-sm font-extrabold text-amber-400 flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center">2</span>
+          <span>選擇原始照片 (可一次選擇多張相片)：</span>
+        </label>
+
+        <div id="dropZone" onclick="document.getElementById('fileInput').click()" class="drop-zone p-6 sm:p-8 rounded-2xl text-center cursor-pointer space-y-3 bg-slate-900/50">
+          <i class="fa-solid fa-images text-4xl sm:text-5xl text-amber-500/80"></i>
+          <div>
+            <p class="text-sm sm:text-base font-extrabold text-slate-100">點擊此處選擇照片，或拖曳多張照片至此</p>
+            <p class="text-xs text-slate-400 mt-1">按住 Ctrl / Shift 或在手機相簿中打勾，可一次選擇數十張原檔</p>
+          </div>
+          <span class="inline-block px-3 py-1 bg-slate-800 text-amber-400 font-bold text-xs rounded-full border border-amber-500/30">
+            <i class="fa-solid fa-square-plus mr-1"></i> 選擇多張相片
+          </span>
+          <input type="file" id="fileInput" accept="image/*" multiple class="hidden" onchange="handleFileChange(event)">
+        </div>
+      </div>
+
+      <!-- 照片預覽區與狀態追蹤 -->
+      <div id="previewContainer" class="hidden space-y-2">
+        <div class="flex justify-between items-center text-xs font-bold text-slate-300">
+          <span class="flex items-center gap-1.5">
+            <i class="fa-solid fa-photo-film text-amber-400"></i>
+            已選擇 <span id="fileCountText" class="text-amber-400 font-black text-sm">0</span> 張照片
+            <span id="statusSummaryText" class="text-[11px] text-slate-400 ml-1"></span>
+          </span>
+          <button onclick="clearSelectedFiles()" class="text-rose-400 hover:text-rose-300 transition text-xs font-extrabold flex items-center gap-1 cursor-pointer">
+            <i class="fa-solid fa-trash-can"></i> 清空重選
+          </button>
+        </div>
+        
+        <div id="thumbnailGrid" class="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-64 overflow-y-auto p-2.5 bg-slate-900/90 rounded-2xl border border-slate-800"></div>
+      </div>
+
+      <!-- 上傳進度條與狀態文字 -->
+      <div id="progressBox" class="hidden space-y-1.5 pt-1">
+        <div class="flex justify-between items-center text-xs font-bold">
+          <span id="uploadStatusText" class="text-amber-400 font-mono">準備批次上傳中...</span>
+          <span id="percentText" class="text-slate-300 font-mono">0%</span>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-3.5 overflow-hidden border border-slate-700">
+          <div id="progressBar" class="bg-gradient-to-r from-amber-500 to-amber-400 h-3.5 rounded-full transition-all duration-300 w-0"></div>
+        </div>
+      </div>
+
+      <!-- 步驟 3：按鈕控制區 -->
+      <div class="space-y-2">
+        <button id="btnUpload" onclick="startBatchUpload()" disabled class="btn-touch w-full bg-amber-500 hover:bg-amber-400 active:scale-95 disabled:opacity-40 disabled:hover:bg-amber-500 disabled:active:scale-100 text-slate-950 font-black text-sm sm:text-base rounded-2xl shadow-xl transition flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span id="btnText">開始批次上傳至 Google 雲端硬碟</span>
+        </button>
+
+        <button id="btnRetryFailed" onclick="retryFailedUploads()" class="btn-touch w-full bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-black text-xs sm:text-sm rounded-2xl shadow-xl transition hidden items-center justify-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-rotate-right"></i>
+          <span>重新上傳失敗的照片 (<span id="failedRetryCount">0</span> 張)</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- 照片上傳說明與檢查須知 -->
+    <div class="glass-card p-4 rounded-2xl space-y-2 border border-slate-800 text-slate-300">
+      <h3 class="font-bold text-xs text-amber-400 flex items-center gap-1.5">
+        <i class="fa-solid fa-circle-check"></i> 上傳確認須知：
+      </h3>
+      <ul class="text-[11px] sm:text-xs space-y-1 text-slate-400 list-disc list-inside font-medium leading-relaxed">
+        <li>上傳檔案命名格式為：<strong class="text-amber-300">班級_日期時間_原檔名</strong>（例如：<code class="text-amber-400 font-mono">401_20260801_143000_IMG_0001.jpg</code>）。</li>
+        <li>上傳過程<strong class="text-amber-300">完全無時間與秒數限制</strong>，系統會持續等待直至檔案完整上傳完畢。</li>
+        <li>相片上傳後會顯示 <strong class="text-emerald-400">✅ 成功</strong> 綠色標籤，代表已精準寫入貴班 Google Drive 資料夾。</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <footer class="text-center text-slate-600 text-xs py-4">
+    <p>臺中市立新社高級中學 活動照片直傳系統 &copy; 2026</p>
+  </footer>
+
+  <script>
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxl_Fhy-SKff55gYd4o8o9-T_-SI05lR2On0VhGJ5hi-el3OpiIGx1t3mqU-4KJY26tXQ/exec";
+
+    let selectedFiles = [];
+
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      let bgClass = 'bg-slate-800 text-white border-slate-700 shadow-xl';
+      if (type === 'success') bgClass = 'bg-emerald-600 text-white border-emerald-500 shadow-xl';
+      else if (type === 'error') bgClass = 'bg-rose-600 text-white border-rose-500 shadow-xl';
+
+      toast.className = `px-4 py-2.5 rounded-2xl border text-xs font-semibold pointer-events-auto flex items-center justify-between gap-3 transition-all duration-300 transform translate-y-2 opacity-0 w-full ${bgClass}`;
+      toast.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()" class="text-xs opacity-60 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>`;
+      container.appendChild(toast);
+      requestAnimationFrame(() => { toast.classList.remove('translate-y-2', 'opacity-0'); });
+      setTimeout(() => { toast.remove(); }, 3500);
+    }
+
+    // 生成易讀的時間字串：YYYYMMDD_HHMMSS
+    function getFormattedTimestamp() {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const yyyy = now.getFullYear();
+      const mm = pad(now.getMonth() + 1);
+      const dd = pad(now.getDate());
+      const hh = pad(now.getHours());
+      const mi = pad(now.getMinutes());
+      const ss = pad(now.getSeconds());
+      return `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
+    }
+
+    // 拖曳事件處理
+    const dropZone = document.getElementById('dropZone');
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+      dropZone.addEventListener(evt, preventDefaults, false);
+    });
+    function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+    ['dragenter', 'dragover'].forEach(evt => {
+      dropZone.addEventListener(evt, () => dropZone.classList.add('dragover'), false);
+    });
+    ['dragleave', 'drop'].forEach(evt => {
+      dropZone.addEventListener(evt, () => dropZone.classList.remove('dragover'), false);
+    });
+    dropZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      if (dt.files && dt.files.length > 0) {
+        addFiles(Array.from(dt.files));
+      }
+    });
+
+    function handleFileChange(event) {
+      if (event.target.files && event.target.files.length > 0) {
+        addFiles(Array.from(event.target.files));
+      }
+    }
+
+    function addFiles(files) {
+      const imageFiles = files.filter(f => f.type.startsWith('image/'));
+      if (imageFiles.length === 0) {
+        showToast('請選擇有效的圖片檔案！', 'error');
+        return;
+      }
+
+      const newItems = imageFiles.map(f => ({
+        id: 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+        file: f,
+        status: 'pending',
+        errorMsg: '',
+        previewUrl: ''
+      }));
+
+      selectedFiles = selectedFiles.concat(newItems);
+      updatePreviewGrid();
+      showToast(`新增 ${newItems.length} 張照片，共 ${selectedFiles.length} 張`, 'info');
+    }
+
+    function clearSelectedFiles() {
+      selectedFiles.forEach(item => {
+        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      });
+      selectedFiles = [];
+      document.getElementById('fileInput').value = '';
+      updatePreviewGrid();
+      document.getElementById('btnRetryFailed').classList.add('hidden');
+      document.getElementById('progressBox').classList.add('hidden');
+    }
+
+    function removeSingleFile(id) {
+      const idx = selectedFiles.findIndex(item => item.id === id);
+      if (idx !== -1) {
+        if (selectedFiles[idx].previewUrl) URL.revokeObjectURL(selectedFiles[idx].previewUrl);
+        selectedFiles.splice(idx, 1);
+        updatePreviewGrid();
+      }
+    }
+
+    function updatePreviewGrid() {
+      const container = document.getElementById('previewContainer');
+      const grid = document.getElementById('thumbnailGrid');
+      const countText = document.getElementById('fileCountText');
+      const summaryText = document.getElementById('statusSummaryText');
+      const btnUpload = document.getElementById('btnUpload');
+
+      if (selectedFiles.length === 0) {
+        container.classList.add('hidden');
+        btnUpload.disabled = true;
+        return;
+      }
+
+      container.classList.remove('hidden');
+      countText.innerText = selectedFiles.length;
+
+      const successCount = selectedFiles.filter(f => f.status === 'success').length;
+      const errorCount = selectedFiles.filter(f => f.status === 'error').length;
+      const pendingCount = selectedFiles.filter(f => f.status === 'pending').length;
+
+      if (successCount > 0 || errorCount > 0) {
+        summaryText.innerText = `(成功 ${successCount} / 失敗 ${errorCount} / 等候 ${pendingCount})`;
+      } else {
+        summaryText.innerText = '';
+      }
+
+      btnUpload.disabled = (pendingCount === 0 && errorCount === 0);
+
+      grid.innerHTML = '';
+      selectedFiles.forEach(item => {
+        if (!item.previewUrl) {
+          item.previewUrl = URL.createObjectURL(item.file);
+        }
+
+        let badgeHtml = '';
+        let borderStyle = 'border-slate-700';
+
+        if (item.status === 'uploading') {
+          borderStyle = 'border-amber-400 ring-2 ring-amber-400/50';
+          badgeHtml = `<span class="bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded text-[10px] font-black animate-pulse flex items-center gap-1"><i class="fa-solid fa-spinner animate-spin"></i> 上傳中</span>`;
+        } else if (item.status === 'success') {
+          borderStyle = 'border-emerald-500 ring-2 ring-emerald-500/30';
+          badgeHtml = `<span class="bg-emerald-600 text-white px-1.5 py-0.5 rounded text-[10px] font-black flex items-center gap-1"><i class="fa-solid fa-check"></i> 成功</span>`;
+        } else if (item.status === 'error') {
+          borderStyle = 'border-rose-500 ring-2 ring-rose-500/50';
+          badgeHtml = `<span class="bg-rose-600 text-white px-1.5 py-0.5 rounded text-[10px] font-black flex items-center gap-1" title="${item.errorMsg}"><i class="fa-solid fa-xmark"></i> 失敗</span>`;
+        } else {
+          badgeHtml = `<span class="bg-slate-800/90 text-slate-300 px-1.5 py-0.5 rounded text-[10px] font-bold">等待中</span>`;
+        }
+
+        const sizeMB = (item.file.size / 1024 / 1024).toFixed(1);
+
+        const div = document.createElement('div');
+        div.className = `relative group rounded-xl overflow-hidden aspect-square border ${borderStyle} bg-slate-800 shadow-sm flex flex-col justify-between p-1`;
+        div.innerHTML = `
+          <img src="${item.previewUrl}" class="absolute inset-0 w-full h-full object-cover z-0">
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/40 z-10"></div>
+          
+          <div class="relative z-20 flex justify-between items-start">
+            ${badgeHtml}
+            ${item.status !== 'uploading' ? `
+              <button onclick="removeSingleFile('${item.id}')" class="w-5 h-5 bg-rose-600/90 hover:bg-rose-600 text-white rounded-full text-[10px] flex items-center justify-center transition shadow cursor-pointer">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            ` : ''}
+          </div>
+
+          <div class="relative z-20 text-[9px] font-mono text-slate-300 font-bold truncate px-1">
+            ${sizeMB} MB
+            ${item.errorMsg ? `<p class="text-rose-300 font-extrabold truncate" title="${item.errorMsg}">${item.errorMsg}</p>` : ''}
+          </div>
+        `;
+        grid.appendChild(div);
+      });
+    }
+
+    // 讀取相片原檔 Base64 (不設任何時間限制)
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = err => reject(err);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function startBatchUpload() {
+      const targetItems = selectedFiles.filter(item => item.status === 'pending' || item.status === 'error');
+      if (targetItems.length === 0) {
+        showToast('目前無可上傳的照片！', 'info');
+        return;
+      }
+      await runUploadProcess(targetItems);
+    }
+
+    async function retryFailedUploads() {
+      const failedItems = selectedFiles.filter(item => item.status === 'error');
+      if (failedItems.length === 0) return;
+      document.getElementById('btnRetryFailed').classList.add('hidden');
+      await runUploadProcess(failedItems);
+    }
+
+    async function runUploadProcess(itemsToUpload) {
+      const classSelect = document.getElementById('classSelect');
+      const selectedClass = classSelect.value;
+      const btnUpload = document.getElementById('btnUpload');
+      const btnText = document.getElementById('btnText');
+      const progressBox = document.getElementById('progressBox');
+      const progressBar = document.getElementById('progressBar');
+      const statusText = document.getElementById('uploadStatusText');
+      const percentText = document.getElementById('percentText');
+
+      btnUpload.disabled = true;
+      btnText.innerText = '批次傳送進行中...';
+      progressBox.classList.remove('hidden');
+
+      let successCount = 0;
+      let failedCount = 0;
+      const total = itemsToUpload.length;
+
+      for (let i = 0; i < total; i++) {
+        const item = itemsToUpload[i];
+        item.status = 'uploading';
+        item.errorMsg = '';
+        updatePreviewGrid();
+
+        const percent = Math.round((i / total) * 100);
+        statusText.innerText = `⏳ [${selectedClass} 班] 傳送第 ${i + 1} / ${total} 張 (${(item.file.size / 1024 / 1024).toFixed(1)} MB)...`;
+        percentText.innerText = `${percent}%`;
+        progressBar.style.width = `${percent}%`;
+
+        try {
+          const base64Data = await fileToBase64(item.file);
+          if (!base64Data) throw new Error('檔案讀取失敗');
+
+          const cleanFileName = item.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const timeStr = getFormattedTimestamp();
+          // 新命名格式：班級_日期時間_原檔名 (如 401_20260801_143000_photo.jpg)
+          const newFileName = `${selectedClass}_${timeStr}_${cleanFileName}`;
+
+          const payload = {
+            className: selectedClass,
+            fileName: newFileName,
+            mimeType: item.file.type || 'image/jpeg',
+            fileData: base64Data.split(',')[1]
+          };
+
+          const response = await fetch(GAS_WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const resText = await response.text();
+          let resJson = {};
+          try { resJson = JSON.parse(resText); } catch(e){}
+
+          if (resJson.result === 'success') {
+            item.status = 'success';
+            item.errorMsg = '';
+            successCount++;
+          } else {
+            throw new Error(resJson.message || '雲端寫入失敗');
+          }
+
+        } catch (err) {
+          console.error(`照片 ${item.file.name} 上傳失敗:`, err);
+          item.status = 'error';
+          item.errorMsg = err.message || '傳送失敗/權限不足';
+          failedCount++;
+        }
+
+        updatePreviewGrid();
+      }
+
+      progressBar.style.width = `100%`;
+      percentText.innerText = `100%`;
+
+      const failedTotal = selectedFiles.filter(f => f.status === 'error').length;
+
+      if (failedTotal > 0) {
+        statusText.innerText = `⚠️ [${selectedClass} 班] 傳送完畢：${successCount} 張成功，${failedTotal} 張失敗`;
+        showToast(`⚠️ 有 ${failedTotal} 張照片傳送失敗，請點擊重試`, 'error');
+        
+        const retryBtn = document.getElementById('btnRetryFailed');
+        document.getElementById('failedRetryCount').innerText = failedTotal;
+        retryBtn.classList.remove('hidden');
+        retryBtn.classList.add('flex');
+      } else {
+        statusText.innerText = `✅ [${selectedClass} 班] 全部 ${successCount} 張照片已成功寫入 Google 雲端硬碟！`;
+        showToast(`🎉 [${selectedClass} 班] 已成功將 ${successCount} 張照片存入雲端！`, 'success');
+        document.getElementById('btnRetryFailed').classList.add('hidden');
+      }
+
+      btnText.innerText = '繼續上傳照片';
+      btnUpload.disabled = false;
+    }
+  </script>
+</body>
+</html>
