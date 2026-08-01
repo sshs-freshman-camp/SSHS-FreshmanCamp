@@ -137,11 +137,11 @@
         <div class="flex justify-between items-center text-xs font-bold text-slate-300">
           <span class="flex items-center gap-1.5">
             <i class="fa-solid fa-photo-film text-amber-400"></i>
-            已選擇 <span id="fileCountText" class="text-amber-400 font-black text-sm">0</span> 張照片
+            待處理 <span id="fileCountText" class="text-amber-400 font-black text-sm">0</span> 張照片
             <span id="statusSummaryText" class="text-[11px] text-slate-400 ml-1"></span>
           </span>
           <button onclick="clearSelectedFiles()" class="text-rose-400 hover:text-rose-300 transition text-xs font-extrabold flex items-center gap-1 cursor-pointer">
-            <i class="fa-solid fa-trash-can"></i> 清空重選
+            <i class="fa-solid fa-trash-can"></i> 清空預覽
           </button>
         </div>
         
@@ -181,9 +181,9 @@
         <i class="fa-solid fa-circle-check"></i> 上傳確認須知：
       </h3>
       <ul class="text-[11px] sm:text-xs space-y-1 text-slate-400 list-disc list-inside font-medium leading-relaxed">
-        <li>命名格式為：<strong class="text-amber-300">班級_日期時間_原檔名</strong>（如：<code class="text-amber-400 font-mono">401_20260801_143000_IMG_0001.jpg</code> 或 <code class="text-amber-400 font-mono">未分類_20260801_143000_photo.jpg</code>）。</li>
+        <li>命名格式為：<strong class="text-amber-300">相簿名稱_原檔名</strong>（如：<code class="text-amber-400 font-mono">401_IMG_0001.jpg</code> 或 <code class="text-amber-400 font-mono">工作人員_活動照片01.jpg</code>，完整保留中文檔名）。</li>
         <li>選擇<strong class="text-amber-300">「未分類 / 其他照片」</strong>會自動寫入雲端硬碟中的「未分類」專屬資料夾。</li>
-        <li>上傳過程<strong class="text-amber-300">完全無時間限制</strong>，會持續等待直到照片完全成功存入雲端。</li>
+        <li>照片成功寫入雲端後，系統會<strong class="text-amber-300">自動清除已完成預覽</strong>，方便您繼續選取新相片！</li>
       </ul>
     </div>
 
@@ -219,18 +219,6 @@
       setTimeout(() => { toast.remove(); }, 3500);
     }
 
-    function getFormattedTimestamp() {
-      const now = new Date();
-      const pad = n => String(n).padStart(2, '0');
-      const yyyy = now.getFullYear();
-      const mm = pad(now.getMonth() + 1);
-      const dd = pad(now.getDate());
-      const hh = pad(now.getHours());
-      const mi = pad(now.getMinutes());
-      const ss = pad(now.getSeconds());
-      return `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
-    }
-
     // 拖曳事件處理
     const dropZone = document.getElementById('dropZone');
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
@@ -242,7 +230,7 @@
       dropZone.addEventListener(evt, () => dropZone.classList.add('dragover'), false);
     });
     ['dragleave', 'drop'].forEach(evt => {
-      dropZone.addEventListener(evt, () => dropZone.classList.remove('dragover'), false);
+      dropZone.addEventListener(evt, () => dropZone.classList.remove('dragleave'), false);
     });
     dropZone.addEventListener('drop', (e) => {
       const dt = e.dataTransfer;
@@ -433,9 +421,10 @@
           const base64Data = await fileToBase64(item.file);
           if (!base64Data) throw new Error('檔案讀取失敗');
 
-          const cleanFileName = item.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-          const timeStr = getFormattedTimestamp();
-          const newFileName = `${selectedClass}_${timeStr}_${cleanFileName}`;
+          // 核心過濾：僅過濾系統非法字元，完整保留中文原檔名
+          const cleanFileName = item.file.name.replace(/[\\/:*?"<>|\r\n\t]/g, '_').trim();
+          // 檔名格式改為：相簿名稱_原檔名
+          const newFileName = `${selectedClass}_${cleanFileName}`;
 
           const payload = {
             className: selectedClass,
@@ -493,6 +482,23 @@
         statusText.innerText = `✅ [${classLabel}] 全部 ${successCount} 張照片已成功寫入 Google 雲端硬碟！`;
         showToast(`🎉 [${classLabel}] 已成功將 ${successCount} 張照片存入雲端！`, 'success');
         document.getElementById('btnRetryFailed').classList.add('hidden');
+      }
+
+      // 留給使用者 1.5 秒確認成功狀態後自動清理成功照片
+      if (successCount > 0) {
+        setTimeout(() => {
+          const successItems = selectedFiles.filter(f => f.status === 'success');
+          successItems.forEach(item => {
+            if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+          });
+          selectedFiles = selectedFiles.filter(f => f.status !== 'success');
+          document.getElementById('fileInput').value = '';
+          updatePreviewGrid();
+          
+          if (selectedFiles.length === 0) {
+            progressBox.classList.add('hidden');
+          }
+        }, 1500);
       }
 
       btnText.innerText = '繼續上傳照片';
