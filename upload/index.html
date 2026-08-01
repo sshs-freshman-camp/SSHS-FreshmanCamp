@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>新社高中活動照片原檔直傳系統</title>
+  <title>新社高中活動照片上傳系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
@@ -46,7 +46,7 @@
       <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-2xl sm:text-3xl mx-auto shadow-xl shadow-amber-500/20">
         <i class="fa-solid fa-cloud-arrow-up"></i>
       </div>
-      <h1 class="text-xl sm:text-3xl font-black text-white tracking-tight">新社高中活動照片原檔直傳系統</h1>
+      <h1 class="text-xl sm:text-3xl font-black text-white tracking-tight">新社高中活動照片上傳系統</h1>
       <p class="text-xs sm:text-sm text-slate-400 font-medium">免登入 • 自動存入 Google Drive</p>
     </header>
 
@@ -99,7 +99,7 @@
         </div>
       </div>
 
-      <!-- 照片預覽區與狀態追蹤 (手機版優化為 2 欄大縮圖，避免擠壓) -->
+      <!-- 照片預覽區與狀態追蹤 (修復手機版防重疊排版) -->
       <div id="previewContainer" class="hidden space-y-2">
         <div class="flex justify-between items-center text-xs font-bold text-slate-300">
           <span class="flex items-center gap-1.5">
@@ -112,14 +112,14 @@
           </button>
         </div>
         
-        <!-- 縮圖網格：手機版 2 欄 (grid-cols-2)，平板/電腦版 3~4 欄 -->
-        <div id="thumbnailGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-72 overflow-y-auto p-2.5 bg-slate-900/90 rounded-2xl border border-slate-800"></div>
+        <!-- 縮圖網格：加入 h-80 與修復卡片高度 -->
+        <div id="thumbnailGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-80 overflow-y-auto p-2.5 bg-slate-900/90 rounded-2xl border border-slate-800"></div>
       </div>
 
       <!-- 上傳進度條與狀態文字 -->
       <div id="progressBox" class="hidden space-y-1.5 pt-1">
         <div class="flex justify-between items-center text-xs font-bold">
-          <span id="uploadStatusText" class="text-amber-400 font-mono">準備批次上傳中...</span>
+          <span id="uploadStatusText" class="text-amber-400 font-mono">準備上傳中...</span>
           <span id="percentText" class="text-slate-300 font-mono">0%</span>
         </div>
         <div class="w-full bg-slate-800 rounded-full h-3.5 overflow-hidden border border-slate-700">
@@ -131,7 +131,7 @@
       <div class="space-y-2">
         <button id="btnUpload" onclick="startBatchUpload()" disabled class="btn-touch w-full bg-amber-500 hover:bg-amber-400 active:scale-95 disabled:opacity-40 disabled:hover:bg-amber-500 disabled:active:scale-100 text-slate-950 font-black text-sm sm:text-base rounded-2xl shadow-xl transition flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed">
           <i class="fa-solid fa-paper-plane"></i>
-          <span id="btnText">開始批次上傳至 Google 雲端硬碟</span>
+          <span id="btnText">開始上傳至 Google 雲端硬碟</span>
         </button>
 
         <button id="btnRetryFailed" onclick="retryFailedUploads()" class="btn-touch w-full bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-black text-xs sm:text-sm rounded-2xl shadow-xl transition hidden items-center justify-center gap-2 cursor-pointer">
@@ -150,14 +150,14 @@
       <ul class="text-[11px] sm:text-xs space-y-1 text-slate-400 list-disc list-inside font-medium leading-relaxed">
         <li>命名格式為：<strong class="text-amber-300">班級_日期時間_原檔名</strong>（如：<code class="text-amber-400 font-mono">401_20260801_143000_IMG_0001.jpg</code> 或 <code class="text-amber-400 font-mono">工作人員_20260801_143000_photo.jpg</code>）。</li>
         <li>選擇<strong class="text-amber-300">「工作人員 / 大會紀錄相簿」</strong>會自動寫入雲端硬碟中的「工作人員」專屬資料夾。</li>
-        <li>上傳過程<strong class="text-amber-300">無時間限制</strong>，會持續等待直到照片完全成功存入雲端。</li>
+        <li>上傳過程<strong class="text-amber-300">完全無時間限制</strong>，會持續等待直到照片完全成功存入雲端。</li>
       </ul>
     </div>
 
   </div>
 
   <footer class="text-center text-slate-600 text-xs py-3">
-    <p>115學年度新生卓越成長營 活動照片上傳系統 &copy; 2026</p>
+    <p>115學年度新生卓越成長營 &copy; 2026</p>
   </footer>
 
   <script>
@@ -262,6 +262,7 @@
       }
     }
 
+    // 重新編寫 updatePreviewGrid，給予每個 DOM 卡片 h-28 或 h-32 的明確物理高度，解決 iOS 縮圖重疊 bug
     function updatePreviewGrid() {
       const container = document.getElementById('previewContainer');
       const grid = document.getElementById('thumbnailGrid');
@@ -301,37 +302,38 @@
 
         if (item.status === 'uploading') {
           borderStyle = 'border-amber-400 ring-2 ring-amber-400/50';
-          badgeHtml = `<span class="bg-amber-500 text-slate-950 px-2 py-0.5 rounded-md text-[11px] font-black animate-pulse flex items-center gap-1 shadow"><i class="fa-solid fa-spinner animate-spin"></i> 上傳中</span>`;
+          badgeHtml = `<span class="bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded text-[10px] font-black animate-pulse flex items-center gap-1 shadow"><i class="fa-solid fa-spinner animate-spin"></i> 上傳中</span>`;
         } else if (item.status === 'success') {
           borderStyle = 'border-emerald-500 ring-2 ring-emerald-500/30';
-          badgeHtml = `<span class="bg-emerald-600 text-white px-2 py-0.5 rounded-md text-[11px] font-black flex items-center gap-1 shadow"><i class="fa-solid fa-check"></i> 成功</span>`;
+          badgeHtml = `<span class="bg-emerald-600 text-white px-1.5 py-0.5 rounded text-[10px] font-black flex items-center gap-1 shadow"><i class="fa-solid fa-check"></i> 成功</span>`;
         } else if (item.status === 'error') {
           borderStyle = 'border-rose-500 ring-2 ring-rose-500/50';
-          badgeHtml = `<span class="bg-rose-600 text-white px-2 py-0.5 rounded-md text-[11px] font-black flex items-center gap-1 shadow" title="${item.errorMsg}"><i class="fa-solid fa-xmark"></i> 失敗</span>`;
+          badgeHtml = `<span class="bg-rose-600 text-white px-1.5 py-0.5 rounded text-[10px] font-black flex items-center gap-1 shadow" title="${item.errorMsg}"><i class="fa-solid fa-xmark"></i> 失敗</span>`;
         } else {
-          badgeHtml = `<span class="bg-slate-900/90 text-slate-300 px-2 py-0.5 rounded-md text-[11px] font-bold border border-slate-700">等待中</span>`;
+          badgeHtml = `<span class="bg-slate-900/80 text-slate-200 px-1.5 py-0.5 rounded text-[10px] font-extrabold border border-slate-700 shadow">等待中</span>`;
         }
 
         const sizeMB = (item.file.size / 1024 / 1024).toFixed(1);
 
         const div = document.createElement('div');
-        div.className = `relative group rounded-2xl overflow-hidden aspect-square border ${borderStyle} bg-slate-800 shadow-md flex flex-col justify-between p-2 transition-all`;
+        // 給定 h-28 sm:h-32 明確高度，阻斷 iOS Safari 縮圖重疊崩壞
+        div.className = `relative w-full h-28 sm:h-32 rounded-2xl overflow-hidden border ${borderStyle} bg-slate-800 shadow-md flex flex-col justify-between p-1.5`;
         div.innerHTML = `
           <img src="${item.previewUrl}" class="absolute inset-0 w-full h-full object-cover z-0">
-          <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-slate-950/50 z-10"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-slate-950/40 z-10"></div>
           
-          <div class="relative z-20 flex justify-between items-start">
-            ${badgeHtml}
+          <div class="relative z-20 flex justify-between items-center w-full">
+            <div>${badgeHtml}</div>
             ${item.status !== 'uploading' ? `
-              <button onclick="removeSingleFile('${item.id}')" class="w-6 h-6 bg-rose-600 hover:bg-rose-500 text-white rounded-full text-xs flex items-center justify-center transition shadow cursor-pointer">
+              <button onclick="removeSingleFile('${item.id}')" class="w-5 h-5 bg-rose-600 hover:bg-rose-500 text-white rounded-full text-[10px] flex items-center justify-center transition shadow cursor-pointer">
                 <i class="fa-solid fa-xmark"></i>
               </button>
             ` : ''}
           </div>
 
-          <div class="relative z-20 text-[10px] font-mono text-slate-200 font-bold truncate px-0.5">
+          <div class="relative z-20 text-[9px] font-mono text-slate-200 font-extrabold truncate px-0.5">
             ${sizeMB} MB
-            ${item.errorMsg ? `<p class="text-rose-300 font-extrabold truncate text-[10px]" title="${item.errorMsg}">${item.errorMsg}</p>` : ''}
+            ${item.errorMsg ? `<p class="text-rose-300 font-extrabold truncate text-[9px]" title="${item.errorMsg}">${item.errorMsg}</p>` : ''}
           </div>
         `;
         grid.appendChild(div);
