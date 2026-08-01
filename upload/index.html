@@ -32,6 +32,15 @@
       transform: scale(1.01);
     }
     .btn-touch { min-height: 48px; }
+    
+    /* 點我看照片 - 微光呼吸動畫效果 */
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.3); }
+      50% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.6); }
+    }
+    .btn-view-drive {
+      animation: pulseGlow 3s infinite;
+    }
   </style>
 </head>
 <body class="flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950 min-h-screen p-3 sm:p-6">
@@ -42,12 +51,35 @@
   <div class="max-w-2xl mx-auto w-full space-y-5 my-auto">
     
     <!-- 頂部 Header -->
-    <header class="text-center space-y-1.5">
+    <header class="text-center space-y-3">
       <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-2xl sm:text-3xl mx-auto shadow-xl shadow-amber-500/20">
         <i class="fa-solid fa-cloud-arrow-up"></i>
       </div>
-      <h1 class="text-xl sm:text-3xl font-black text-white tracking-tight">新社高中活動照片上傳系統</h1>
-      <p class="text-xs sm:text-sm text-slate-400 font-medium">免登入 • 自動存入 Google Drive</p>
+      <div>
+        <h1 class="text-xl sm:text-3xl font-black text-white tracking-tight">新社高中活動照片上傳系統</h1>
+        <p class="text-xs sm:text-sm text-slate-400 font-medium mt-1">免登入 • 自動存入 Google Drive</p>
+      </div>
+
+      <!-- 置中放大版「點我看照片」按鈕 -->
+      <div class="pt-2 pb-1 flex justify-center w-full">
+        <a href="https://drive.google.com/drive/folders/17fPjR4mX-YNIunJCszMMnP0o0B9eJG8z?usp=drive_link" 
+           target="_blank" 
+           rel="noopener noreferrer" 
+           class="btn-view-drive group relative inline-flex items-center justify-center gap-3 w-full max-w-md px-6 py-3.5 sm:py-4 rounded-2xl bg-gradient-to-r from-amber-500/25 via-amber-500/15 to-amber-500/25 hover:from-amber-500/40 hover:to-amber-500/40 border-2 border-amber-400 text-amber-300 hover:text-white text-base sm:text-lg font-black transition-all duration-300 active:scale-95 shadow-2xl">
+          
+          <!-- 即時連線狀態燈號 -->
+          <span class="relative flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+          </span>
+
+          <i class="fa-solid fa-folder-open text-amber-400 text-xl group-hover:rotate-6 transition-transform"></i>
+          
+          <span>點我看照片 (Google Drive 雲端硬碟)</span>
+          
+          <i class="fa-solid fa-arrow-up-right-from-square text-sm opacity-75 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+        </a>
+      </div>
     </header>
 
     <!-- 主要上傳控制卡片 -->
