@@ -113,7 +113,7 @@
 
       <div class="flex items-center gap-2 w-full sm:w-auto">
         <button id="btnUploadAll" onclick="startUploadAllAlbums()" disabled class="btn-touch flex-1 sm:flex-none px-5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 active:scale-95 disabled:opacity-40 text-slate-950 font-black text-xs sm:text-sm rounded-2xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed">
-          <i class="fa-solid fa-[#1e293b] fa-bolt"></i>
+          <i class="fa-solid fa-bolt"></i>
           <span>⚡ 一鍵上傳所有相簿的照片</span>
         </button>
 
@@ -254,7 +254,7 @@
             <span>🛡️ 失敗自動重試防護</span>
           </h4>
           <p class="text-slate-300 text-[11px] leading-relaxed">
-            系統內建每張照片間隔 2 秒緩衝，遇到網路異常或超載時，系統會自動等待並**自動重試 2 次**。若仍失敗，請按重試按鈕補傳。
+            系統內建每張照片間隔 2 秒緩衝，遇到網路異常或超載時，系統會自動等待並<strong>自動重試 2 次</strong>。若仍失敗，請按重試按鈕補傳。
           </p>
         </div>
 
@@ -514,8 +514,12 @@
       btnUpload.disabled = (pendingCount === 0 && errorCount === 0) || isUploading;
 
       grid.innerHTML = '';
-      viewFiles.forEach(item => {
-        if (!item.previewUrl) {
+
+      // 記憶體防護：只為前 16 張照片生成圖片 Blob，避免一次加載幾百張大圖擠爆手機 RAM 造成 Safari 閃退
+      const MAX_PREVIEW_BLOBS = 16;
+
+      viewFiles.forEach((item, index) => {
+        if (index < MAX_PREVIEW_BLOBS && !item.previewUrl) {
           try { item.previewUrl = URL.createObjectURL(item.file); } catch(e){}
         }
 
@@ -540,8 +544,11 @@
 
         const div = document.createElement('div');
         div.className = `relative w-full h-28 sm:h-32 rounded-2xl overflow-hidden border ${borderStyle} bg-slate-800 shadow-md flex flex-col justify-between p-1.5`;
+        
+        const hasImgPreview = index < MAX_PREVIEW_BLOBS && item.previewUrl;
+        
         div.innerHTML = `
-          ${item.previewUrl ? `<img src="${item.previewUrl}" class="absolute inset-0 w-full h-full object-cover z-0">` : `<div class="absolute inset-0 flex items-center justify-center text-slate-500 text-xs font-bold">照片圖檔</div>`}
+          ${hasImgPreview ? `<img src="${item.previewUrl}" class="absolute inset-0 w-full h-full object-cover z-0">` : `<div class="absolute inset-0 flex flex-col items-center justify-center p-2 text-center bg-slate-900/90 z-0"><i class="fa-solid fa-file-image text-amber-400 text-xl mb-1"></i><span class="text-[10px] text-slate-300 font-bold truncate max-w-full">${item.file.name}</span></div>`}
           <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-slate-950/40 z-10"></div>
           
           <div class="relative z-20 flex justify-between items-center w-full">
@@ -754,6 +761,7 @@
           renderAlbumTabs();
           updatePreviewGrid();
 
+          // 保持 2 秒傳送間隔防連線封鎖
           await new Promise(r => setTimeout(r, 2000));
         }
 
