@@ -128,9 +128,15 @@
     <div id="allAlbumsProgressContainer" class="hidden glass-card p-4 rounded-3xl border border-slate-700 space-y-3">
       <div class="flex justify-between items-center pb-2 border-b border-slate-700">
         <span class="text-xs font-black text-amber-400 flex items-center gap-1.5">
-          <i class="fa-solid fa-bars-progress"></i> 各相簿即時上傳進度
+          <i class="fa-solid fa-gauge-high"></i> 即時傳輸速率與總進度
         </span>
         <span id="globalProgressSummary" class="text-[11px] font-mono font-bold text-slate-300">已完成 0 / 0</span>
+      </div>
+
+      <!-- 實時速度與剩餘時間預估 -->
+      <div id="speedMetricsBox" class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 flex justify-between items-center text-xs font-mono text-amber-300">
+        <span class="flex items-center gap-1.5"><i class="fa-solid fa-bolt text-amber-400"></i> 上傳速率: <span id="metricSpeedText" class="font-black text-white">0.0 MB/s</span></span>
+        <span class="flex items-center gap-1.5"><i class="fa-solid fa-hourglass-half text-amber-400"></i> 預估剩餘: <span id="metricTimeText" class="font-black text-white">計算中...</span></span>
       </div>
 
       <div id="albumsProgressList" class="space-y-2.5 max-h-60 overflow-y-auto pr-1">
@@ -160,7 +166,7 @@
           <i class="fa-solid fa-cloud-arrow-up text-3xl sm:text-5xl text-amber-500/80"></i>
           <div>
             <p id="dropZoneText" class="text-xs sm:text-base font-extrabold text-slate-100">點擊直接加入預設 ❓ 未分類相簿 照片，或先選擇上方具體班級頁籤</p>
-            <p id="dropZoneSubText" class="text-[11px] sm:text-xs text-slate-300 mt-1">⚠️ 照片單張極大 (超過10MB) 時，<strong class="text-rose-400">強烈建議單次選擇 20~30 張分批上傳</strong></p>
+            <p id="dropZoneSubText" class="text-[11px] sm:text-xs text-slate-300 mt-1">⚠️ 照片單張極大 (超過10MB) 時，<strong class="text-rose-400">強烈建議單次選擇 20~30 張分批上傳體驗更佳</strong></p>
           </div>
           <span class="inline-block px-3.5 py-1.5 bg-amber-500/20 text-amber-300 font-black text-xs rounded-full border border-amber-500/40 shadow-sm">
             <i class="fa-solid fa-square-plus mr-1"></i> 選擇照片
@@ -254,7 +260,7 @@
             <span>🛡️ 失敗自動重試防護</span>
           </h4>
           <p class="text-slate-300 text-[11px] leading-relaxed">
-            系統內建每張照片間隔 2 秒緩衝，遇到網路異常或超載時，系統會自動等待並<strong>自動重試 2 次</strong>。若仍失敗，請按重試按鈕補傳。
+            系統內建智慧上傳緩衝，遇到網路異常或超載時，系統會自動等待並<strong>自動重試 2 次</strong>。若仍失敗，請按重試按鈕補傳。
           </p>
         </div>
 
@@ -633,6 +639,9 @@
       const progressList = document.getElementById('albumsProgressList');
       const globalSummary = document.getElementById('globalProgressSummary');
 
+      const metricSpeedText = document.getElementById('metricSpeedText');
+      const metricTimeText = document.getElementById('metricTimeText');
+
       btnUploadAll.disabled = true;
       btnUpload.disabled = true;
       btnPause.classList.remove('hidden');
@@ -640,12 +649,17 @@
       progressContainer.classList.remove('hidden');
 
       let grandTotalFiles = 0;
+      let grandTotalBytes = 0;
       let grandSuccessCount = 0;
       let grandFailedCount = 0;
+      let uploadedBytesSoFar = 0;
+
+      const uploadStartTime = Date.now();
 
       albumIdsList.forEach(id => {
         const pendingFiles = (albumFilesMap[id] || []).filter(f => f.status === 'pending' || f.status === 'error');
         grandTotalFiles += pendingFiles.length;
+        pendingFiles.forEach(f => { grandTotalBytes += f.file.size; });
       });
 
       progressList.innerHTML = albumIdsList.map(id => {
@@ -701,6 +715,8 @@
           let maxRetries = 2;
           let uploadSuccess = false;
 
+          const fileStartTime = Date.now();
+
           while (attempt <= maxRetries && !uploadSuccess) {
             try {
               const base64Data = await fileToBase64(item.file);
@@ -735,6 +751,7 @@
                 item.status = 'success';
                 item.errorMsg = '';
                 grandSuccessCount++;
+                uploadedBytesSoFar += item.file.size;
               } else {
                 throw new Error(resJson.message || '寫入失敗/容量過大');
               }
@@ -743,12 +760,31 @@
               attempt++;
               if (attempt <= maxRetries) {
                 console.warn(`[重試 ${attempt}/${maxRetries}] 照片 ${item.file.name} 傳送失敗，等待後重試:`, err);
-                await new Promise(r => setTimeout(r, 3000));
+                await new Promise(r => setTimeout(r, 2000));
               } else {
                 console.error(`相簿 [${id}] 照片 ${item.file.name} 最終傳送失敗:`, err);
                 item.status = 'error';
                 item.errorMsg = err.message || '傳送失敗/伺服器超載';
                 grandFailedCount++;
+              }
+            }
+          }
+
+          // 計算實時速度與剩餘時間
+          const elapsedSec = (Date.now() - uploadStartTime) / 1000;
+          if (elapsedSec > 0 && uploadedBytesSoFar > 0) {
+            const speedMBps = (uploadedBytesSoFar / 1024 / 1024) / elapsedSec;
+            const remainingBytes = grandTotalBytes - uploadedBytesSoFar;
+            const remainingSec = Math.round(remainingBytes / (uploadedBytesSoFar / elapsedSec));
+
+            if (metricSpeedText) metricSpeedText.innerText = `${speedMBps.toFixed(2)} MB/s`;
+            if (metricTimeText) {
+              if (remainingSec < 60) {
+                metricTimeText.innerText = `約 ${remainingSec} 秒`;
+              } else {
+                const mins = Math.floor(remainingSec / 60);
+                const secs = remainingSec % 60;
+                metricTimeText.innerText = `約 ${mins} 分 ${secs} 秒`;
               }
             }
           }
@@ -761,8 +797,8 @@
           renderAlbumTabs();
           updatePreviewGrid();
 
-          // 保持 2 秒傳送間隔防連線封鎖
-          await new Promise(r => setTimeout(r, 2000));
+          // 優化：間隔調整為 0.8 秒提升傳送速度
+          await new Promise(r => setTimeout(r, 800));
         }
 
         if (progCard) progCard.className = "p-2.5 rounded-2xl bg-slate-900/60 border border-emerald-500/40 space-y-1";
@@ -773,6 +809,9 @@
 
       btnPause.classList.add('hidden');
       btnPause.classList.remove('flex');
+
+      if (metricSpeedText) metricSpeedText.innerText = "傳送完成";
+      if (metricTimeText) metricTimeText.innerText = "0 秒";
 
       if (grandFailedCount > 0) {
         showToast(`⚠️ 批次傳送完畢：${grandSuccessCount} 張成功，${grandFailedCount} 張失敗`, 'error');
