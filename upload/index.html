@@ -160,7 +160,7 @@
           <i class="fa-solid fa-cloud-arrow-up text-3xl sm:text-5xl text-amber-500/80"></i>
           <div>
             <p id="dropZoneText" class="text-xs sm:text-base font-extrabold text-slate-100">點擊直接加入預設 ❓ 未分類相簿 照片，或先選擇上方具體班級頁籤</p>
-            <p id="dropZoneSubText" class="text-[11px] sm:text-xs text-slate-400 mt-1">可點選上方頁籤選擇指定班級，或直接在此加入照片</p>
+            <p id="dropZoneSubText" class="text-[11px] sm:text-xs text-slate-300 mt-1">⚠️ 照片單張極大 (超過10MB) 時，<strong class="text-rose-400">強烈建議單次選擇 20~30 張分批上傳</strong></p>
           </div>
           <span class="inline-block px-3.5 py-1.5 bg-amber-500/20 text-amber-300 font-black text-xs rounded-full border border-amber-500/40 shadow-sm">
             <i class="fa-solid fa-square-plus mr-1"></i> 選擇照片
@@ -183,7 +183,7 @@
           </button>
         </div>
         
-        <!-- 縮圖網格：修復 iOS 手機版縮圖重疊問題 -->
+        <!-- 縮圖網格 -->
         <div id="thumbnailGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-80 overflow-y-auto p-2.5 bg-slate-900/90 rounded-2xl border border-slate-800"></div>
       </div>
 
@@ -202,16 +202,63 @@
 
     </div>
 
-    <!-- 照片上傳說明與檢查須知 -->
-    <div class="glass-card p-4 rounded-2xl space-y-2 border border-slate-800 text-slate-300">
-      <h3 class="font-bold text-xs text-amber-400 flex items-center gap-1.5">
-        <i class="fa-solid fa-circle-check"></i> 上傳確認須知：
-      </h3>
-      <ul class="text-[11px] sm:text-xs space-y-1 text-slate-400 list-disc list-inside font-medium leading-relaxed">
-        <li>預設停留在第一個選項<strong class="text-amber-300">「📂 所有已選擇照片」</strong>，在此視窗直接選取照片預設會進入<strong class="text-amber-300">「❓ 未分類相簿」</strong>。</li>
-        <li>點擊<strong class="text-amber-300">「一鍵上傳所有相簿的照片」</strong>後，畫面會自動跳轉至<strong class="text-amber-300">「所有已選擇照片」</strong>分頁展示實時傳送總進度！</li>
-        <li>寫入檔名格式為：<strong class="text-amber-300">相簿名稱_原檔名</strong>（完整保留中文檔名）。</li>
-      </ul>
+    <!-- 📸 活動照片原檔直傳系統 — 完整注意事項與指南 (內嵌版) -->
+    <div class="glass-card p-5 sm:p-6 rounded-3xl space-y-4 border border-slate-700 text-slate-200 shadow-xl">
+      <div class="flex items-center justify-between border-b border-slate-700/80 pb-3">
+        <h3 class="font-black text-sm sm:text-base text-amber-400 flex items-center gap-2">
+          <i class="fa-solid fa-circle-info text-amber-400 text-lg"></i>
+          <span>📸 活動照片原檔直傳指南</span>
+        </h3>
+        <span class="text-[10px] bg-amber-500/20 text-amber-300 font-bold px-2.5 py-0.5 rounded-full border border-amber-500/30">必讀說明</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        
+        <!-- 1. 保留照片原檔畫質 -->
+        <div class="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-1.5">
+          <h4 class="font-extrabold text-amber-300 flex items-center gap-1.5">
+            <span class="w-5 h-5 rounded-full bg-amber-500 text-slate-950 text-[11px] font-black flex items-center justify-center">1</span>
+            <span>📷 保留照片原檔畫質</span>
+          </h4>
+          <p class="text-slate-300 text-[11px] leading-relaxed">
+            請直接開啟手機相簿選擇照片。<strong class="text-rose-400 block mt-0.5">⚠️ 切勿先傳至 LINE 再下載！</strong>以免嚴重壓縮畫質並抹除時間紀錄。
+          </p>
+        </div>
+
+        <!-- 2. 分批上傳防封鎖 (重點) -->
+        <div class="p-3.5 bg-rose-950/30 rounded-2xl border border-rose-500/40 space-y-1.5">
+          <h4 class="font-extrabold text-rose-300 flex items-center gap-1.5">
+            <span class="w-5 h-5 rounded-full bg-rose-600 text-white text-[11px] font-black flex items-center justify-center">2</span>
+            <span>⚡ 分批數量與上傳建議</span>
+          </h4>
+          <p class="text-rose-200 text-[11px] leading-relaxed">
+            若您的單張照片體積過大 (如 15MB 級別的高清原檔)，為避免觸發伺服器超載阻擋，<strong class="text-white bg-rose-600/50 px-1 rounded">強烈建議單次選擇 20 ~ 30 張分批上傳</strong>。
+          </p>
+        </div>
+
+        <!-- 3. 班級與相簿歸屬確認 -->
+        <div class="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-1.5">
+          <h4 class="font-extrabold text-amber-300 flex items-center gap-1.5">
+            <span class="w-5 h-5 rounded-full bg-amber-500 text-slate-950 text-[11px] font-black flex items-center justify-center">3</span>
+            <span>📂 相簿切換與命名歸屬</span>
+          </h4>
+          <p class="text-slate-300 text-[11px] leading-relaxed">
+            在「所有已選擇照片」直接加入會預設放入 <strong class="text-amber-300">「未分類」</strong>。寫入檔名格式會自動標示為：<strong class="text-amber-300">相簿名稱_原檔名</strong>。
+          </p>
+        </div>
+
+        <!-- 4. ⏳ 傳送機制 -->
+        <div class="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-1.5">
+          <h4 class="font-extrabold text-amber-300 flex items-center gap-1.5">
+            <span class="w-5 h-5 rounded-full bg-amber-500 text-slate-950 text-[11px] font-black flex items-center justify-center">4</span>
+            <span>🛡️ 失敗自動重試防護</span>
+          </h4>
+          <p class="text-slate-300 text-[11px] leading-relaxed">
+            系統內建每張照片間隔 2 秒緩衝，遇到網路異常或超載時，系統會自動等待並**自動重試 2 次**。若仍失敗，請按重試按鈕補傳。
+          </p>
+        </div>
+
+      </div>
     </div>
 
   </div>
@@ -223,7 +270,6 @@
   <script>
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxl_Fhy-SKff55gYd4o8o9-T_-SI05lR2On0VhGJ5hi-el3OpiIGx1t3mqU-4KJY26tXQ/exec";
 
-    // 專屬相簿清單 (第一項即為預設選項：ALL)
     const ALBUMS = [
       { id: 'ALL', name: '📂 所有已選擇照片', group: '全域' },
       { id: '101', name: '101 班', group: '高一' },
@@ -249,7 +295,6 @@
     let isUploading = false;
     let isPaused = false;
 
-    // 相簿獨立佇列字典
     let albumFilesMap = {};
     ALBUMS.filter(a => a.id !== 'ALL').forEach(a => { albumFilesMap[a.id] = []; });
 
@@ -273,7 +318,6 @@
       setTimeout(() => { toast.remove(); }, 3500);
     }
 
-    // 繪製相簿頁籤與計算全系統照片總數
     function renderAlbumTabs() {
       const container = document.getElementById('albumTabsGrid');
       if (!container) return;
@@ -291,13 +335,7 @@
 
       container.innerHTML = ALBUMS.map(a => {
         const isActive = a.id === currentAlbumId;
-        let count = 0;
-
-        if (a.id === 'ALL') {
-          count = globalTotal;
-        } else {
-          count = (albumFilesMap[a.id] || []).length;
-        }
+        let count = (a.id === 'ALL') ? globalTotal : (albumFilesMap[a.id] || []).length;
 
         let btnClass = isActive 
           ? 'bg-amber-500 text-slate-950 font-black shadow-lg scale-105 border-amber-400' 
@@ -321,7 +359,6 @@
       }
     }
 
-    // 切換當前相簿視窗
     function switchAlbumTab(id) {
       currentAlbumId = id;
       const label = getClassLabel(id);
@@ -346,7 +383,6 @@
       updatePreviewGrid();
     }
 
-    // 拖曳事件處理
     const dropZone = document.getElementById('dropZone');
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
       dropZone.addEventListener(evt, preventDefaults, false);
@@ -379,7 +415,6 @@
         return;
       }
 
-      // 若在 'ALL' 全域視窗下直接點選加入，預設放入 '未分類'
       const targetId = currentAlbumId === 'ALL' ? '未分類' : currentAlbumId;
       let currentFiles = albumFilesMap[targetId] || [];
 
@@ -481,7 +516,7 @@
       grid.innerHTML = '';
       viewFiles.forEach(item => {
         if (!item.previewUrl) {
-          item.previewUrl = URL.createObjectURL(item.file);
+          try { item.previewUrl = URL.createObjectURL(item.file); } catch(e){}
         }
 
         let badgeHtml = '';
@@ -506,7 +541,7 @@
         const div = document.createElement('div');
         div.className = `relative w-full h-28 sm:h-32 rounded-2xl overflow-hidden border ${borderStyle} bg-slate-800 shadow-md flex flex-col justify-between p-1.5`;
         div.innerHTML = `
-          <img src="${item.previewUrl}" class="absolute inset-0 w-full h-full object-cover z-0">
+          ${item.previewUrl ? `<img src="${item.previewUrl}" class="absolute inset-0 w-full h-full object-cover z-0">` : `<div class="absolute inset-0 flex items-center justify-center text-slate-500 text-xs font-bold">照片圖檔</div>`}
           <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-slate-950/40 z-10"></div>
           
           <div class="relative z-20 flex justify-between items-center w-full">
@@ -536,7 +571,6 @@
       });
     }
 
-    // 暫停／繼續傳送切換
     function togglePauseUpload() {
       isPaused = !isPaused;
       const btnIcon = document.getElementById('pauseBtnIcon');
@@ -553,7 +587,6 @@
       }
     }
 
-    // 單一視窗/全域啟動上傳
     async function startSingleAlbumUpload() {
       if (currentAlbumId === 'ALL') {
         await startUploadAllAlbums();
@@ -562,7 +595,6 @@
       }
     }
 
-    // 一鍵上傳所有有相片的相簿
     async function startUploadAllAlbums() {
       const targetAlbums = ALBUMS.filter(a => a.id !== 'ALL').filter(a => {
         const files = albumFilesMap[a.id] || [];
@@ -574,19 +606,15 @@
         return;
       }
 
-      // 自動跳轉至「所有已選擇照片」總覽分頁視窗
       switchAlbumTab('ALL');
-
       await executeMasterUploadProcess(targetAlbums);
     }
 
-    // 重新嘗試失敗項
     async function retryFailedUploads() {
       document.getElementById('btnRetryFailed').classList.add('hidden');
       await startSingleAlbumUpload();
     }
 
-    // 核心主控傳送佇列引擎
     async function executeMasterUploadProcess(albumIdsList) {
       isUploading = true;
       isPaused = false;
@@ -662,47 +690,60 @@
           item.errorMsg = '';
           updatePreviewGrid();
 
-          try {
-            const base64Data = await fileToBase64(item.file);
-            if (!base64Data) throw new Error('檔案讀取失敗');
+          let attempt = 0;
+          let maxRetries = 2;
+          let uploadSuccess = false;
 
-            const cleanFileName = item.file.name.replace(/[\\/:*?"<>|\r\n\t]/g, '_').trim();
-            const newFileName = `${id}_${cleanFileName}`;
+          while (attempt <= maxRetries && !uploadSuccess) {
+            try {
+              const base64Data = await fileToBase64(item.file);
+              if (!base64Data) throw new Error('檔案讀取失敗');
 
-            const payload = {
-              className: id,
-              fileName: newFileName,
-              mimeType: item.file.type || 'image/jpeg',
-              fileData: base64Data.split(',')[1]
-            };
+              const cleanFileName = item.file.name.replace(/[\\/:*?"<>|\r\n\t]/g, '_').trim();
+              const newFileName = `${id}_${cleanFileName}`;
 
-            const response = await fetch(GAS_WEB_APP_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify(payload)
-            });
+              const payload = {
+                className: id,
+                fileName: newFileName,
+                mimeType: item.file.type || 'image/jpeg',
+                fileData: base64Data.split(',')[1]
+              };
 
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}`);
+              const response = await fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+              });
+
+              if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+              }
+
+              const resText = await response.text();
+              let resJson = {};
+              try { resJson = JSON.parse(resText); } catch(e){}
+
+              if (resJson.result === 'success') {
+                uploadSuccess = true;
+                item.status = 'success';
+                item.errorMsg = '';
+                grandSuccessCount++;
+              } else {
+                throw new Error(resJson.message || '寫入失敗/容量過大');
+              }
+
+            } catch (err) {
+              attempt++;
+              if (attempt <= maxRetries) {
+                console.warn(`[重試 ${attempt}/${maxRetries}] 照片 ${item.file.name} 傳送失敗，等待後重試:`, err);
+                await new Promise(r => setTimeout(r, 3000));
+              } else {
+                console.error(`相簿 [${id}] 照片 ${item.file.name} 最終傳送失敗:`, err);
+                item.status = 'error';
+                item.errorMsg = err.message || '傳送失敗/伺服器超載';
+                grandFailedCount++;
+              }
             }
-
-            const resText = await response.text();
-            let resJson = {};
-            try { resJson = JSON.parse(resText); } catch(e){}
-
-            if (resJson.result === 'success') {
-              item.status = 'success';
-              item.errorMsg = '';
-              grandSuccessCount++;
-            } else {
-              throw new Error(resJson.message || '雲端寫入失敗');
-            }
-
-          } catch (err) {
-            console.error(`相簿 [${id}] 照片 ${item.file.name} 傳送失敗:`, err);
-            item.status = 'error';
-            item.errorMsg = err.message || '傳送失敗/權限不足';
-            grandFailedCount++;
           }
 
           const currentProgressPercent = Math.round(((i + 1) / totalInAlbum) * 100);
@@ -712,6 +753,8 @@
 
           renderAlbumTabs();
           updatePreviewGrid();
+
+          await new Promise(r => setTimeout(r, 2000));
         }
 
         if (progCard) progCard.className = "p-2.5 rounded-2xl bg-slate-900/60 border border-emerald-500/40 space-y-1";
@@ -730,7 +773,7 @@
         retryBtn.classList.remove('hidden');
         retryBtn.classList.add('flex');
       } else {
-        showToast(`🎉 全部 ${grandSuccessCount} 張照片已成功分門別類寫入 Google 雲端硬碟！`, 'success');
+        showToast(`🎉 全部 ${grandSuccessCount} 張照片已成功寫入 Google 雲端硬碟！`, 'success');
         document.getElementById('btnRetryFailed').classList.add('hidden');
       }
 
@@ -738,7 +781,6 @@
       updatePreviewGrid();
     }
 
-    // 頁面初始化：預設選擇第一個選項 (ALBUMS[0].id 即 'ALL')
     window.onload = function() {
       switchAlbumTab(ALBUMS[0].id);
     };
